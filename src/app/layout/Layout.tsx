@@ -76,7 +76,20 @@ export default function Layout() {
             </IconButton>
           )}
           <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Investments
+            {(() => {
+              switch (loc.pathname) {
+                case '/':
+                  return 'Investments';
+                case '/credits':
+                  return 'Credits';
+                case '/cashflow':
+                  return 'Cashflow';
+                case '/options':
+                  return 'Optionen';
+                default:
+                  return '';
+              }
+            })()}
           </Typography>
         </Toolbar>
       </AppBar>

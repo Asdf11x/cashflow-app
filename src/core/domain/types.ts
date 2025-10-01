@@ -20,22 +20,23 @@ export interface Objectvestment extends BaseInvestment {
 
 export type Investment = Objectvestment;
 
-export interface Loan {
+export interface Credit {
   id: string;
-  objectId: string;
+  name: string;
   principal: Money; // Kredithöhe
   equity: Money; // Eigenkapital
-  rateAnnualPct: string; // Zinssatz in %
+  rateAnnualPct: string; // Zinssatz p.a. in %
   amortMonthly: Money; // Tilgung pro Monat
+
+  // derived
+  interestMonthly: Money;
+  interestYearly: Money;
 }
 
-export interface CashflowResult {
+export interface Cashflow {
   id: string;
-  objectId: string;
-  loanId: string;
-  monthlyIncome: Money;
-  monthlyInterest: Money;
-  monthlyAmort: Money;
-  monthlyNet: Money;
-  computedAt: string; // ISO time
+  name: string;
+  investmentId: string;
+  creditId: string;
+  cashflowMonthly: Money; // computed
 }
