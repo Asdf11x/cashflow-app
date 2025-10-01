@@ -1,113 +1,128 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Fab,
+  Box,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { fmtMoney } from '../../core/domain/calc';
 import ObjectCreateSheet from '../shared/ObjectCreateSheet';
+import { useSwipeable } from 'react-swipeable';
+
+function SwipeableRow({ onDelete, children }: { onDelete: () => void; children: React.ReactNode }) {
+  const [tx, setTx] = React.useState(0);
+  const TH = 120;
+  const handlers = useSwipeable({
+    onSwiping: (e) => {
+      const nx = Math.max(-160, Math.min(0, -e.deltaX)); // left only
+      setTx(-nx);
+    },
+    onSwipedLeft: (e) => {
+      if (e.absX > TH) onDelete();
+      else setTx(0);
+    },
+    onSwipedRight: () => setTx(0),
+    trackMouse: true,
+  });
+
+  return (
+    <Box sx={{ position: 'relative', overflow: 'hidden' }} {...handlers}>
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          pr: 2,
+          bgcolor: '#fee2e2',
+          color: '#b91c1c',
+        }}
+      >
+        🗑
+      </Box>
+      <Box
+        sx={{
+          position: 'relative',
+          transform: `translateX(${-tx}px)`,
+          transition: 'transform .15s ease',
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+}
 
 export default function InvestmentsList() {
   const objects = useInvestStore((s) => s.objects);
   const removeObject = useInvestStore((s) => s.removeObject);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = React.useState(false);
 
   return (
-    <div className="container">
-      <div className="h1">Investments</div>
+    <>
+      <TableContainer component={Paper}>
+        <Table size="medium">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell align="right">Kaufpreis</TableCell>
+              <TableCell align="right">monatl. Gewinn</TableCell>
+              <TableCell align="right">Rendite p.a.</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {objects.map((o) => (
+              <TableRow
+                key={o.id}
+                hover
+                sx={{ '& td': { borderBottom: '1px solid #e5e7eb' }, p: 0 }}
+              >
+                <TableCell colSpan={4} sx={{ p: 0 }}>
+                  <SwipeableRow onDelete={() => removeObject(o.id)}>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 0.5fr 0.5fr 0.5fr',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Box sx={{ p: 1.5 }}>{o.name}</Box>
+                      <Box sx={{ p: 1.5, textAlign: 'right' }}>{fmtMoney(o.purchasePrice)}</Box>
+                      <Box sx={{ p: 1.5, textAlign: 'right' }}>{fmtMoney(o.netGainMonthly)}</Box>
+                      <Box sx={{ p: 1.5, textAlign: 'right' }}>{o.yieldPctYearly} %</Box>
+                    </Box>
+                  </SwipeableRow>
+                </TableCell>
+              </TableRow>
+            ))}
+            {objects.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} sx={{ color: '#94a3b8' }}>
+                  Noch keine Investments. Klicke unten rechts auf „+“.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      <table className="table" style={{ tableLayout: 'fixed' }}>
-        <colgroup>
-          <col style={{ width: '40%' }} />
-          <col style={{ width: '20%' }} />
-          <col style={{ width: '20%' }} />
-          <col style={{ width: '20%' }} />
-        </colgroup>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Kaufpreis</th>
-            <th>monatl. Gewinn</th>
-            <th>Rendite p.a.</th>
-          </tr>
-        </thead>
-        <tbody>
-          {objects.map((o) => (
-            <tr key={o.id}>
-              <td colSpan={4} style={{ padding: 0, borderBottom: '1px solid var(--line)' }}>
-                {/* keep swipe-to-delete row */}
-                <div className="swipe-wrap" style={{ height: 56 }}>
-                  <div className="swipe-bg" style={{ height: 56 }}>
-                    <svg className="basket" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        fill="currentColor"
-                        d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9zM7 9h2v10H7V9z"
-                      />
-                    </svg>
-                  </div>
-                  <SwipeRowLike onDelete={() => removeObject(o.id)}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '40% 20% 20% 20%' }}>
-                      <div style={{ padding: '12px' }}>{o.name}</div>
-                      <div style={{ padding: '12px' }}>{fmtMoney(o.purchasePrice)}</div>
-                      <div style={{ padding: '12px' }}>{fmtMoney(o.netGainMonthly)}</div>
-                      <div style={{ padding: '12px' }}>{o.yieldPctYearly} %</div>
-                    </div>
-                  </SwipeRowLike>
-                </div>
-              </td>
-            </tr>
-          ))}
-          {objects.length === 0 && (
-            <tr>
-              <td colSpan={4} style={{ color: '#94a3b8', padding: '24px' }}>
-                Noch keine Investments. Unten rechts „+“ klicken.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <Fab
+        color="primary"
+        sx={{ position: 'fixed', right: 24, bottom: 24 }}
+        onClick={() => setOpen(true)}
+      >
+        <AddIcon />
+      </Fab>
 
-      <button className="fab" onClick={() => setOpen(true)}>
-        +
-      </button>
       {open && <ObjectCreateSheet onClose={() => setOpen(false)} />}
-    </div>
-  );
-}
-
-/* tiny inline variant so you don't need to import; uses same logic as SwipeRow */
-function SwipeRowLike({ onDelete, children }: { onDelete: () => void; children: React.ReactNode }) {
-  const [tx, setTx] = React.useState(0);
-  const start = React.useRef(0);
-  const cur = React.useRef(0);
-  const TH = 120,
-    MAX = 160;
-  const down = (e: React.PointerEvent) => {
-    start.current = e.clientX;
-    cur.current = 0;
-    (e.target as any).setPointerCapture?.(e.pointerId);
-  };
-  const move = (e: React.PointerEvent) => {
-    if (!start.current) return;
-    const nx = Math.max(-MAX, Math.min(0, e.clientX - start.current));
-    cur.current = nx;
-    setTx(nx);
-  };
-  const up = () => {
-    if (Math.abs(cur.current) > TH) {
-      setTx(-400);
-      setTimeout(onDelete, 120);
-    } else setTx(0);
-    start.current = 0;
-    cur.current = 0;
-  };
-  return (
-    <div
-      className="swipe-fg"
-      style={{ transform: `translateX(${tx}px)` }}
-      onPointerDown={down}
-      onPointerMove={move}
-      onPointerUp={up}
-      onPointerCancel={up}
-      onPointerLeave={() => start.current && up()}
-    >
-      {children}
-    </div>
+    </>
   );
 }

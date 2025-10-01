@@ -2,7 +2,6 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './app/layout/Layout';
 import InvestmentsList from './app/routes/InvestmentsList';
 import Placeholder from './app/routes/Placeholder';
-import './app/styles.css';
 
 export default function App() {
   return (
