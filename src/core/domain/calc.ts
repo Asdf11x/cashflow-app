@@ -1,6 +1,5 @@
 import Decimal from 'decimal.js';
-import type { Money, Objectvestment } from './types';
-
+import type { Money, Objectvestment, Credit } from './types';
 const D = (v: Money | number | string) => new Decimal(v || '0');
 
 export function netMonthly(i: Objectvestment): Money {
@@ -33,3 +32,23 @@ export const fmtNumberTrim = (v: string | number) => {
     minimumFractionDigits: 0,
   }).format(num);
 };
+
+/* --- NEW: Credit math --- */
+// Zinsen auf (Kredithöhe - Eigenkapital)
+export function creditInterestMonthly(c: Credit): Money {
+  const debt = D(c.principal).minus(D(c.equity)); // Restschuld
+  const r = D(c.rateAnnualPct).div(100).div(12); // Monatszins
+  return debt.mul(r).toFixed(2);
+}
+export function creditInterestYearly(c: Credit): Money {
+  return D(creditInterestMonthly(c)).mul(12).toFixed(2);
+}
+
+export function computeCashflowMonthly(i: Objectvestment, c: Credit): Money {
+  // net investment income minus interest and amortization
+  return D(i.grossGainMonthly)
+    .minus(D(i.costMonthly))
+    .minus(D(c.interestMonthly))
+    .minus(D(c.amortMonthly))
+    .toFixed(2);
+}
