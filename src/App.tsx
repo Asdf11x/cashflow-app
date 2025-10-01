@@ -1,21 +1,17 @@
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import InvestmentsList from './src/app/routes/InvestmentsList';
-import './src/app/styles.css';
+import { Routes, Route } from 'react-router-dom';
+import Layout from './app/layout/Layout';
+import InvestmentsList from './app/routes/InvestmentsList';
+import Placeholder from './app/routes/Placeholder';
 
-export default function App(){
-    const loc = useLocation();
-    return (
-        <>
-            <nav style={{
-                position:'sticky',top:0,zIndex:10,background:'#fff',
-                borderBottom:'1px solid var(--line)',padding:'10px 16px',display:'flex',gap:16
-            }}>
-                <Link to="/" style={{fontWeight: loc.pathname==='/'?700:400}}>Investments</Link>
-            </nav>
-
-            <Routes>
-                <Route path="/" element={<InvestmentsList/>}/>
-            </Routes>
-        </>
-    );
+export default function App() {
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<InvestmentsList />} />
+        <Route path="credits" element={<Placeholder title="Credits" />} />
+        <Route path="cashflow" element={<Placeholder title="Cashflow" />} />
+        <Route path="options" element={<Placeholder title="Options" />} />
+      </Route>
+    </Routes>
+  );
 }
