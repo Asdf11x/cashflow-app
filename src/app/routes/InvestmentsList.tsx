@@ -8,104 +8,84 @@ import {
   TableHead,
   TableRow,
   Fab,
-  Box,
+  IconButton,
+  Tooltip,
+  Snackbar,
+  Button,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useInvestStore } from '../../core/state/useInvestStore';
-import { fmtMoney } from '../../core/domain/calc';
-import ObjectCreateSheet from '../shared/ObjectCreateSheet';
-import { useSwipeable } from 'react-swipeable';
-
-function SwipeableRow({ onDelete, children }: { onDelete: () => void; children: React.ReactNode }) {
-  const [tx, setTx] = React.useState(0);
-  const TH = 120;
-  const handlers = useSwipeable({
-    onSwiping: (e) => {
-      const nx = Math.max(-160, Math.min(0, -e.deltaX)); // left only
-      setTx(-nx);
-    },
-    onSwipedLeft: (e) => {
-      if (e.absX > TH) onDelete();
-      else setTx(0);
-    },
-    onSwipedRight: () => setTx(0),
-    trackMouse: true,
-  });
-
-  return (
-    <Box sx={{ position: 'relative', overflow: 'hidden' }} {...handlers}>
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          pr: 2,
-          bgcolor: '#fee2e2',
-          color: '#b91c1c',
-        }}
-      >
-        🗑
-      </Box>
-      <Box
-        sx={{
-          position: 'relative',
-          transform: `translateX(${-tx}px)`,
-          transition: 'transform .15s ease',
-        }}
-      >
-        {children}
-      </Box>
-    </Box>
-  );
-}
+import { fmtMoney, fmtNumberTrim } from '../../core/domain/calc';
+import ObjectCreateDialog from '../shared/ObjectCreateDialog';
 
 export default function InvestmentsList() {
   const objects = useInvestStore((s) => s.objects);
   const removeObject = useInvestStore((s) => s.removeObject);
-  const [open, setOpen] = React.useState(false);
+
+  const [openAdd, setOpenAdd] = React.useState(false);
+  const [snack, setSnack] = React.useState<{ open: boolean; msg: string }>({
+    open: false,
+    msg: '',
+  });
+  const [undoCtx, setUndoCtx] = React.useState<{ item: any; index: number } | null>(null);
+
+  const handleDelete = (id: string) => {
+    const index = objects.findIndex((o) => o.id === id);
+    const item = objects[index];
+    removeObject(id); // delete immediately
+    setUndoCtx({ item, index }); // keep for undo
+    setSnack({ open: true, msg: 'Investment gelöscht' });
+  };
+
+  const handleUndo = () => {
+    if (!undoCtx) return;
+    // precise re-insert at original index
+    const { item, index } = undoCtx;
+    useInvestStore.setState((s) => ({
+      objects: [...s.objects.slice(0, index), item, ...s.objects.slice(index)],
+    }));
+    setUndoCtx(null);
+    setSnack({ open: true, msg: 'Rückgängig gemacht' });
+  };
 
   return (
     <>
-      <TableContainer component={Paper}>
-        <Table size="medium">
+      <TableContainer component={Paper} sx={{ width: '100%' }}>
+        <Table size="medium" sx={{ minWidth: 760 }}>
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell align="right">Kaufpreis</TableCell>
               <TableCell align="right">monatl. Gewinn</TableCell>
               <TableCell align="right">Rendite p.a.</TableCell>
+              <TableCell align="right" width={64} />
             </TableRow>
           </TableHead>
           <TableBody>
             {objects.map((o) => (
-              <TableRow
-                key={o.id}
-                hover
-                sx={{ '& td': { borderBottom: '1px solid #e5e7eb' }, p: 0 }}
-              >
-                <TableCell colSpan={4} sx={{ p: 0 }}>
-                  <SwipeableRow onDelete={() => removeObject(o.id)}>
-                    <Box
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 0.5fr 0.5fr 0.5fr',
-                        alignItems: 'center',
-                      }}
+              <TableRow key={o.id} hover>
+                <TableCell>{o.name}</TableCell>
+                <TableCell align="right">{fmtMoney(o.purchasePrice)}</TableCell>
+                <TableCell align="right">{fmtMoney(o.netGainMonthly)}</TableCell>
+                <TableCell align="right">{fmtNumberTrim(o.yieldPctYearly)} %</TableCell>
+                <TableCell align="right">
+                  <Tooltip title="Löschen">
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDelete(o.id)}
+                      size="small"
+                      aria-label={`Lösche ${o.name}`}
                     >
-                      <Box sx={{ p: 1.5 }}>{o.name}</Box>
-                      <Box sx={{ p: 1.5, textAlign: 'right' }}>{fmtMoney(o.purchasePrice)}</Box>
-                      <Box sx={{ p: 1.5, textAlign: 'right' }}>{fmtMoney(o.netGainMonthly)}</Box>
-                      <Box sx={{ p: 1.5, textAlign: 'right' }}>{o.yieldPctYearly} %</Box>
-                    </Box>
-                  </SwipeableRow>
+                      <DeleteOutlineIcon />
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
             {objects.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} sx={{ color: '#94a3b8' }}>
+                <TableCell colSpan={5} sx={{ color: '#94a3b8' }}>
                   Noch keine Investments. Klicke unten rechts auf „+“.
                 </TableCell>
               </TableRow>
@@ -114,15 +94,32 @@ export default function InvestmentsList() {
         </Table>
       </TableContainer>
 
+      {/* Add FAB */}
       <Fab
         color="primary"
         sx={{ position: 'fixed', right: 24, bottom: 24 }}
-        onClick={() => setOpen(true)}
+        onClick={() => setOpenAdd(true)}
       >
         <AddIcon />
       </Fab>
 
-      {open && <ObjectCreateSheet onClose={() => setOpen(false)} />}
+      {/* MUI Dialog */}
+      {openAdd && <ObjectCreateDialog onClose={() => setOpenAdd(false)} />}
+
+      {/* Snackbar with Undo */}
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={3000}
+        onClose={() => setSnack({ open: false, msg: '' })}
+        message={snack.msg}
+        action={
+          undoCtx ? (
+            <Button color="inherit" size="small" onClick={handleUndo}>
+              Rückgängig
+            </Button>
+          ) : null
+        }
+      />
     </>
   );
 }

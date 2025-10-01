@@ -38,7 +38,7 @@ export default function Layout() {
   const loc = useLocation();
 
   const drawer = (
-    <Box sx={{ width: drawerWidth }}>
+    <Box sx={{ maxWidth: '1400px', mx: 'auto' }}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h6" fontWeight={800}>
           cashflow-app
@@ -102,7 +102,14 @@ export default function Layout() {
       {/* Content */}
       <Box
         component="main"
-        sx={{ flex: 1, p: 2, mt: 8, ...(isDesktop && { ml: `${drawerWidth}px` }) }}
+        sx={{
+          flex: 1,
+          p: 2,
+          mt: 8,
+          ...(isDesktop && { ml: `${drawerWidth}px` }),
+          maxWidth: '100%',
+          width: '100%',
+        }}
       >
         <Outlet />
       </Box>
