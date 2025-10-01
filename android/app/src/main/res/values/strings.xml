@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CashflowApp</string>
+    <string name="title_activity_main">CashflowApp</string>
+    <string name="package_name">com.example.cashflowapp</string>
+    <string name="custom_url_scheme">com.example.cashflowapp</string>
+</resources>

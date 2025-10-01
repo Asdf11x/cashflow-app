@@ -22,3 +22,39 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# --- Android / Capacitor ---
+# Gradle & Android Studio
+android/.gradle/
+android/.idea/
+android/local.properties
+android/captures/
+android/.cxx/
+
+# Build outputs
+android/build/
+android/app/build/
+android/app/release/
+android/app/debug/
+
+# Generated web assets inside native project
+android/app/src/main/assets/*
+!android/app/src/main/assets/keep.json
+
+# NDK / CMake caches
+.cxx/
+
+# --- iOS (falls ihr später ios add macht) ---
+ios/build/
+ios/Pods/
+ios/DerivedData/
+ios/.idea/
+ios/*.xcworkspace
+ios/Podfile.lock
+
+# --- Misc ---
+# Environment files (falls genutzt)
+.env
+.env.local
+.env.*.local
