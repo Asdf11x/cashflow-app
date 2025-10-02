@@ -1,24 +1,68 @@
-export type Money = string; // Dezimal-String (Rechnen mit decimal.js)
+export type Money = string; // decimal string, computed with decimal.js
+
+export type InvestmentKind = 'OBJECT' | 'REAL_ESTATE' | 'STOCK';
 
 export interface BaseInvestment {
   id: string;
   name: string;
-  kind: 'OBJECT' | 'REAL_ESTATE' | 'STOCK';
+  kind: InvestmentKind;
 
-  netGainMonthly: Money; // Netto-Gewinn pro Monat
-  netGainYearly: Money; // Netto-Gewinn pro Jahr
-  yieldPctYearly: string; // Rendite in %
+  netGainMonthly: Money; // output
+  netGainYearly: Money; // output
+  yieldPctYearly: string; // output, e.g. "3.75"
 }
 
-// MVP: nur OBJECT
-export interface Objectvestment extends BaseInvestment {
+export interface ObjectInvestment extends BaseInvestment {
   kind: 'OBJECT';
-  purchasePrice: Money; // Kaufpreis
-  grossGainMonthly: Money; // Gewinn (brutto) pro Monat
-  costMonthly: Money; // Kosten/Verlust pro Monat
+  purchasePrice: Money;
+  grossGainMonthly: Money;
+  costMonthly: Money;
 }
 
-export type Investment = Objectvestment;
+export type PurchasePriceExtraCosts = {
+  // store the *applied* amounts (not rates) after calculation, as Money
+  brokerCommission?: Money; // Maklerprovision (optional)
+  propertyTransferTax: Money; // Grunderwerbsteuer
+  notaryFees: Money; // Notarkosten
+  landRegistryFees: Money; // Grundbucheintrag
+  appraisalFee?: Money; // Gutachterkosten (optional)
+  insuranceSetup?: Money; // Versicherungs-Setup (optional)
+  total: Money;
+};
+
+export interface RunningCostsSelection {
+  // how user chose to compute each block
+  apportionableMode: 'percentage' | 'manual' | 'none';
+  nonApportionableMode: 'percentage' | 'manual' | 'none';
+  manualApportionableAnnual?: Money; // if mode = manual
+  manualNonApportionableAnnual?: Money; // if mode = manual
+  applyIncomeTax: boolean;
+  applySolidarity: boolean;
+  applyChurchTax: boolean;
+}
+
+export interface RealEstateInvestment extends BaseInvestment {
+  kind: 'REAL_ESTATE';
+  purchasePrice: Money;
+
+  // RENT INPUTS
+  monthlyColdRent: Money; // "Miete (Kaltmiete)" as input
+  runningCostsSelection: RunningCostsSelection;
+
+  // CALCULATED FROM CONFIG
+  appliedPurchaseCosts: PurchasePriceExtraCosts;
+
+  // RENT / COSTS OUTPUTS (derived)
+  annualColdRent: Money;
+  incomeTaxAmountAnnual: Money;
+  solidarityAnnual: Money;
+  churchTaxAnnual: Money;
+  netRentAfterTaxAnnual: Money;
+
+  apportionableAnnual: Money; // umlagefähig (usually tenant pays)
+  nonApportionableAnnual: Money; // nicht umlagefähig (owner)
+  totalRunningCostsAnnual: Money;
+}
 
 export interface Credit {
   id: string;

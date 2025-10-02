@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "country": "DE",
+    "currency": "EUR",
+    "version": 2,
+    "notes": "Defaults for Germany. All values are multipliers or amounts to add."
+  },
+
+  "purchaseCosts": {
+    "basicCosts": {
+      "brokerCommission": {
+        "label_de": "Maklerprovision",
+        "rateOfPurchasePrice": 0.035,
+        "optional": true
+      },
+      "propertyTransferTax": {
+        "label_de": "Grunderwerbsteuer",
+        "rateOfPurchasePrice": 0.05,
+        "optional": false
+      },
+      "notaryFees": {
+        "label_de": "Notarkosten",
+        "rateOfPurchasePrice": 0.0125,
+        "optional": false
+      },
+      "landRegistryFees": {
+        "label_de": "Grundbucheintrag",
+        "rateOfPurchasePrice": 0.005,
+        "optional": false
+      }
+    },
+    "additionalCosts": {
+      "appraisalFee": {
+        "label_de": "Gutachterkosten",
+        "rateOfPurchasePrice": 0.002,
+        "optional": true
+      },
+      "insuranceSetup": {
+        "label_de": "Versicherungs-Setup",
+        "rateOfPurchasePrice": 0.001,
+        "optional": true
+      }
+    }
+  },
+
+  "rent": {
+    "labels": {
+      "grossRent": "Miete (Kaltmiete)",
+      "netAfterTax": "Netto nach Steuern"
+    },
+    "taxes": {
+      "incomeTax": {
+        "label_de": "Einkommensteuer",
+        "base": "gross_rent",
+        "rate": 0.25,
+        "optional": true
+      },
+      "solidaritySurcharge": {
+        "label_de": "Solidaritätszuschlag",
+        "appliesTo": "incomeTax",
+        "rate": 0.055,
+        "optional": true
+      },
+      "churchTax": {
+        "label_de": "Kirchensteuer",
+        "appliesTo": "incomeTax",
+        "rate": 0.09,
+        "optional": true
+      }
+    }
+  },
+
+  "runningCosts": {
+    "apportionableOperatingCosts": {
+      "key": "nebenkosten_umlagefaehig",
+      "label_de": "umlagefähige Nebenkosten",
+      "mode": "percentage",
+      "percentageOfAnnualColdRent": 0.25,
+      "manualAnnualAmount": 0,
+      "allowManualOverride": true
+    },
+    "nonApportionableOperatingCosts": {
+      "key": "nebenkosten_nicht_umlagefaehig",
+      "label_de": "nicht umlagefähige Nebenkosten (Hausgeld-Anteil, Verwaltung, Instandhaltungsrücklage)",
+      "mode": "percentage",
+      "percentageOfAnnualColdRent": 0.05,
+      "manualAnnualAmount": 0,
+      "allowManualOverride": true
+    }
+  }
+}
