@@ -358,7 +358,7 @@ export default function CreateInvestmentDialog({ onClose }: Props) {
               {/* STANDARD = itemized + editable */}
               <Collapse in={useStdPurchase} unmountOnExit>
                 <Stack spacing={1} sx={{ pl: 1 }}>
-                  BASIC (always enabled)
+                  {/*BASIC (always enabled)*/}
                   <TextField
                     label="Maklergebühr"
                     type="number"
