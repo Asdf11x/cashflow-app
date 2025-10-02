@@ -17,37 +17,112 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { fmtMoney, fmtNumberTrim } from '../../core/domain/calc';
-import ObjectCreateDialog from '../shared/ObjectCreateDialog';
+import CreateInvestmentDialog from '../shared/CreateInvestmentDialog.tsx';
+
+type Row = {
+  id: string;
+  name: string;
+  purchasePrice: string;
+  netGainMonthly: string;
+  yieldPctYearly: string;
+  kind: 'OBJECT' | 'REAL_ESTATE';
+};
 
 export default function InvestmentsList() {
+  // state selectors (hooks must be INSIDE the component)
   const objects = useInvestStore((s) => s.objects);
+  const realEstates = useInvestStore((s) => s.realEstates);
   const removeObject = useInvestStore((s) => s.removeObject);
+  const removeRealEstate = useInvestStore((s) => s.removeRealEstate);
 
   const [openAdd, setOpenAdd] = React.useState(false);
   const [snack, setSnack] = React.useState<{ open: boolean; msg: string }>({
     open: false,
     msg: '',
   });
-  const [undoCtx, setUndoCtx] = React.useState<{ item: any; index: number } | null>(null);
+  const [undoCtx, setUndoCtx] = React.useState<{
+    row: Row;
+    subsetIndex: number; // index within its own collection at delete time
+  } | null>(null);
 
-  const handleDelete = (id: string) => {
-    const index = objects.findIndex((o) => o.id === id);
-    const item = objects[index];
-    removeObject(id); // delete immediately
-    setUndoCtx({ item, index }); // keep for undo
+  // merge into single list for the table
+  const rows: Row[] = React.useMemo(
+    () => [
+      ...objects.map((o) => ({
+        id: o.id,
+        name: o.name,
+        purchasePrice: fmtMoney(o.purchasePrice),
+        netGainMonthly: fmtMoney(o.netGainMonthly),
+        yieldPctYearly: `${fmtNumberTrim(o.yieldPctYearly)} %`,
+        kind: 'OBJECT' as const,
+      })),
+      ...realEstates.map((r) => ({
+        id: r.id,
+        name: r.name,
+        purchasePrice: fmtMoney(r.purchasePrice),
+        netGainMonthly: fmtMoney(r.netGainMonthly),
+        yieldPctYearly: `${fmtNumberTrim(r.yieldPctYearly)} %`,
+        kind: 'REAL_ESTATE' as const,
+      })),
+    ],
+    [objects, realEstates],
+  );
+
+  // delete a row and capture undo info
+  const handleDelete = (row: Row, visibleIndex: number) => {
+    // compute the index within the *same* subset (OBJECT or REAL_ESTATE) at delete time
+    const subsetIndex = rows.slice(0, visibleIndex).filter((r) => r.kind === row.kind).length;
+
+    if (row.kind === 'OBJECT') {
+      removeObject(row.id);
+    } else {
+      removeRealEstate(row.id);
+    }
+
+    setUndoCtx({ row, subsetIndex });
     setSnack({ open: true, msg: 'Investment gelöscht' });
   };
 
+  // undo reinserts into the proper collection at the original subset index
   const handleUndo = () => {
     if (!undoCtx) return;
-    // precise re-insert at original index
-    const { item, index } = undoCtx;
-    useInvestStore.setState((s) => ({
-      objects: [...s.objects.slice(0, index), item, ...s.objects.slice(index)],
-    }));
+    const { row, subsetIndex } = undoCtx;
+
+    useInvestStore.setState((s) => {
+      if (row.kind === 'OBJECT') {
+        const before = s.objects.slice(0, subsetIndex);
+        const after = s.objects.slice(subsetIndex);
+        return {
+          objects: [
+            ...before,
+            {
+              ...row,
+              // if your store keeps additional fields, spread them here or
+              // reconstruct as needed
+            } as any,
+            ...after,
+          ],
+        };
+      } else {
+        const before = s.realEstates.slice(0, subsetIndex);
+        const after = s.realEstates.slice(subsetIndex);
+        return {
+          realEstates: [
+            ...before,
+            {
+              ...row,
+            } as any,
+            ...after,
+          ],
+        };
+      }
+    });
+
     setUndoCtx(null);
     setSnack({ open: true, msg: 'Rückgängig gemacht' });
   };
+
+  const isEmpty = rows.length === 0;
 
   return (
     <>
@@ -63,19 +138,25 @@ export default function InvestmentsList() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {objects.map((o) => (
-              <TableRow key={o.id} hover>
-                <TableCell>{o.name}</TableCell>
-                <TableCell align="right">{fmtMoney(o.purchasePrice)}</TableCell>
-                <TableCell align="right">{fmtMoney(o.netGainMonthly)}</TableCell>
-                <TableCell align="right">{fmtNumberTrim(o.yieldPctYearly)} %</TableCell>
+            {rows.map((r, idx) => (
+              <TableRow key={`${r.kind}:${r.id}`} hover>
+                <TableCell>
+                  {r.name}
+                  {/* optional badge to distinguish types */}
+                  {/* <span style={{ marginLeft: 8, color: '#64748b', fontSize: 12 }}>
+                    {r.kind === 'OBJECT' ? 'Objekt' : 'Immobilie'}
+                  </span> */}
+                </TableCell>
+                <TableCell align="right">{r.purchasePrice}</TableCell>
+                <TableCell align="right">{r.netGainMonthly}</TableCell>
+                <TableCell align="right">{r.yieldPctYearly} %</TableCell>
                 <TableCell align="right">
                   <Tooltip title="Löschen">
                     <IconButton
                       color="error"
-                      onClick={() => handleDelete(o.id)}
+                      onClick={() => handleDelete(r, idx)}
                       size="small"
-                      aria-label={`Lösche ${o.name}`}
+                      aria-label={`Lösche ${r.name}`}
                     >
                       <DeleteOutlineIcon />
                     </IconButton>
@@ -83,7 +164,8 @@ export default function InvestmentsList() {
                 </TableCell>
               </TableRow>
             ))}
-            {objects.length === 0 && (
+
+            {isEmpty && (
               <TableRow>
                 <TableCell colSpan={5} sx={{ color: '#94a3b8' }}>
                   Noch keine Investments. Klicke unten rechts auf „+“.
@@ -103,8 +185,8 @@ export default function InvestmentsList() {
         <AddIcon />
       </Fab>
 
-      {/* MUI Dialog */}
-      {openAdd && <ObjectCreateDialog onClose={() => setOpenAdd(false)} />}
+      {/* Dialog */}
+      {openAdd && <CreateInvestmentDialog onClose={() => setOpenAdd(false)} />}
 
       {/* Snackbar with Undo */}
       <Snackbar

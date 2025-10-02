@@ -1,14 +1,14 @@
 import Decimal from 'decimal.js';
-import type { Money, Objectvestment, Credit } from './types';
+import type { Money, ObjectInvestment, Credit } from './types';
 const D = (v: Money | number | string) => new Decimal(v || '0');
 
-export function netMonthly(i: Objectvestment): Money {
+export function netMonthly(i: ObjectInvestment): Money {
   return D(i.grossGainMonthly).minus(D(i.costMonthly)).toFixed(2);
 }
-export function netYearly(i: Objectvestment): Money {
+export function netYearly(i: ObjectInvestment): Money {
   return D(netMonthly(i)).mul(12).toFixed(2);
 }
-export function yieldPctYearly(i: Objectvestment): string {
+export function yieldPctYearly(i: ObjectInvestment): string {
   const basis = D(i.purchasePrice);
   if (basis.isZero()) return '0';
   return D(netYearly(i)).div(basis).mul(100).toFixed(2);
@@ -44,7 +44,7 @@ export function creditInterestYearly(c: Credit): Money {
   return D(creditInterestMonthly(c)).mul(12).toFixed(2);
 }
 
-export function computeCashflowMonthly(i: Objectvestment, c: Credit): Money {
+export function computeCashflowMonthly(i: ObjectInvestment, c: Credit): Money {
   // net investment income minus interest and amortization
   return D(i.grossGainMonthly)
     .minus(D(i.costMonthly))
