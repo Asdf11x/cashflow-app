@@ -21,7 +21,6 @@ import { getDefaultCostsConfig } from '../../../config';
 import Decimal from 'decimal.js';
 import type { CostItemState, CostState } from './formHelpers';
 
-// --- NEW ---
 // New type for a cost item that has a primary value and a secondary (deductible) value
 interface SplitCostItemState {
   enabled: boolean;
@@ -32,7 +31,6 @@ interface SplitCostItemState {
   label1: string;
   label2: string;
 }
-// --- END NEW ---
 
 interface CostInputRowProps {
   item: CostItemState;
@@ -101,7 +99,6 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
   );
 }
 
-// --- NEW ---
 // A special input row for split costs like Hausgeld / umlagefähiger Anteil
 interface SplitCostInputRowProps {
   item: SplitCostItemState;
@@ -217,7 +214,6 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
     </Box>
   );
 }
-// --- END NEW ---
 
 interface CostSectionAccordionProps {
   title: string;
@@ -380,8 +376,9 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
       label: 'Zusätzliche Abzüge',
     },
   });
-  // --- NEW ---
-  const [runningCosts, setRunningCosts] = React.useState({
+
+  // State for special split costs (Hausgeld)
+  const [runningCostsSplit, setRunningCostsSplit] = React.useState({
     hausgeld: {
       enabled: false,
       value1: '0', // total
@@ -392,11 +389,23 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
       label2: 'davon umlagefähig',
     } as SplitCostItemState,
   });
+
+  // --- NEW ---
+  // State for standard running costs (Sonstiges)
+  const [otherRunningCosts, setOtherRunningCosts] = React.useState<CostState>({
+    other: {
+      enabled: false,
+      value: '0',
+      mode: 'currency',
+      allowModeChange: true,
+      label: 'Sonstiges',
+    },
+  });
   // --- END NEW ---
 
   const [isPriceTouched, setIsPriceTouched] = React.useState(false);
   const rPurchasePriceD = D(normalize(rPurchasePrice));
-  const rMonthlyColdRentD = D(normalize(rMonthlyColdRent)); // MODIFIED: Renamed for clarity
+  const rMonthlyColdRentD = D(normalize(rMonthlyColdRent));
   const rAnnualColdRentD = rMonthlyColdRentD.mul(12);
 
   const handleCostChange =
@@ -404,17 +413,16 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
     (key: string, newValues: Partial<CostItemState>) => {
       setState((prev) => ({ ...prev, [key]: { ...prev[key], ...newValues } }));
     };
-  // --- NEW ---
-  const handleRunningCostsChange = (
-    key: keyof typeof runningCosts,
+
+  const handleSplitCostChange = (
+    key: keyof typeof runningCostsSplit,
     newValues: Partial<SplitCostItemState>,
   ) => {
-    setRunningCosts((prev) => ({
+    setRunningCostsSplit((prev) => ({
       ...prev,
       [key]: { ...prev[key], ...newValues },
     }));
   };
-  // --- END NEW ---
 
   const calculateTotal = (
     costs: CostState,
@@ -433,6 +441,7 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
       return sum.add(value);
     }, new Decimal(0));
   };
+
   const purchaseCostsTotal = React.useMemo(
     () => calculateTotal(purchaseCosts, rPurchasePriceD),
     [purchaseCosts, rPurchasePriceD],
@@ -464,27 +473,40 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
     return annualTaxes.add(otherDeductionsAnnual);
   }, [taxDeductions, rAnnualColdRentD]);
 
-  // --- NEW ---
+  // --- NEW/MODIFIED ---
+  // Calculate "Sonstiges" total
+  const otherRunningCostsTotalMonthly = React.useMemo(
+    () => calculateTotal(otherRunningCosts, rMonthlyColdRentD),
+    [otherRunningCosts, rMonthlyColdRentD],
+  );
+
+  // Combined monthly running costs (Hausgeld Net + Sonstiges)
   const runningCostsTotalMonthly = React.useMemo(() => {
     let total = D(0);
-    const item = runningCosts.hausgeld;
+
+    // 1. Add Net Hausgeld from split state
+    const item = runningCostsSplit.hausgeld;
     if (item.enabled) {
-      const base = rMonthlyColdRentD; // Base for percent is monthly rent
+      const base = rMonthlyColdRentD;
       const val1 =
         item.mode === 'percent' ? base.mul(pctToFrac(item.value1)) : D(normalize(item.value1));
       const val2 =
         item.mode === 'percent' ? base.mul(pctToFrac(item.value2)) : D(normalize(item.value2));
       total = total.add(val1.sub(val2));
     }
+
+    // 2. Add "Sonstiges" from standard state
+    total = total.add(otherRunningCostsTotalMonthly);
+
     return total;
-  }, [runningCosts, rMonthlyColdRentD]);
+  }, [runningCostsSplit, rMonthlyColdRentD, otherRunningCostsTotalMonthly]);
+  // --- END NEW/MODIFIED ---
 
   const runningCostsTotalAnnual = runningCostsTotalMonthly.mul(12);
-  // --- END NEW ---
 
   const totalPurchaseSideCosts = purchaseCostsTotal.add(additionalCostsTotal);
   const grandTotalPrice = rPurchasePriceD.add(totalPurchaseSideCosts);
-  const netRentAnnual = rAnnualColdRentD.sub(deductionsTotalAnnual).sub(runningCostsTotalAnnual); // MODIFIED
+  const netRentAnnual = rAnnualColdRentD.sub(deductionsTotalAnnual).sub(runningCostsTotalAnnual);
   const netRentMonthly = netRentAnnual.div(12);
   const yieldPct = grandTotalPrice.gt(0)
     ? netRentAnnual.div(grandTotalPrice).mul(100).toDP(2).toString()
@@ -500,6 +522,7 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
       }
       console.log('Creating Real Estate:', {
         name: rName,
+        // In real implementation, gather all cost data here
       });
       onClose();
     },
@@ -565,6 +588,8 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
         currency={rCurrency}
         total={deductionsTotalAnnual.div(12)}
       />
+
+      {/* --- NEW/MODIFIED Laufende Kosten Accordion --- */}
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
@@ -576,15 +601,28 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
         </AccordionSummary>
         <AccordionDetails>
           <Stack spacing={2}>
+            {/* Special Split Row (Hausgeld) */}
             <SplitCostInputRow
-              item={runningCosts.hausgeld}
-              onItemChange={(newValues) => handleRunningCostsChange('hausgeld', newValues)}
+              item={runningCostsSplit.hausgeld}
+              onItemChange={(newValues) => handleSplitCostChange('hausgeld', newValues)}
               baseAmount={rMonthlyColdRentD}
               currency={rCurrency}
             />
+            {/* Standard Rows (Sonstiges) */}
+            {Object.entries(otherRunningCosts).map(([key, item]) => (
+              <CostInputRow
+                key={key}
+                item={item}
+                onItemChange={(newValues) => handleCostChange(setOtherRunningCosts)(key, newValues)}
+                baseAmount={rMonthlyColdRentD}
+                currency={rCurrency}
+              />
+            ))}
           </Stack>
         </AccordionDetails>
       </Accordion>
+      {/* --- END NEW/MODIFIED --- */}
+
       <Stack
         spacing={1}
         sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
@@ -600,18 +638,16 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
           isBold
         />
         <Divider sx={{ my: 1 }} />
-        {/* --- NEW --- */}
         <ResultRow
           label="Jährliche laufende Kosten"
           value={fmtMoney(runningCostsTotalAnnual.toString())}
         />
-        {/* --- END NEW --- */}
         <ResultRow
-          label="Monatliche Nettomiete (nach Abzügen & Kosten)" // MODIFIED
+          label="Monatliche Nettomiete (nach Abzügen & Kosten)"
           value={fmtMoney(netRentMonthly.toString())}
         />
         <ResultRow
-          label="Jährliche Nettomiete (nach Abzügen & Kosten)" // MODIFIED
+          label="Jährliche Nettomiete (nach Abzügen & Kosten)"
           value={fmtMoney(netRentAnnual.toString())}
         />
         <ResultRow label="Anfangsrendite p.a." value={`${yieldPct} %`} isBold />
