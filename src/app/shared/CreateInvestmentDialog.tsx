@@ -46,6 +46,28 @@ type CostState = Record<string, CostItemState>;
 // --- Helper Functions ---
 const D = (v: Money | number | string) => new Decimal(v || '0');
 const normalize = (v: string) => (v ?? '').toString().replace(/\s/g, '').replace(',', '.');
+
+// --- NEW: Helper function to sanitize numeric input ---
+/**
+ * Sanitizes input to allow only valid decimal numbers (digits and one separator).
+ * It replaces commas with dots and strips any other non-numeric characters.
+ * This prevents invalid input that could crash Decimal.js and prompts the correct mobile keyboard.
+ */
+const sanitizeDecimal = (value: string): string => {
+  if (value === null || value === undefined) return '';
+  let str = String(value).replace(/\s/g, ''); // remove spaces
+  str = str.replace(/,/g, '.'); // use dot as decimal separator
+  str = str.replace(/[^\d.]/g, ''); // remove all non-digit/non-dot characters
+
+  // Ensure only one decimal point exists
+  const firstDotIndex = str.indexOf('.');
+  if (firstDotIndex !== -1) {
+    const afterDot = str.substring(firstDotIndex + 1).replace(/\./g, '');
+    str = str.substring(0, firstDotIndex + 1) + afterDot;
+  }
+  return str;
+};
+
 const cfgToPctStr = (v: number) => new Decimal(v * 100).toDP(2).toString();
 const pctToFrac = (s: string) => D(normalize(s)).div(100);
 
@@ -69,18 +91,19 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
     return D(normalize(value));
   }, [value, mode, baseAmount]);
 
-  const handleModeChange = (_: any, newMode: 'percent' | 'currency' | null) => {
-    if (newMode) {
-      // Convert value when switching mode
-      const currentValue = absoluteAmount;
-      let nextValue = '0';
-      if (newMode === 'percent') {
-        nextValue = baseAmount.gt(0) ? currentValue.div(baseAmount).mul(100).toDP(2).toString() : '0';
-      } else {
-        nextValue = currentValue.toDP(0).toString();
-      }
-      onItemChange({ mode: newMode, value: nextValue });
+  const handleToggleMode = () => {
+    // Determine the next mode by flipping the current one
+    const newMode = mode === 'percent' ? 'currency' : 'percent';
+
+    // Convert the value to the new mode's format
+    const currentValue = absoluteAmount;
+    let nextValue = '0';
+    if (newMode === 'percent') {
+      nextValue = baseAmount.gt(0) ? currentValue.div(baseAmount).mul(100).toDP(2).toString() : '0';
+    } else {
+      nextValue = currentValue.toDP(0).toString();
     }
+    onItemChange({ mode: newMode, value: nextValue });
   };
 
   const isPercent = mode === 'percent';
@@ -91,7 +114,7 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
       <TextField
         label={label}
         value={value}
-        onChange={(e) => onItemChange({ value: e.target.value })}
+        onChange={(e) => onItemChange({ value: sanitizeDecimal(e.target.value) })}
         disabled={!enabled}
         type="text"
         inputMode="decimal"
@@ -110,7 +133,7 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
       <ToggleButtonGroup
         value={mode}
         exclusive
-        onChange={handleModeChange}
+        onChange={handleToggleMode}
         size="small"
         disabled={!enabled || !allowModeChange}
       >
@@ -217,6 +240,7 @@ export default function CreateInvestmentDialog({ onClose }: { onClose: () => voi
 
   const [rMonthlyColdRent, setRMonthlyColdRent] = React.useState('1200');
   const rAnnualColdRentD = D(normalize(rMonthlyColdRent)).mul(12);
+  const rMonthlyColdRentD = D(normalize(rMonthlyColdRent));
 
   const [deductions, setDeductions] = React.useState<CostState>({
     incomeTax: { enabled: true, value: cfgToPctStr(cfg.rent.taxes.incomeTax.rate), mode: 'percent', allowModeChange: false, label: "Einkommensteuer" },
@@ -248,8 +272,8 @@ export default function CreateInvestmentDialog({ onClose }: { onClose: () => voi
   const deductionsTotalAnnual = React.useMemo(() => {
     // Standard taxes are calculated based on annual rent
     const incomeTaxAmount = deductions.incomeTax.enabled ? rAnnualColdRentD.mul(pctToFrac(deductions.incomeTax.value)) : D(0);
-    const soliAmount = deductions.solidaritySurcharge.enabled ? incomeTaxAmount.mul(pctToFrac(deductions.solidaritySurcharge.value)) : D(0);
-    const churchTaxAmount = deductions.churchTax.enabled ? incomeTaxAmount.mul(pctToFrac(deductions.churchTax.value)) : D(0);
+    const soliAmount = deductions.solidaritySurcharge.enabled ? rAnnualColdRentD.mul(pctToFrac(deductions.solidaritySurcharge.value)) : D(0);
+    const churchTaxAmount = deductions.churchTax.enabled ? rAnnualColdRentD.mul(pctToFrac(deductions.churchTax.value)) : D(0);
     const annualTaxes = incomeTaxAmount.add(soliAmount).add(churchTaxAmount);
 
     // Custom "other" deduction is handled separately
@@ -302,12 +326,11 @@ export default function CreateInvestmentDialog({ onClose }: { onClose: () => voi
                   type="text"
                   inputMode="decimal"
                   value={rPurchasePrice}
-                  onChange={(e) => setRPurchasePrice(e.target.value)}
+                  onChange={(e) => setRPurchasePrice(sanitizeDecimal(e.target.value))}
                   error={purchasePriceError}
                   helperText={purchasePriceError ? 'Kaufpreis muss > 0 sein' : ' '}
                   fullWidth
                   required
-                  // size="small"
                 />
                 <Select value={rCurrency} onChange={(e) => setRCurrency(e.target.value)} sx={{minWidth: 100}}>
                   <MenuItem value="€">€ EUR</MenuItem>
@@ -348,7 +371,7 @@ export default function CreateInvestmentDialog({ onClose }: { onClose: () => voi
               type="text"
               inputMode="decimal"
               value={rMonthlyColdRent}
-              onChange={(e) => setRMonthlyColdRent(e.target.value)}
+              onChange={(e) => setRMonthlyColdRent(sanitizeDecimal(e.target.value))}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
@@ -368,7 +391,7 @@ export default function CreateInvestmentDialog({ onClose }: { onClose: () => voi
               title="Abzüge von Miete (monatlich)"
               costs={deductions}
               onCostChange={handleCostChange(setDeductions)}
-              baseAmount={rAnnualColdRentD} // Base for % is still annual rent
+              baseAmount={rMonthlyColdRentD} // Base for % is still annual rent
               currency={rCurrency}
               total={deductionsTotalAnnual.div(12)} // Display the monthly total
             />
