@@ -2,7 +2,7 @@ import Decimal from 'decimal.js';
 import type {
   Money,
   RealEstateInvestment,
-  PurchasePriceExtraCosts,
+  PurchasePriceCosts,
   RunningCostsSelection,
 } from './types';
 import type { RealEstateCostsConfig } from '../../config/costs';
@@ -24,11 +24,11 @@ export function calcPurchaseCosts(
     includeAppraisal?: boolean;
     includeInsuranceSetup?: boolean;
   },
-): PurchasePriceExtraCosts {
+): PurchasePriceCosts {
   const price = D(purchasePrice);
-  const { basicCosts, additionalCosts } = cfg.purchaseCosts;
+  const { basicCosts } = cfg.purchaseCosts;
 
-  const items: { key: keyof PurchasePriceExtraCosts; rate?: number; required?: boolean }[] = [
+  const items: { key: keyof PurchasePriceCosts; rate?: number; required?: boolean }[] = [
     {
       key: 'brokerCommission',
       rate: basicCosts.brokerCommission.rateOfPurchasePrice,
@@ -45,27 +45,27 @@ export function calcPurchaseCosts(
       rate: basicCosts.landRegistryFees.rateOfPurchasePrice,
       required: true,
     },
-    {
-      key: 'appraisalFee',
-      rate: additionalCosts.appraisalFee.rateOfPurchasePrice,
-      required: false,
-    },
-    {
-      key: 'insuranceSetup',
-      rate: additionalCosts.insuranceSetup.rateOfPurchasePrice,
-      required: false,
-    },
+    // {
+    //   key: 'appraisalFee',
+    //   rate: additionalCosts.appraisalFee.rateOfPurchasePrice,
+    //   required: false,
+    // },
+    // {
+    //   key: 'insuranceSetup',
+    //   rate: additionalCosts.insuranceSetup.rateOfPurchasePrice,
+    //   required: false,
+    // },
   ];
 
-  const applied: Partial<PurchasePriceExtraCosts> = {};
+  const applied: Partial<PurchasePriceCosts> = {};
   let total = new Decimal(0);
 
   for (const it of items) {
     const include =
       it.required ||
-      (it.key === 'brokerCommission' && opts?.includeBroker) ||
-      (it.key === 'appraisalFee' && opts?.includeAppraisal) ||
-      (it.key === 'insuranceSetup' && opts?.includeInsuranceSetup);
+      (it.key === 'brokerCommission' && opts?.includeBroker) ;
+      // (it.key === 'appraisalFee' && opts?.includeAppraisal) ||
+      // (it.key === 'insuranceSetup' && opts?.includeInsuranceSetup);
 
     if (include && it.rate) {
       const amount = price.mul(it.rate);
@@ -75,7 +75,7 @@ export function calcPurchaseCosts(
   }
 
   (applied as any).total = fmt(total);
-  return applied as PurchasePriceExtraCosts;
+  return applied as PurchasePriceCosts;
 }
 
 /** Annual taxes from rent (approximation on gross rent, per your v1 model) */
