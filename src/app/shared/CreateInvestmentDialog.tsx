@@ -44,7 +44,7 @@ type CostState = Record<string, CostItemState>;
 
 
 // --- Helper Functions ---
-const D = (v: Money | number | string) => new Decimal(v ?? '0');
+const D = (v: Money | number | string) => new Decimal(v || '0');
 const normalize = (v: string) => (v ?? '').toString().replace(/\s/g, '').replace(',', '.');
 const cfgToPctStr = (v: number) => new Decimal(v * 100).toDP(2).toString();
 const pctToFrac = (s: string) => D(normalize(s)).div(100);
@@ -201,7 +201,7 @@ export default function CreateInvestmentDialog({ onClose }: { onClose: () => voi
   const rPurchasePriceD = D(normalize(rPurchasePrice));
 
   const [purchaseCosts, setPurchaseCosts] = React.useState<CostState>({
-    brokerCommission: { enabled: true, value: cfgToPctStr(cfg.purchaseCosts.basicCosts.brokerCommission.rateOfPurchasePrice), mode: 'percent', allowModeChange: true, label: "Maklerprovision" },
+    brokerCommission: { enabled: true, value: cfgToPctStr(cfg.purchaseCosts.basicCosts.brokerCommission.rateOfPurchasePrice), mode: 'percent', allowModeChange: false, label: "Maklerprovision" },
     propertyTransferTax: { enabled: true, value: cfgToPctStr(cfg.purchaseCosts.basicCosts.propertyTransferTax.rateOfPurchasePrice), mode: 'percent', allowModeChange: false, label: "Grunderwerbsteuer" },
     notaryFees: { enabled: true, value: cfgToPctStr(cfg.purchaseCosts.basicCosts.notaryFees.rateOfPurchasePrice), mode: 'percent', allowModeChange: false, label: "Notarkosten" },
     landRegistryFees: { enabled: true, value: cfgToPctStr(cfg.purchaseCosts.basicCosts.landRegistryFees.rateOfPurchasePrice), mode: 'percent', allowModeChange: false, label: "Grundbucheintrag" },
@@ -296,7 +296,7 @@ export default function CreateInvestmentDialog({ onClose }: { onClose: () => voi
             {/* --- 1. Top Section --- */}
             <Stack spacing={2}>
               <TextField label="Name" value={rName} onChange={(e) => setRName(e.target.value)} fullWidth />
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                 <TextField
                   label="Kaufpreis"
                   type="text"
@@ -307,6 +307,7 @@ export default function CreateInvestmentDialog({ onClose }: { onClose: () => voi
                   helperText={purchasePriceError ? 'Kaufpreis muss > 0 sein' : ' '}
                   fullWidth
                   required
+                  // size="small"
                 />
                 <Select value={rCurrency} onChange={(e) => setRCurrency(e.target.value)} sx={{minWidth: 100}}>
                   <MenuItem value="€">€ EUR</MenuItem>
