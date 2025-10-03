@@ -52,12 +52,12 @@ export interface RunningCostsSelection {
 export interface RealEstateInvestmentDetails {
   link: string;
   address: string;
-  type: string;                // "Doppelhaushälfte" -> e.g. "semi-detached house"
-  numberOfFloors: number;      // Etagenanzahl
-  livingAreaSqm: number;       // Wohnfläche ca. (m², can be fractional)
-  usableAreaSqm: number;       // Nutzfläche ca. (m², can be fractional)
-  landAreaSqm: number;         // Grundstück ca. (m², usually whole number but keep decimal safe)
-  rooms: number;               // Zimmer
+  type: string; // "Doppelhaushälfte" -> e.g. "semi-detached house"
+  numberOfFloors: number; // Etagenanzahl
+  livingAreaSqm: number; // Wohnfläche ca. (m², can be fractional)
+  usableAreaSqm: number; // Nutzfläche ca. (m², can be fractional)
+  landAreaSqm: number; // Grundstück ca. (m², usually whole number but keep decimal safe)
+  rooms: number; // Zimmer
 }
 
 export interface RealEstateInvestmentCalculatedDetails {

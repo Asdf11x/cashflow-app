@@ -17,7 +17,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { fmtMoney, fmtNumberTrim } from '../../core/domain/calc';
-import CreateInvestmentDialog from '../shared/CreateInvestmentDialog.tsx';
+import CreateInvestmentDialog from '../shared/CreateInvestmentDialog/CreateInvestmentDialog.tsx';
 
 type Row = {
   id: string;

@@ -61,11 +61,9 @@ export function calcPurchaseCosts(
   let total = new Decimal(0);
 
   for (const it of items) {
-    const include =
-      it.required ||
-      (it.key === 'brokerCommission' && opts?.includeBroker) ;
-      // (it.key === 'appraisalFee' && opts?.includeAppraisal) ||
-      // (it.key === 'insuranceSetup' && opts?.includeInsuranceSetup);
+    const include = it.required || (it.key === 'brokerCommission' && opts?.includeBroker);
+    // (it.key === 'appraisalFee' && opts?.includeAppraisal) ||
+    // (it.key === 'insuranceSetup' && opts?.includeInsuranceSetup);
 
     if (include && it.rate) {
       const amount = price.mul(it.rate);
