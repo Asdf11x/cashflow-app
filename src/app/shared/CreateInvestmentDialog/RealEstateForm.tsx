@@ -21,6 +21,19 @@ import { getDefaultCostsConfig } from '../../../config';
 import Decimal from 'decimal.js';
 import type { CostItemState, CostState } from './formHelpers';
 
+// --- NEW ---
+// New type for a cost item that has a primary value and a secondary (deductible) value
+interface SplitCostItemState {
+  enabled: boolean;
+  value1: string; // e.g., total Hausgeld
+  value2: string; // e.g., apportionable part
+  mode: 'currency' | 'percent';
+  allowModeChange: boolean;
+  label1: string;
+  label2: string;
+}
+// --- END NEW ---
+
 interface CostInputRowProps {
   item: CostItemState;
   onItemChange: (newItem: Partial<CostItemState>) => void;
@@ -87,6 +100,124 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
     </Box>
   );
 }
+
+// --- NEW ---
+// A special input row for split costs like Hausgeld / umlagefähiger Anteil
+interface SplitCostInputRowProps {
+  item: SplitCostItemState;
+  onItemChange: (newItem: Partial<SplitCostItemState>) => void;
+  baseAmount: Decimal; // NOTE: For running costs, this is usually MONTHLY rent
+  currency: string;
+}
+
+function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCostInputRowProps) {
+  const { enabled, value1, value2, mode, allowModeChange, label1, label2 } = item;
+  const isPercent = mode === 'percent';
+
+  const handleToggleMode = () => {
+    const newMode = mode === 'percent' ? 'currency' : 'percent';
+    let nextValue1 = '0';
+    let nextValue2 = '0';
+
+    if (newMode === 'percent') {
+      // from currency to percent
+      nextValue1 = baseAmount.gt(0)
+        ? D(normalize(value1)).div(baseAmount).mul(100).toDP(2).toString()
+        : '0';
+      nextValue2 = baseAmount.gt(0)
+        ? D(normalize(value2)).div(baseAmount).mul(100).toDP(2).toString()
+        : '0';
+    } else {
+      // from percent to currency
+      nextValue1 = baseAmount.mul(pctToFrac(value1)).toDP(0).toString();
+      nextValue2 = baseAmount.mul(pctToFrac(value2)).toDP(0).toString();
+    }
+    onItemChange({ mode: newMode, value1: nextValue1, value2: nextValue2 });
+  };
+
+  const absoluteNet = React.useMemo(() => {
+    const val1 = isPercent ? baseAmount.mul(pctToFrac(value1)) : D(normalize(value1));
+    const val2 = isPercent ? baseAmount.mul(pctToFrac(value2)) : D(normalize(value2));
+    return val1.sub(val2);
+  }, [value1, value2, mode, baseAmount, isPercent]);
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+      <Checkbox checked={enabled} onChange={(e) => onItemChange({ enabled: e.target.checked })} />
+
+      <Stack sx={{ flexGrow: 1 }} direction="row" alignItems="center">
+        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: { xs: 'column', sm: 'row' } }}>
+          <TextField
+            label={label1}
+            value={value1}
+            onChange={(e) => onItemChange({ value1: sanitizeDecimal(e.target.value) })}
+            disabled={!enabled}
+            type="text"
+            inputMode="decimal"
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Typography variant="body2" color={enabled ? 'text.primary' : 'text.disabled'}>
+                    {isPercent ? '%' : currency}
+                  </Typography>
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderTopRightRadius: { sm: 0 },
+                borderBottomRightRadius: { sm: 0 },
+              },
+            }}
+          />
+          <TextField
+            label={label2}
+            value={value2}
+            onChange={(e) => onItemChange({ value2: sanitizeDecimal(e.target.value) })}
+            disabled={!enabled}
+            type="text"
+            inputMode="decimal"
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Typography variant="body2" color={enabled ? 'text.primary' : 'text.disabled'}>
+                    {isPercent ? '%' : currency}
+                  </Typography>
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              marginTop: { xs: 2, sm: 0 },
+              '& .MuiOutlinedInput-root': {
+                borderTopLeftRadius: { sm: 0 },
+                borderBottomLeftRadius: { sm: 0 },
+                marginLeft: { sm: '-1px' },
+              },
+            }}
+          />
+        </Box>
+        <Stack spacing={0.5} alignItems="center" sx={{ ml: 1.5, minWidth: '80px' }}>
+          <ToggleButtonGroup
+            value={mode}
+            exclusive
+            onChange={handleToggleMode}
+            size="small"
+            disabled={!enabled || !allowModeChange}
+          >
+            <ToggleButton value="currency">{currency}</ToggleButton>
+            <ToggleButton value="percent">%</ToggleButton>
+          </ToggleButtonGroup>
+          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+            netto: {fmtMoney(absoluteNet.toString())}
+          </Typography>
+        </Stack>
+      </Stack>
+    </Box>
+  );
+}
+// --- END NEW ---
 
 interface CostSectionAccordionProps {
   title: string;
@@ -249,14 +380,42 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
       label: 'Zusätzliche Abzüge',
     },
   });
+  // --- NEW ---
+  const [runningCosts, setRunningCosts] = React.useState({
+    hausgeld: {
+      enabled: false,
+      value1: '0', // total
+      value2: '0', // apportionable
+      mode: 'currency',
+      allowModeChange: true,
+      label1: 'Hausgeld',
+      label2: 'davon umlagefähig',
+    } as SplitCostItemState,
+  });
+  // --- END NEW ---
+
   const [isPriceTouched, setIsPriceTouched] = React.useState(false);
   const rPurchasePriceD = D(normalize(rPurchasePrice));
-  const rAnnualColdRentD = D(normalize(rMonthlyColdRent)).mul(12);
+  const rMonthlyColdRentD = D(normalize(rMonthlyColdRent)); // MODIFIED: Renamed for clarity
+  const rAnnualColdRentD = rMonthlyColdRentD.mul(12);
+
   const handleCostChange =
     (setState: React.Dispatch<React.SetStateAction<CostState>>) =>
-      (key: string, newValues: Partial<CostItemState>) => {
-        setState((prev) => ({ ...prev, [key]: { ...prev[key], ...newValues } }));
-      };
+    (key: string, newValues: Partial<CostItemState>) => {
+      setState((prev) => ({ ...prev, [key]: { ...prev[key], ...newValues } }));
+    };
+  // --- NEW ---
+  const handleRunningCostsChange = (
+    key: keyof typeof runningCosts,
+    newValues: Partial<SplitCostItemState>,
+  ) => {
+    setRunningCosts((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], ...newValues },
+    }));
+  };
+  // --- END NEW ---
+
   const calculateTotal = (
     costs: CostState,
     base: Decimal,
@@ -304,9 +463,28 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
     }
     return annualTaxes.add(otherDeductionsAnnual);
   }, [taxDeductions, rAnnualColdRentD]);
+
+  // --- NEW ---
+  const runningCostsTotalMonthly = React.useMemo(() => {
+    let total = D(0);
+    const item = runningCosts.hausgeld;
+    if (item.enabled) {
+      const base = rMonthlyColdRentD; // Base for percent is monthly rent
+      const val1 =
+        item.mode === 'percent' ? base.mul(pctToFrac(item.value1)) : D(normalize(item.value1));
+      const val2 =
+        item.mode === 'percent' ? base.mul(pctToFrac(item.value2)) : D(normalize(item.value2));
+      total = total.add(val1.sub(val2));
+    }
+    return total;
+  }, [runningCosts, rMonthlyColdRentD]);
+
+  const runningCostsTotalAnnual = runningCostsTotalMonthly.mul(12);
+  // --- END NEW ---
+
   const totalPurchaseSideCosts = purchaseCostsTotal.add(additionalCostsTotal);
   const grandTotalPrice = rPurchasePriceD.add(totalPurchaseSideCosts);
-  const netRentAnnual = rAnnualColdRentD.sub(deductionsTotalAnnual);
+  const netRentAnnual = rAnnualColdRentD.sub(deductionsTotalAnnual).sub(runningCostsTotalAnnual); // MODIFIED
   const netRentMonthly = netRentAnnual.div(12);
   const yieldPct = grandTotalPrice.gt(0)
     ? netRentAnnual.div(grandTotalPrice).mul(100).toDP(2).toString()
@@ -380,13 +558,33 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
         fullWidth
       />
       <CostSectionAccordion
-        title="Steuerliche Abzüge von Miete (monatlich)"
+        title="Steuerliche Abzüge"
         costs={taxDeductions}
         onCostChange={handleCostChange(setTaxDeductions)}
         baseAmount={rAnnualColdRentD}
         currency={rCurrency}
         total={deductionsTotalAnnual.div(12)}
       />
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
+            <Typography fontWeight={700}>Laufende Kosten</Typography>
+            <Typography color="text.secondary">
+              Kosten: {fmtMoney(runningCostsTotalMonthly.toString())}
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Stack spacing={2}>
+            <SplitCostInputRow
+              item={runningCosts.hausgeld}
+              onItemChange={(newValues) => handleRunningCostsChange('hausgeld', newValues)}
+              baseAmount={rMonthlyColdRentD}
+              currency={rCurrency}
+            />
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
       <Stack
         spacing={1}
         sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
@@ -402,12 +600,18 @@ const RealEstateForm = React.forwardRef(({ onClose }: { onClose: () => void }, r
           isBold
         />
         <Divider sx={{ my: 1 }} />
+        {/* --- NEW --- */}
         <ResultRow
-          label="Monatliche Nettomiete (nach Abzügen)"
+          label="Jährliche laufende Kosten"
+          value={fmtMoney(runningCostsTotalAnnual.toString())}
+        />
+        {/* --- END NEW --- */}
+        <ResultRow
+          label="Monatliche Nettomiete (nach Abzügen & Kosten)" // MODIFIED
           value={fmtMoney(netRentMonthly.toString())}
         />
         <ResultRow
-          label="Jährliche Nettomiete (nach Abzügen)"
+          label="Jährliche Nettomiete (nach Abzügen & Kosten)" // MODIFIED
           value={fmtMoney(netRentAnnual.toString())}
         />
         <ResultRow label="Anfangsrendite p.a." value={`${yieldPct} %`} isBold />
