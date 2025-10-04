@@ -75,6 +75,7 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
         alignItems: { xs: 'flex-start', sm: 'center' },
       }}
     >
+      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1.5, flexGrow: 1 }}>
       <Checkbox checked={enabled} onChange={(e) => onItemChange({ enabled: e.target.checked })} />
       <TextField
         label={label}
@@ -105,6 +106,7 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
           ),
         }}
       />
+      </Box>
       <ToggleButtonGroup
         value={mode}
         exclusive
