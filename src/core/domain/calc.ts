@@ -1,17 +1,20 @@
 import Decimal from 'decimal.js';
-import type { Money, ObjectInvestment, Credit } from './types';
+import type { Money, ObjectInvestment, Credit, RealEstateInvestment } from './types';
 const D = (v: Money | number | string) => new Decimal(v || '0');
 
+// calc.ts - adjust these functions
 export function netMonthly(i: ObjectInvestment): Money {
-  return D(i.grossGainMonthly).minus(D(i.costMonthly)).toFixed(2);
+  return i.netGainMonthly; // For objects, monthlyGain is already net
 }
+
 export function netYearly(i: ObjectInvestment): Money {
-  return D(netMonthly(i)).mul(12).toFixed(2);
+  return D(i.netGainMonthly).mul(12).toFixed(2);
 }
+
 export function yieldPctYearly(i: ObjectInvestment): string {
-  const basis = D(i.purchasePrice);
-  if (basis.isZero()) return '0';
-  return D(netYearly(i)).div(basis).mul(100).toFixed(2);
+  const totalvested = D(i.purchasePrice);
+  const yearlyGain = D(i.netGainMonthly).mul(12);
+  return totalvested.gt(0) ? yearlyGain.div(totalvested).mul(100).toFixed(2) : '0.00';
 }
 
 /** 1) format money with no trailing .00, using de-DE separators */
@@ -44,11 +47,13 @@ export function creditInterestYearly(c: Credit): Money {
   return D(creditInterestMonthly(c)).mul(12).toFixed(2);
 }
 
-export function computeCashflowMonthly(i: ObjectInvestment, c: Credit): Money {
-  // net investment income minus interest and amortization
-  return D(i.grossGainMonthly)
-    .minus(D(i.costMonthly))
-    .minus(D(c.interestMonthly))
-    .minus(D(c.amortMonthly))
-    .toFixed(2);
+export function computeCashflowMonthly(
+  investment: ObjectInvestment | RealEstateInvestment,
+  credit: Credit,
+): Decimal {
+  const iGain = new Decimal(investment.netGainMonthly ?? '0');
+  const cInterest = new Decimal(credit.interestMonthly ?? '0');
+  const cAmort = new Decimal(credit.amortMonthly ?? '0');
+
+  return iGain.sub(cInterest).sub(cAmort);
 }

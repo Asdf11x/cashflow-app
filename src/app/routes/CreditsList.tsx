@@ -17,7 +17,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useCreditStore } from '../../core/state/useCreditStore';
 import { fmtMoney } from '../../core/domain/calc';
-import CreditCreateDialog from '../shared/CreditCreateDialog';
+import CreditCreateDialog from '../shared/credit/CreditCreateDialog.tsx';
 
 export default function CreditsList() {
   const credits = useCreditStore((s) => s.credits);

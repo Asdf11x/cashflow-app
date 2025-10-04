@@ -20,24 +20,32 @@ import { useInvestStore } from '../../core/state/useInvestStore';
 import { useCreditStore } from '../../core/state/useCreditStore';
 import { fmtMoney } from '../../core/domain/calc';
 import CashflowCreateDialog from '../shared/CashflowCreateDialog';
+import type { Cashflow } from '../../core/state/useCashflowStore';
 
 export default function CashflowList() {
-  const { cashflows, removeCashflow } = useCashflowStore();
-  const investments = useInvestStore((s) => s.objects);
+  const cashflows = useCashflowStore((s) => s.cashflows);
+  const removeCashflow = useCashflowStore((s) => s.removeCashflow);
+  // --- FIX 1: Select state slices individually to prevent infinite loops ---
+  const objects = useInvestStore((s) => s.objects);
+  const realEstates = useInvestStore((s) => s.realEstates);
+  // --------------------------------------------------------------------------
   const credits = useCreditStore((s) => s.credits);
+
+  const allInvestments = React.useMemo(() => [...objects, ...realEstates], [objects, realEstates]);
 
   const [openAdd, setOpenAdd] = React.useState(false);
   const [snack, setSnack] = React.useState<{ open: boolean; msg: string }>({
     open: false,
     msg: '',
   });
-  const [undoCtx, setUndoCtx] = React.useState<{ item: any; index: number } | null>(null);
+  const [undoCtx, setUndoCtx] = React.useState<{ item: Cashflow; index: number } | null>(null);
 
   const nameById = <T extends { id: string; name: string }>(list: T[], id: string) =>
     list.find((x) => x.id === id)?.name ?? '—';
 
   const handleDelete = (id: string) => {
     const index = cashflows.findIndex((c) => c.id === id);
+    if (index === -1) return;
     const item = cashflows[index];
     removeCashflow(id);
     setUndoCtx({ item, index });
@@ -51,12 +59,15 @@ export default function CashflowList() {
       cashflows: [...s.cashflows.slice(0, index), item, ...s.cashflows.slice(index)],
     }));
     setUndoCtx(null);
-    setSnack({ open: true, msg: 'Rückgängig gemacht' });
+    setSnack({ open: false, msg: '' });
+    setTimeout(() => setSnack({ open: true, msg: 'Rückgängig gemacht' }), 100);
   };
 
   return (
     <>
+      {/* --- FIX 2: Correct the component prop typo --- */}
       <TableContainer component={Paper} sx={{ width: '100%' }}>
+        {/* ------------------------------------------- */}
         <Table size="medium" sx={{ minWidth: 760 }}>
           <TableHead>
             <TableRow>
@@ -71,8 +82,13 @@ export default function CashflowList() {
             {cashflows.map((cf) => (
               <TableRow key={cf.id} hover>
                 <TableCell>{cf.name}</TableCell>
-                <TableCell align="right">{fmtMoney(cf.cashflowMonthly)} €</TableCell>
-                <TableCell>{nameById(investments, cf.investmentId)}</TableCell>
+                <TableCell
+                  align="right"
+                  sx={{ color: cf.cashflowMonthly.startsWith('-') ? 'error.main' : 'success.main' }}
+                >
+                  {fmtMoney(cf.cashflowMonthly)}
+                </TableCell>
+                <TableCell>{nameById(allInvestments, cf.investmentId)}</TableCell>
                 <TableCell>{nameById(credits, cf.creditId)}</TableCell>
                 <TableCell align="right">
                   <Tooltip title="Löschen">
@@ -85,8 +101,8 @@ export default function CashflowList() {
             ))}
             {cashflows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} sx={{ color: '#94a3b8' }}>
-                  Noch keine Cashflows. Rechts unten „+“ klicken.
+                <TableCell colSpan={5} sx={{ textAlign: 'center', color: '#94a3b8', py: 3 }}>
+                  Noch keine Cashflows. Klicke unten rechts auf „+".
                 </TableCell>
               </TableRow>
             )}
@@ -106,8 +122,11 @@ export default function CashflowList() {
 
       <Snackbar
         open={snack.open}
-        autoHideDuration={3000}
-        onClose={() => setSnack({ open: false, msg: '' })}
+        autoHideDuration={4000}
+        onClose={() => {
+          setSnack({ open: false, msg: '' });
+          setUndoCtx(null);
+        }}
         message={snack.msg}
         action={
           undoCtx ? (
