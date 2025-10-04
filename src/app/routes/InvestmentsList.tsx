@@ -20,7 +20,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { fmtMoney, fmtNumberTrim } from '../../core/domain/calc';
-import CreateInvestmentDialog from '../shared/CreateInvestmentDialog/CreateInvestmentDialog.tsx';
+import CreateInvestmentDialog from '../shared/investment/CreateInvestmentDialog.tsx';
 import type { ObjectInvestment, RealEstateInvestment } from '../../core/domain/types.ts';
 
 type Row = {
@@ -99,7 +99,7 @@ export default function InvestmentsList() {
     }
 
     setUndoCtx({ item: originalItem, subsetIndex });
-    setSnack({ open: true, msg: 'Investment gelöscht' });
+    setSnack({ open: true, msg: 'investment gelöscht' });
   };
 
   // undo reinserts into the proper collection at the original subset index

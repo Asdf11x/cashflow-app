@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Stack, TextField, Box, Divider, InputAdornment, Typography } from '@mui/material';
 import { D, normalize, sanitizeDecimal } from './formHelpers';
-import { ResultRow, CurrencySelect, PriceInput } from './SharedComponents';
+import { ResultRow, CurrencySelect, PriceInput } from '../SharedComponents.tsx';
 import { fmtMoney } from '../../../core/domain/calc';
 import { useInvestStore } from '../../../core/state/useInvestStore.ts'; // Assuming path is correct
 

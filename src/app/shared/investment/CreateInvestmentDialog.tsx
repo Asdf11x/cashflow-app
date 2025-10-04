@@ -1,4 +1,4 @@
-// --- START OF FILE CreateInvestmentDialog.tsx ---
+// --- START OF FILE investment.tsx ---
 
 import * as React from 'react';
 import {
@@ -48,7 +48,7 @@ export default function CreateInvestmentDialog({
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>{editItem ? 'Investment bearbeiten' : 'Investment hinzufügen'}</DialogTitle>
+      <DialogTitle>{editItem ? 'investment bearbeiten' : 'investment hinzufügen'}</DialogTitle>
       <Tabs
         value={tab}
         onChange={handleTabChange}

@@ -1,4 +1,4 @@
-// src/components/shared/CreateInvestmentDialog/RealEstateForm.tsx
+// src/components/shared/investment/RealEstateForm.tsx
 import * as React from 'react';
 import {
   TextField,
@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { D, normalize, sanitizeDecimal, cfgToPctStr, pctToFrac } from './formHelpers';
-import { ResultRow, CurrencySelect, PriceInput } from './SharedComponents';
+import { ResultRow, CurrencySelect, PriceInput } from '../SharedComponents.tsx';
 import { fmtMoney } from '../../../core/domain/calc';
 import { getDefaultCostsConfig } from '../../../config';
 import Decimal from 'decimal.js';

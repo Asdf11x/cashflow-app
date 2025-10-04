@@ -1,5 +1,3 @@
-// --- START OF FILE SharedComponents.tsx ---
-
 import * as React from 'react';
 import {
   Box,
@@ -10,7 +8,6 @@ import {
   type SelectChangeEvent,
 } from '@mui/material';
 
-// ... (ResultRow remains the same) ...
 export function ResultRow({
   label,
   value,
