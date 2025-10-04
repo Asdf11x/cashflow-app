@@ -1,3 +1,5 @@
+# Run locally
+
 ```sh
 npm install
 ```
@@ -13,4 +15,17 @@ npm run dev
 
 ```sh
 npm run build
+```
+
+```sh
+npm run dev
+```
+
+# Open port and run online
+
+Not stable yet, sometimes it works, sometimes not unfortunately.
+
+run 
+```
+npm run dev:tunnel
 ```
