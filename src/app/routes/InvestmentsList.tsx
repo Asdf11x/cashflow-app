@@ -12,9 +12,11 @@ import {
   Tooltip,
   Snackbar,
   Button,
+  Box,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { fmtMoney, fmtNumberTrim } from '../../core/domain/calc';
 import CreateInvestmentDialog from '../shared/CreateInvestmentDialog/CreateInvestmentDialog.tsx';
@@ -29,17 +31,24 @@ type Row = {
 };
 
 export default function InvestmentsList() {
-  // state selectors (hooks must be INSIDE the component)
   const objects = useInvestStore((s) => s.objects);
   const realEstates = useInvestStore((s) => s.realEstates);
   const removeObject = useInvestStore((s) => s.removeObject);
   const removeRealEstate = useInvestStore((s) => s.removeRealEstate);
 
   const [openAdd, setOpenAdd] = React.useState(false);
+  const [editItem, setEditItem] = React.useState<{
+    id: string;
+    kind: 'OBJECT' | 'REAL_ESTATE';
+  } | null>(null);
   const [snack, setSnack] = React.useState<{ open: boolean; msg: string }>({
     open: false,
     msg: '',
   });
+  const existingNames = React.useMemo(
+    () => [...objects.map((o) => o.name), ...realEstates.map((r) => r.name)],
+    [objects, realEstates],
+  );
   const [undoCtx, setUndoCtx] = React.useState<{
     row: Row;
     subsetIndex: number; // index within its own collection at delete time
@@ -53,7 +62,7 @@ export default function InvestmentsList() {
         name: o.name,
         purchasePrice: fmtMoney(o.purchasePrice),
         netGainMonthly: fmtMoney(o.netGainMonthly),
-        yieldPctYearly: `${fmtNumberTrim(o.yieldPctYearly)} %`,
+        yieldPctYearly: fmtNumberTrim(o.returnPercent),
         kind: 'OBJECT' as const,
       })),
       ...realEstates.map((r) => ({
@@ -61,7 +70,7 @@ export default function InvestmentsList() {
         name: r.name,
         purchasePrice: fmtMoney(r.purchasePrice),
         netGainMonthly: fmtMoney(r.netGainMonthly),
-        yieldPctYearly: `${fmtNumberTrim(r.yieldPctYearly)} %`,
+        yieldPctYearly: fmtNumberTrim(r.returnPercent),
         kind: 'REAL_ESTATE' as const,
       })),
     ],
@@ -122,53 +131,50 @@ export default function InvestmentsList() {
     setSnack({ open: true, msg: 'Rückgängig gemacht' });
   };
 
-  const isEmpty = rows.length === 0;
-
   return (
     <>
       <TableContainer component={Paper} sx={{ width: '100%' }}>
         <Table size="medium" sx={{ minWidth: 760 }}>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
+              <TableCell width={100}>Aktionen</TableCell>
+              <TableCell align="right">Name</TableCell>
               <TableCell align="right">Kaufpreis</TableCell>
-              <TableCell align="right">monatl. Gewinn</TableCell>
+              <TableCell align="right">Monatl. Gewinn</TableCell>
               <TableCell align="right">Rendite p.a.</TableCell>
-              <TableCell align="right" width={64} />
             </TableRow>
           </TableHead>
           <TableBody>
             {rows.map((r, idx) => (
               <TableRow key={`${r.kind}:${r.id}`} hover>
                 <TableCell>
-                  {r.name}
-                  {/* optional badge to distinguish types */}
-                  {/* <span style={{ marginLeft: 8, color: '#64748b', fontSize: 12 }}>
-                    {r.kind === 'OBJECT' ? 'Objekt' : 'Immobilie'}
-                  </span> */}
+                  <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <Tooltip title="Bearbeiten">
+                      <IconButton
+                        color="primary"
+                        size="small"
+                        onClick={() => setEditItem({ id: r.id, kind: r.kind })}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Löschen">
+                      <IconButton color="error" size="small" onClick={() => handleDelete(r, idx)}>
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </TableCell>
+                <TableCell align="right">{r.name}</TableCell>
                 <TableCell align="right">{r.purchasePrice}</TableCell>
                 <TableCell align="right">{r.netGainMonthly}</TableCell>
                 <TableCell align="right">{r.yieldPctYearly} %</TableCell>
-                <TableCell align="right">
-                  <Tooltip title="Löschen">
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(r, idx)}
-                      size="small"
-                      aria-label={`Lösche ${r.name}`}
-                    >
-                      <DeleteOutlineIcon />
-                    </IconButton>
-                  </Tooltip>
-                </TableCell>
               </TableRow>
             ))}
-
-            {isEmpty && (
+            {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} sx={{ color: '#94a3b8' }}>
-                  Noch keine Investments. Klicke unten rechts auf „+“.
+                <TableCell colSpan={5} sx={{ textAlign: 'center', color: '#94a3b8', py: 3 }}>
+                  Noch keine Investments. Klicke unten rechts auf „+".
                 </TableCell>
               </TableRow>
             )}
@@ -185,10 +191,25 @@ export default function InvestmentsList() {
         <AddIcon />
       </Fab>
 
-      {/* Dialog */}
-      {openAdd && <CreateInvestmentDialog onClose={() => setOpenAdd(false)} />}
-
-      {/* Snackbar with Undo */}
+      {openAdd && (
+        <CreateInvestmentDialog onClose={() => setOpenAdd(false)} existingNames={existingNames} />
+      )}
+      {editItem && (
+        <CreateInvestmentDialog
+          onClose={() => setEditItem(null)}
+          existingNames={existingNames.filter((n) => {
+            // Exclude current item's name from uniqueness check
+            if (editItem.kind === 'OBJECT') {
+              const obj = objects.find((o) => o.id === editItem.id);
+              return obj ? n !== obj.name : true;
+            } else {
+              const re = realEstates.find((r) => r.id === editItem.id);
+              return re ? n !== re.name : true;
+            }
+          })}
+          editItem={editItem}
+        />
+      )}
       <Snackbar
         open={snack.open}
         autoHideDuration={3000}

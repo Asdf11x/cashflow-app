@@ -1,7 +1,6 @@
 // src/core/state/useInvestStore.ts
 import { create } from 'zustand';
 import type { ObjectInvestment, RealEstateInvestment } from '../domain/types';
-import { netMonthly, netYearly, yieldPctYearly } from '../domain/calc';
 import { getDefaultCostsConfig } from '../../config';
 import type { RealEstateCostsConfig } from '../../config/costs';
 import { buildRealEstateInvestmentOutput } from '../domain/realEstateCalculator.ts';
@@ -12,26 +11,27 @@ type State = {
 };
 
 type Actions = {
-  addObjectRaw: (
-    i: Omit<ObjectInvestment, 'netGainMonthly' | 'netGainYearly' | 'yieldPctYearly'>,
-  ) => void;
+  addObjectRaw: (i: Omit<ObjectInvestment, 'costMonthly'>) => void;
   removeObject: (id: string) => void;
-
   addRealEstateRaw: (
     i: Omit<
       RealEstateInvestment,
-      | 'appliedPurchaseCosts'
+      | 'details'
+      | 'additionalPurchaseCosts'
+      | 'monthlyColdRent'
+      | 'runningCostsRent'
+      | 'additionalRunningCostsRent'
+      | 'totalAdditionalPurchaseCosts'
+      | 'totalRunningCostsAnnually'
+      | 'purchaseCosts'
       | 'annualColdRent'
       | 'incomeTaxAmountAnnual'
       | 'solidarityAnnual'
       | 'churchTaxAnnual'
       | 'netRentAfterTaxAnnual'
-      | 'apportionableAnnual'
-      | 'nonApportionableAnnual'
-      | 'totalRunningCostsAnnual'
-      | 'netGainMonthly'
-      | 'netGainYearly'
-      | 'yieldPctYearly'
+      | 'apportionableMonthly'
+      | 'nonApportionableMonthly'
+      | 'totalRunningCostsMonthly'
     >,
     opts?: { includeBroker?: boolean; includeAppraisal?: boolean; includeInsuranceSetup?: boolean },
     cfgOverride?: RealEstateCostsConfig,
@@ -47,16 +47,8 @@ export const useInvestStore = create<State & Actions>((set) => ({
 
   addObjectRaw: (iRaw) =>
     set((s) => {
-      const draft: ObjectInvestment = {
-        ...iRaw,
-        netGainMonthly: '0',
-        netGainYearly: '0',
-        yieldPctYearly: '0',
-      } as ObjectInvestment;
-      draft.netGainMonthly = netMonthly(draft);
-      draft.netGainYearly = netYearly(draft);
-      draft.yieldPctYearly = yieldPctYearly(draft);
-      return { objects: [...s.objects, draft] };
+      const newObject = iRaw as ObjectInvestment;
+      return { objects: [...s.objects, newObject] };
     }),
 
   removeObject: (id) => set((s) => ({ objects: s.objects.filter((o) => o.id !== id) })),
@@ -67,20 +59,23 @@ export const useInvestStore = create<State & Actions>((set) => ({
       const computed = buildRealEstateInvestmentOutput(
         {
           ...iRaw,
-          // placeholders (builder will fill)
           netGainMonthly: '0',
+          details: '',
+          additionalPurchaseCosts: '',
+          monthlyColdRent: '',
+          runningCostsRent: '',
           netGainYearly: '0',
-          yieldPctYearly: '0',
-          appliedPurchaseCosts: {} as any,
+          returnPercent: '0',
+          purchaseCosts: {} as any,
           annualColdRent: '0',
           incomeTaxAmountAnnual: '0',
           solidarityAnnual: '0',
           churchTaxAnnual: '0',
           netRentAfterTaxAnnual: '0',
-          apportionableAnnual: '0',
-          nonApportionableAnnual: '0',
-          totalRunningCostsAnnual: '0',
-        } as RealEstateInvestment,
+          apportionableMonthly: '0',
+          nonApportionableMonthly: '0',
+          totalRunningCostsMonthly: '0',
+        } as unknown as RealEstateInvestment,
         cfgToUse,
         opts,
       );

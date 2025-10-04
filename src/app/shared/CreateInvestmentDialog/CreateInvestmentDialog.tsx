@@ -13,11 +13,32 @@ import {
 import RealEstateForm from './RealEstateForm';
 import ObjectForm from './ObjectForm';
 
-export default function CreateInvestmentDialog({ onClose }: { onClose: () => void }) {
-  const [tab, setTab] = React.useState<'REAL_ESTATE' | 'OBJECT'>('REAL_ESTATE');
-
-  // A ref to access the submit function of the active form component
-  const formRef = React.useRef<{ submit: () => void }>(null);
+export default function CreateInvestmentDialog({
+  onClose,
+  existingNames,
+  editItem,
+}: {
+  onClose: () => void;
+  existingNames: string[];
+  editItem?: { id: string; kind: 'OBJECT' | 'REAL_ESTATE' } | null;
+}) {
+  const [tab, setTab] = React.useState<'REAL_ESTATE' | 'OBJECT'>(editItem?.kind || 'REAL_ESTATE');
+  const formRef = React.useRef<{ submit: () => void; isValid: () => boolean }>(null);
+  const [isValid, setIsValid] = React.useState(false);
+  const handleTabChange = (_: any, v: 'REAL_ESTATE' | 'OBJECT') => {
+    if (!editItem) {
+      setTab(v);
+    }
+  };
+  // Poll for validation state
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      if (formRef.current?.isValid) {
+        setIsValid(formRef.current.isValid());
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [tab]);
 
   const handleCreate = () => {
     if (formRef.current) {
@@ -27,26 +48,40 @@ export default function CreateInvestmentDialog({ onClose }: { onClose: () => voi
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Investment hinzufügen</DialogTitle>
+      <DialogTitle>{editItem ? 'Investment bearbeiten' : 'Investment hinzufügen'}</DialogTitle>
       <Tabs
         value={tab}
-        onChange={(_, v) => setTab(v)}
+        onChange={handleTabChange}
         variant="fullWidth"
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
-        <Tab value="REAL_ESTATE" label="Immobilie" />
-        <Tab value="OBJECT" label="Objekt" />
+        <Tab value="REAL_ESTATE" label="Immobilie" disabled={!!editItem} />
+        <Tab value="OBJECT" label="Objekt" disabled={!!editItem} />
       </Tabs>
 
       <DialogContent dividers sx={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
-        {tab === 'REAL_ESTATE' && <RealEstateForm ref={formRef} onClose={onClose} />}
-        {tab === 'OBJECT' && <ObjectForm ref={formRef} onClose={onClose} />}
+        {tab === 'REAL_ESTATE' && (
+          <RealEstateForm
+            ref={formRef}
+            onClose={onClose}
+            existingNames={existingNames}
+            editId={editItem?.kind === 'REAL_ESTATE' ? editItem.id : undefined}
+          />
+        )}
+        {tab === 'OBJECT' && (
+          <ObjectForm
+            ref={formRef}
+            onClose={onClose}
+            existingNames={existingNames}
+            editId={editItem?.kind === 'OBJECT' ? editItem.id : undefined}
+          />
+        )}
       </DialogContent>
 
       <DialogActions>
         <Button onClick={onClose}>Abbrechen</Button>
-        <Button variant="contained" onClick={handleCreate}>
-          Erstellen
+        <Button variant="contained" onClick={handleCreate} disabled={!isValid}>
+          {editItem ? 'Speichern' : 'Erstellen'}
         </Button>
       </DialogActions>
     </Dialog>

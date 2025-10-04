@@ -1,10 +1,5 @@
 import Decimal from 'decimal.js';
-import type {
-  Money,
-  RealEstateInvestment,
-  PurchasePriceCosts,
-  RunningCostsSelection,
-} from './types';
+import type { Money, RealEstateInvestment, PurchasePriceCosts, RunningCostsRent } from './types';
 import type { RealEstateCostsConfig } from '../../config/costs';
 import { getDefaultCostsConfig } from '../../config';
 
@@ -80,7 +75,7 @@ export function calcPurchaseCosts(
 export function calcRentTaxesAnnual(
   monthlyColdRent: Money,
   cfg: RealEstateCostsConfig = cfgDefault,
-  sel: RunningCostsSelection,
+  sel: RunningCostsRent,
 ) {
   const annualColdRent = D(monthlyColdRent).mul(12);
 
@@ -88,12 +83,12 @@ export function calcRentTaxesAnnual(
   let soli = new Decimal(0);
   let church = new Decimal(0);
 
-  if (sel.applyIncomeTax) {
+  if (sel.incomeTax) {
     incomeTax = annualColdRent.mul(cfg.rent.taxes.incomeTax.rate);
-    if (sel.applySolidarity) {
+    if (sel.solidaritySurcharge) {
       soli = incomeTax.mul(cfg.rent.taxes.solidaritySurcharge.rate);
     }
-    if (sel.applyChurchTax) {
+    if (sel.churchTax) {
       church = incomeTax.mul(cfg.rent.taxes.churchTax.rate);
     }
   }
@@ -110,42 +105,42 @@ export function calcRentTaxesAnnual(
 }
 
 /** Annual running costs (umlagefähig / nicht umlagefähig) */
-export function calcRunningCostsAnnual(
-  monthlyColdRent: Money,
-  cfg: RealEstateCostsConfig = cfgDefault,
-  sel: RunningCostsSelection,
-) {
-  const annualColdRent = D(monthlyColdRent).mul(12);
-
-  const calcBlock = (
-    mode: RunningCostsSelection['apportionableMode'],
-    block: RealEstateCostsConfig['runningCosts']['apportionableOperatingCosts'],
-    manual?: Money,
-  ): Decimal => {
-    if (mode === 'none') return new Decimal(0);
-    if (mode === 'manual' && manual) return D(manual);
-    return annualColdRent.mul(block.percentageOfAnnualColdRent); // default percentage
-  };
-
-  const apportionable = calcBlock(
-    sel.apportionableMode,
-    cfg.runningCosts.apportionableOperatingCosts,
-    sel.manualApportionableAnnual,
-  );
-  const nonApportionable = calcBlock(
-    sel.nonApportionableMode,
-    cfg.runningCosts.nonApportionableOperatingCosts,
-    sel.manualNonApportionableAnnual,
-  );
-
-  const total = apportionable.add(nonApportionable);
-
-  return {
-    apportionableAnnual: fmt(apportionable),
-    nonApportionableAnnual: fmt(nonApportionable),
-    totalRunningCostsAnnual: fmt(total),
-  };
-}
+// export function calcRunningCostsAnnual(
+//   monthlyColdRent: Money,
+//   cfg: RealEstateCostsConfig = cfgDefault,
+//   sel: RunningCostsRent,
+// ) {
+//   const annualColdRent = D(monthlyColdRent).mul(12);
+//
+//   const calcBlock = (
+//     mode: RunningCostsRent['apportionableMode'],
+//     block: RealEstateCostsConfig['runningCosts']['apportionableOperatingCosts'],
+//     manual?: Money,
+//   ): Decimal => {
+//     if (mode === 'none') return new Decimal(0);
+//     if (mode === 'manual' && manual) return D(manual);
+//     return annualColdRent.mul(block.percentageOfAnnualColdRent); // default percentage
+//   };
+//
+//   // const apportionable = calcBlock(
+//   //   sel.apportionableMode,
+//   //   cfg.runningCosts.apportionableOperatingCosts,
+//   //   sel.manualApportionableAnnual,
+//   // );
+//   // const nonApportionable = calcBlock(
+//   //   sel.nonApportionableMode,
+//   //   cfg.runningCosts.nonApportionableOperatingCosts,
+//   //   sel.manualNonApportionableAnnual,
+//   // );
+//
+//   const total = apportionable.add(nonApportionable);
+//
+//   return {
+//     apportionableAnnual: fmt(apportionable),
+//     nonApportionableAnnual: fmt(nonApportionable),
+//     totalRunningCostsAnnual: fmt(total),
+//   };
+// }
 
 /**
  * Build/refresh a RealEstateInvestment with all derived outputs.
@@ -154,28 +149,29 @@ export function calcRunningCostsAnnual(
 export function buildRealEstateInvestmentOutput(
   base: Omit<
     RealEstateInvestment,
-    | 'appliedPurchaseCosts'
+    | 'purchaseCosts'
     | 'annualColdRent'
     | 'incomeTaxAmountAnnual'
     | 'solidarityAnnual'
     | 'churchTaxAnnual'
     | 'netRentAfterTaxAnnual'
-    | 'apportionableAnnual'
-    | 'nonApportionableAnnual'
-    | 'totalRunningCostsAnnual'
+    | 'apportionableMonthly'
+    | 'nonApportionableMonthly'
+    | 'totalRunningCostsMonthly'
     | 'netGainMonthly'
     | 'netGainYearly'
-    | 'yieldPctYearly'
+    | 'returnPercent'
   >,
   cfg: RealEstateCostsConfig = cfgDefault,
   opts?: { includeBroker?: boolean; includeAppraisal?: boolean; includeInsuranceSetup?: boolean },
 ): RealEstateInvestment {
   const purchase = calcPurchaseCosts(base.purchasePrice, cfg, opts);
-  const rent = calcRentTaxesAnnual(base.monthlyColdRent, cfg, base.runningCostsSelection);
-  const run = calcRunningCostsAnnual(base.monthlyColdRent, cfg, base.runningCostsSelection);
+  const rent = calcRentTaxesAnnual(base.monthlyColdRent, cfg, base.runningCostsRent);
+  // const run = calcRunningCostsAnnual(base.monthlyColdRent, cfg, base.runningCostsRent);
 
   // Simplified profit model per your v1: only owner-borne running costs reduce net
-  const netAnnual = D(rent.netRentAfterTaxAnnual).sub(run.nonApportionableAnnual);
+  const netAnnual = D(rent.netRentAfterTaxAnnual);
+  // .sub(run.nonApportionableAnnual);
   const netMonthly = netAnnual.div(12);
 
   const totalInvested = D(base.purchasePrice).add(purchase.total);
@@ -186,17 +182,17 @@ export function buildRealEstateInvestmentOutput(
   return {
     ...base,
     kind: 'REAL_ESTATE',
-    appliedPurchaseCosts: purchase,
-    annualColdRent: rent.annualColdRent,
-    incomeTaxAmountAnnual: rent.incomeTaxAmountAnnual,
-    solidarityAnnual: rent.solidarityAnnual,
-    churchTaxAnnual: rent.churchTaxAnnual,
-    netRentAfterTaxAnnual: rent.netRentAfterTaxAnnual,
-    apportionableAnnual: run.apportionableAnnual,
-    nonApportionableAnnual: run.nonApportionableAnnual,
-    totalRunningCostsAnnual: run.totalRunningCostsAnnual,
+    purchaseCosts: purchase,
+    monthlyColdRent: rent.annualColdRent,
+    // incomeTaxAmountAnnual: rent.incomeTaxAmountAnnual,
+    // solidarityAnnual: rent.solidarityAnnual,
+    // churchTaxAnnual: rent.churchTaxAnnual,
+    // netRentAfterTaxAnnual: rent.netRentAfterTaxAnnual,
+    // apportionableMonthly: run.apportionableAnnual,
+    // nonApportionableMonthly: run.nonApportionableAnnual,
+    // totalRunningCostsMonthly: run.totalRunningCostsAnnual,
     netGainMonthly: fmt(netMonthly),
     netGainYearly: fmt(netAnnual),
-    yieldPctYearly,
+    returnPercent: yieldPctYearly,
   };
 }
