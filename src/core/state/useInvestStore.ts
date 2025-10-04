@@ -1,5 +1,6 @@
 // src/core/state/useInvestStore.ts
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { ObjectInvestment, RealEstateInvestment } from '../domain/types';
 
 type State = {
@@ -17,29 +18,37 @@ type Actions = {
   removeRealEstate: (id: string) => void;
 };
 
-export const useInvestStore = create<State & Actions>((set) => ({
-  objects: [],
-  realEstates: [],
+export const useInvestStore = create<State & Actions>()(
+  persist(
+    (set) => ({
+      objects: [],
+      realEstates: [],
 
-  // --- Object Actions ---
-  addObject: (newObject) => set((s) => ({ objects: [...s.objects, newObject] })),
+      // --- Object Actions ---
+      addObject: (newObject) => set((s) => ({ objects: [...s.objects, newObject] })),
 
-  updateObject: (updatedObject) =>
-    set((s) => ({
-      objects: s.objects.map((o) => (o.id === updatedObject.id ? updatedObject : o)),
-    })),
+      updateObject: (updatedObject) =>
+        set((s) => ({
+          objects: s.objects.map((o) => (o.id === updatedObject.id ? updatedObject : o)),
+        })),
 
-  removeObject: (id) => set((s) => ({ objects: s.objects.filter((o) => o.id !== id) })),
+      removeObject: (id) => set((s) => ({ objects: s.objects.filter((o) => o.id !== id) })),
 
-  addRealEstate: (newRealEstate) =>
-    set((s) => ({ realEstates: [...s.realEstates, newRealEstate] })),
+      addRealEstate: (newRealEstate) =>
+        set((s) => ({ realEstates: [...s.realEstates, newRealEstate] })),
 
-  updateRealEstate: (updatedRealEstate) =>
-    set((s) => ({
-      realEstates: s.realEstates.map((r) =>
-        r.id === updatedRealEstate.id ? updatedRealEstate : r,
-      ),
-    })),
+      updateRealEstate: (updatedRealEstate) =>
+        set((s) => ({
+          realEstates: s.realEstates.map((r) =>
+            r.id === updatedRealEstate.id ? updatedRealEstate : r,
+          ),
+        })),
 
-  removeRealEstate: (id) => set((s) => ({ realEstates: s.realEstates.filter((r) => r.id !== id) })),
-}));
+      removeRealEstate: (id) =>
+        set((s) => ({ realEstates: s.realEstates.filter((r) => r.id !== id) })),
+    }),
+    {
+      name: 'invest-storage',
+    },
+  ),
+);
