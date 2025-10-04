@@ -12,6 +12,10 @@ import {
   Tooltip,
   Snackbar,
   Button,
+  useMediaQuery,
+  useTheme,
+  Box,
+  Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -20,6 +24,9 @@ import { fmtMoney } from '../../core/domain/calc';
 import CreditCreateDialog from '../shared/credit/CreditCreateDialog.tsx';
 
 export default function CreditsList() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const credits = useCreditStore((s) => s.credits);
   const removeCredit = useCreditStore((s) => s.removeCredit);
 
@@ -48,10 +55,89 @@ export default function CreditsList() {
     setSnack({ open: true, msg: 'Rückgängig gemacht' });
   };
 
+  // Mobile card view
+  if (isMobile) {
+    return (
+      <>
+        <Box sx={{ pb: 10 }}>
+          {credits.map((c) => (
+            <Paper key={c.id} sx={{ p: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  mb: 1,
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  {c.name}
+                </Typography>
+                <IconButton color="error" size="small" onClick={() => handleDelete(c.id)}>
+                  <DeleteOutlineIcon />
+                </IconButton>
+              </Box>
+              <Box sx={{ display: 'grid', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Kredithöhe:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {fmtMoney(c.principal)} €
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Tilgung/Monat:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {fmtMoney(c.amortMonthly)} €
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          ))}
+          {credits.length === 0 && (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                Noch keine Kredite. Rechts unten „+" klicken.
+              </Typography>
+            </Paper>
+          )}
+        </Box>
+
+        <Fab
+          color="primary"
+          sx={{ position: 'fixed', right: 24, bottom: 24 }}
+          onClick={() => setOpenAdd(true)}
+        >
+          <AddIcon />
+        </Fab>
+
+        {openAdd && <CreditCreateDialog onClose={() => setOpenAdd(false)} />}
+
+        <Snackbar
+          open={snack.open}
+          autoHideDuration={3000}
+          onClose={() => setSnack({ open: false, msg: '' })}
+          message={snack.msg}
+          action={
+            undoCtx ? (
+              <Button color="inherit" size="small" onClick={handleUndo}>
+                Rückgängig
+              </Button>
+            ) : null
+          }
+        />
+      </>
+    );
+  }
+
+  // Desktop table view
   return (
     <>
       <TableContainer component={Paper} sx={{ width: '100%' }}>
-        <Table size="medium" sx={{ minWidth: 720 }}>
+        <Table size="medium">
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
@@ -78,7 +164,7 @@ export default function CreditsList() {
             {credits.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} sx={{ color: '#94a3b8' }}>
-                  Noch keine Kredite. Rechts unten „+“ klicken.
+                  Noch keine Kredite. Rechts unten „+" klicken.
                 </TableCell>
               </TableRow>
             )}

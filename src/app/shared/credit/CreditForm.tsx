@@ -114,7 +114,10 @@ const CreditForm = React.forwardRef(({ onClose }: { onClose: () => void }, ref) 
           value={cRateAnnualPct}
           onChange={(e) => setCRateAnnualPct(sanitizeDecimal(e.target.value))}
           type="text"
-          inputMode="decimal"
+          inputProps={{
+            inputMode: 'decimal',
+            pattern: '[0-9]*[.,]?[0-9]*',
+          }}
           InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
         />
         <TextField
@@ -122,7 +125,10 @@ const CreditForm = React.forwardRef(({ onClose }: { onClose: () => void }, ref) 
           value={cAmortMonthly}
           onChange={(e) => setCAmortMonthly(sanitizeDecimal(e.target.value))}
           type="text"
-          inputMode="decimal"
+          inputProps={{
+            inputMode: 'decimal',
+            pattern: '[0-9]*[.,]?[0-9]*',
+          }}
           InputProps={{
             endAdornment: <InputAdornment position="end">{cCurrency}</InputAdornment>,
           }}

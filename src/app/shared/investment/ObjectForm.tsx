@@ -127,7 +127,10 @@ const ObjectForm = React.forwardRef(
         <TextField
           label="Monatlicher Gewinn"
           type="text"
-          inputMode="decimal"
+          inputProps={{
+            inputMode: 'decimal',
+            pattern: '[0-9]*[.,]?[0-9]*',
+          }}
           value={oMonthlyGain}
           onChange={(e) => setOMonthlyGain(sanitizeDecimal(e.target.value))}
           fullWidth

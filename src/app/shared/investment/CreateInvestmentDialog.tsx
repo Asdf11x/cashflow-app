@@ -8,6 +8,7 @@ import {
   Tabs,
   Tab,
   useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import RealEstateForm from './RealEstateForm';
 import ObjectForm from './ObjectForm';
@@ -24,13 +25,15 @@ export default function CreateInvestmentDialog({
   const [tab, setTab] = React.useState<'REAL_ESTATE' | 'OBJECT'>(editItem?.kind || 'REAL_ESTATE');
   const formRef = React.useRef<{ submit: () => void; isValid: () => boolean }>(null);
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [isValid, setIsValid] = React.useState(false);
+
   const handleTabChange = (_: any, v: 'REAL_ESTATE' | 'OBJECT') => {
     if (!editItem) {
       setTab(v);
     }
   };
-  // Poll for validation state
+
   React.useEffect(() => {
     const interval = setInterval(() => {
       if (formRef.current?.isValid) {
@@ -52,17 +55,17 @@ export default function CreateInvestmentDialog({
       onClose={onClose}
       fullWidth
       maxWidth="sm"
+      fullScreen={isMobile}
+      disableScrollLock={true}
+      keepMounted={false}
       sx={{
-        [theme.breakpoints.down('sm')]: {
-          '& .MuiDialog-paper': {
-            margin: 0,
-            maxHeight: '100%',
-            borderRadius: 0,
-          },
+        '& .MuiDialog-paper': {
+          margin: isMobile ? 0 : 2,
+          maxHeight: isMobile ? '100%' : 'calc(100% - 64px)',
         },
       }}
     >
-      <DialogTitle>{editItem ? 'investment bearbeiten' : 'investment hinzufügen'}</DialogTitle>
+      <DialogTitle>{editItem ? 'Investment bearbeiten' : 'Investment hinzufügen'}</DialogTitle>
       <Tabs
         value={tab}
         onChange={handleTabChange}
@@ -73,7 +76,14 @@ export default function CreateInvestmentDialog({
         <Tab value="OBJECT" label="Objekt" disabled={!!editItem} />
       </Tabs>
 
-      <DialogContent dividers sx={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+      <DialogContent
+        dividers
+        sx={{
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          pb: isMobile ? 10 : 2,
+        }}
+      >
         {tab === 'REAL_ESTATE' && (
           <RealEstateForm
             ref={formRef}
@@ -92,7 +102,9 @@ export default function CreateInvestmentDialog({
         )}
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions
+        sx={{ position: isMobile ? 'sticky' : 'relative', bottom: 0, bgcolor: 'background.paper' }}
+      >
         <Button onClick={onClose}>Abbrechen</Button>
         <Button variant="contained" onClick={handleCreate} disabled={!isValid}>
           {editItem ? 'Speichern' : 'Erstellen'}

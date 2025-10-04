@@ -25,7 +25,12 @@ npm run dev
 
 Not stable yet, sometimes it works, sometimes not unfortunately.
 
-run 
 ```
 npm run dev:tunnel
+```
+
+works more stable:
+```
+vite --port 5174
+ngrok http 5174                                                                                                                                                                
 ```

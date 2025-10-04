@@ -1,3 +1,5 @@
+// FILE: Layout.tsx (Original with Keyboard Fix)
+
 import * as React from 'react';
 import {
   AppBar,
@@ -67,64 +69,55 @@ export default function Layout() {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <AppBar color="inherit" position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
+      <AppBar color="inherit" position="sticky" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Toolbar>
           {!isDesktop && (
-            <IconButton onClick={() => setOpen(true)} edge="start" sx={{ mr: 1 }}>
+            <IconButton edge="start" onClick={() => setOpen(true)} sx={{ mr: 2 }}>
               <MenuIcon />
             </IconButton>
           )}
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            {(() => {
-              switch (loc.pathname) {
-                case '/':
-                  return 'Investments';
-                case '/credits':
-                  return 'Credits';
-                case '/cashflow':
-                  return 'Cashflow';
-                case '/options':
-                  return 'Optionen';
-                default:
-                  return '';
-              }
-            })()}
+          <Typography variant="h6" fontWeight={700}>
+            cashflow-app
           </Typography>
         </Toolbar>
       </AppBar>
 
-      {/* Drawer */}
-      {isDesktop ? (
-        <Drawer
-          variant="permanent"
-          PaperProps={{ sx: { width: drawerWidth, borderRight: '1px solid #e5e7eb' } }}
-        >
-          {drawer}
-        </Drawer>
-      ) : (
-        <Drawer
-          open={open}
-          onClose={() => setOpen(false)}
-          PaperProps={{ sx: { width: drawerWidth } }}
-        >
-          {drawer}
-        </Drawer>
-      )}
+      <Box sx={{ display: 'flex', flex: 1 }}>
+        {isDesktop ? (
+          <Drawer
+            variant="permanent"
+            PaperProps={{ sx: { width: drawerWidth, position: 'relative' } }}
+          >
+            {drawer}
+          </Drawer>
+        ) : (
+          <Drawer
+            open={open}
+            onClose={() => setOpen(false)}
+            PaperProps={{ sx: { width: drawerWidth } }}
+          >
+            {drawer}
+          </Drawer>
+        )}
 
-      {/* Content */}
-      <Box
-        component="main"
-        sx={{
-          flex: 1,
-          p: 2,
-          mt: 8,
-          ...(isDesktop && { ml: `${drawerWidth}px` }),
-          maxWidth: '100%',
-          width: '100%',
-        }}
-      >
-        <Outlet />
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            p: 2,
+            minWidth: 0,
+          }}
+        >
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );

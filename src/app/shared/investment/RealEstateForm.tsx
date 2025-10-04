@@ -83,7 +83,10 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
           onChange={(e) => onItemChange({ value: sanitizeDecimal(e.target.value) })}
           disabled={!enabled}
           type="text"
-          inputMode="decimal"
+          inputProps={{
+            inputMode: 'decimal',
+            pattern: '[0-9]*[.,]?[0-9]*',
+          }}
           fullWidth
           InputProps={{
             endAdornment: (
@@ -184,7 +187,10 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
             onChange={(e) => onItemChange({ value1: sanitizeDecimal(e.target.value) })}
             disabled={!enabled}
             type="text"
-            inputMode="decimal"
+            inputProps={{
+              inputMode: 'decimal',
+              pattern: '[0-9]*[.,]?[0-9]*',
+            }}
             fullWidth
             InputProps={{
               endAdornment: (
@@ -208,7 +214,10 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
             onChange={(e) => onItemChange({ value2: sanitizeDecimal(e.target.value) })}
             disabled={!enabled}
             type="text"
-            inputMode="decimal"
+            inputProps={{
+              inputMode: 'decimal',
+              pattern: '[0-9]*[.,]?[0-9]*',
+            }}
             fullWidth
             InputProps={{
               endAdornment: (
@@ -337,9 +346,9 @@ const RealEstateForm = React.forwardRef(
     const cfg = getDefaultCostsConfig();
     const [rName, setRName] = React.useState('');
     const [isNameTouched, setIsNameTouched] = React.useState(false);
-    const [rPurchasePrice, setRPurchasePrice] = React.useState('350000');
+    const [rPurchasePrice, setRPurchasePrice] = React.useState('100000');
     const [rCurrency, setRCurrency] = React.useState('€');
-    const [rMonthlyColdRent, setRMonthlyColdRent] = React.useState('1200');
+    const [rMonthlyColdRent, setRMonthlyColdRent] = React.useState('1000');
     const [purchaseCosts, setPurchaseCosts] = React.useState<CostState>({
       brokerCommission: {
         enabled: true,
@@ -830,7 +839,10 @@ const RealEstateForm = React.forwardRef(
         <TextField
           label="Monatliche Kaltmiete"
           type="text"
-          inputMode="decimal"
+          inputProps={{
+            inputMode: 'decimal',
+            pattern: '[0-9]*[.,]?[0-9]*',
+          }}
           value={rMonthlyColdRent}
           onChange={(e) => setRMonthlyColdRent(sanitizeDecimal(e.target.value))}
           InputProps={{

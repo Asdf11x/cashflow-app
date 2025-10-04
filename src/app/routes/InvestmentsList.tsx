@@ -1,4 +1,3 @@
-// src/components/InvestmentsList.tsx
 import * as React from 'react';
 import {
   Paper,
@@ -14,6 +13,10 @@ import {
   Snackbar,
   Button,
   Box,
+  useMediaQuery,
+  useTheme,
+  Typography,
+  Chip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -33,6 +36,9 @@ type Row = {
 };
 
 export default function InvestmentsList() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const objects = useInvestStore((s) => s.objects);
   const realEstates = useInvestStore((s) => s.realEstates);
   const removeObject = useInvestStore((s) => s.removeObject);
@@ -53,10 +59,9 @@ export default function InvestmentsList() {
   );
   const [undoCtx, setUndoCtx] = React.useState<{
     item: ObjectInvestment | RealEstateInvestment;
-    subsetIndex: number; // index within its own collection at delete time
+    subsetIndex: number;
   } | null>(null);
 
-  // merge into single list for the table
   const rows: Row[] = React.useMemo(
     () => [
       ...objects.map((o) => ({
@@ -70,9 +75,7 @@ export default function InvestmentsList() {
       ...realEstates.map((r) => ({
         id: r.id,
         name: r.name,
-        // --- FIX: Use totalPrice for Real Estate to show the grand total ---
         purchasePrice: fmtMoney(r.totalPrice),
-        // --------------------------------------------------------------------
         netGainMonthly: fmtMoney(r.netGainMonthly),
         yieldPctYearly: fmtNumberTrim(r.returnPercent),
         kind: 'REAL_ESTATE' as const,
@@ -81,16 +84,14 @@ export default function InvestmentsList() {
     [objects, realEstates],
   );
 
-  // delete a row and capture undo info
   const handleDelete = (row: Row, visibleIndex: number) => {
-    // compute the index within the *same* subset (OBJECT or REAL_ESTATE) at delete time
     const subsetIndex = rows.slice(0, visibleIndex).filter((r) => r.kind === row.kind).length;
     const originalItem =
       row.kind === 'OBJECT'
         ? objects.find((o) => o.id === row.id)
         : realEstates.find((r) => r.id === row.id);
 
-    if (!originalItem) return; // Should not happen
+    if (!originalItem) return;
 
     if (row.kind === 'OBJECT') {
       removeObject(row.id);
@@ -99,10 +100,9 @@ export default function InvestmentsList() {
     }
 
     setUndoCtx({ item: originalItem, subsetIndex });
-    setSnack({ open: true, msg: 'investment gelöscht' });
+    setSnack({ open: true, msg: 'Investment gelöscht' });
   };
 
-  // undo reinserts into the proper collection at the original subset index
   const handleUndo = () => {
     if (!undoCtx) return;
     const { item, subsetIndex } = undoCtx;
@@ -124,14 +124,136 @@ export default function InvestmentsList() {
     });
 
     setUndoCtx(null);
-    setSnack({ open: false, msg: '' }); // close old snack before showing new
+    setSnack({ open: false, msg: '' });
     setTimeout(() => setSnack({ open: true, msg: 'Rückgängig gemacht' }), 100);
   };
 
+  // Mobile card view
+  if (isMobile) {
+    return (
+      <>
+        <Box sx={{ pb: 10 }}>
+          {rows.map((r, idx) => (
+            <Paper key={`${r.kind}:${r.id}`} sx={{ p: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  mb: 1,
+                }}
+              >
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                    {r.name}
+                  </Typography>
+                  <Chip
+                    label={r.kind === 'OBJECT' ? 'Objekt' : 'Immobilie'}
+                    size="small"
+                    color={r.kind === 'OBJECT' ? 'primary' : 'secondary'}
+                  />
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <IconButton
+                    color="primary"
+                    size="small"
+                    onClick={() => setEditItem({ id: r.id, kind: r.kind })}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton color="error" size="small" onClick={() => handleDelete(r, idx)}>
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'grid', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Gesamtpreis:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {r.purchasePrice}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Monatl. Gewinn:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={600} color="success.main">
+                    {r.netGainMonthly}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Rendite p.a.:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700} color="primary.main">
+                    {r.yieldPctYearly} %
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          ))}
+          {rows.length === 0 && (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                Noch keine Investments. Klicke unten rechts auf „+".
+              </Typography>
+            </Paper>
+          )}
+        </Box>
+
+        <Fab
+          color="primary"
+          sx={{ position: 'fixed', right: 24, bottom: 24 }}
+          onClick={() => setOpenAdd(true)}
+        >
+          <AddIcon />
+        </Fab>
+
+        {openAdd && (
+          <CreateInvestmentDialog onClose={() => setOpenAdd(false)} existingNames={existingNames} />
+        )}
+        {editItem && (
+          <CreateInvestmentDialog
+            onClose={() => setEditItem(null)}
+            existingNames={existingNames.filter((n) => {
+              if (editItem.kind === 'OBJECT') {
+                const obj = objects.find((o) => o.id === editItem.id);
+                return obj ? n !== obj.name : true;
+              } else {
+                const re = realEstates.find((r) => r.id === editItem.id);
+                return re ? n !== re.name : true;
+              }
+            })}
+            editItem={editItem}
+          />
+        )}
+        <Snackbar
+          open={snack.open}
+          autoHideDuration={4000}
+          onClose={() => {
+            setSnack({ open: false, msg: '' });
+            setUndoCtx(null);
+          }}
+          message={snack.msg}
+          action={
+            undoCtx ? (
+              <Button color="inherit" size="small" onClick={handleUndo}>
+                Rückgängig
+              </Button>
+            ) : null
+          }
+        />
+      </>
+    );
+  }
+
+  // Desktop table view
   return (
     <>
       <TableContainer component={Paper} sx={{ width: '100%' }}>
-        <Table size="medium" sx={{ minWidth: 760 }}>
+        <Table size="medium">
           <TableHead>
             <TableRow>
               <TableCell width={100}>Aktionen</TableCell>
@@ -179,7 +301,6 @@ export default function InvestmentsList() {
         </Table>
       </TableContainer>
 
-      {/* Add FAB */}
       <Fab
         color="primary"
         sx={{ position: 'fixed', right: 24, bottom: 24 }}
@@ -195,7 +316,6 @@ export default function InvestmentsList() {
         <CreateInvestmentDialog
           onClose={() => setEditItem(null)}
           existingNames={existingNames.filter((n) => {
-            // Exclude current item's name from uniqueness check
             if (editItem.kind === 'OBJECT') {
               const obj = objects.find((o) => o.id === editItem.id);
               return obj ? n !== obj.name : true;
@@ -212,7 +332,7 @@ export default function InvestmentsList() {
         autoHideDuration={4000}
         onClose={() => {
           setSnack({ open: false, msg: '' });
-          setUndoCtx(null); // Clear undo context if snackbar closes
+          setUndoCtx(null);
         }}
         message={snack.msg}
         action={
