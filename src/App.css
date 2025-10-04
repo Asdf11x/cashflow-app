@@ -5,6 +5,12 @@
   text-align: center;
 }
 
+.app-container {
+  /* We use our custom property. calc() is used to multiply it by 100. */
+  /* The second value, 1vh, is a fallback in case the JS hasn't run yet. */
+  height: calc(var(--vh, 1vh) * 100);
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
