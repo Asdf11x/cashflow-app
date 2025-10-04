@@ -288,16 +288,11 @@ function CostSectionAccordion({
   return (
     <Accordion>
       <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 1 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            width: '100%',
-            alignItems: 'center',
-          }}
-        >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
           <Typography fontWeight={700}>{title}</Typography>
-          <Typography color="text.secondary">Kosten: {fmtMoney(total.toString())}</Typography>
+          <Typography color="text.secondary">
+            {fmtMoney(total.toFixed(0).toString())} {currency}
+          </Typography>
         </Box>
       </AccordionSummary>
       <AccordionDetails>
@@ -868,11 +863,11 @@ const RealEstateForm = React.forwardRef(
           total={deductionsTotalAnnual.div(12)}
         />
         <Accordion>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
               <Typography fontWeight={700}>Weitere Laufende Kosten</Typography>
               <Typography color="text.secondary">
-                Kosten: {fmtMoney(runningCostsTotalMonthly.toString())}
+                {fmtMoney(runningCostsTotalMonthly.toString())} {rCurrency}
               </Typography>
             </Box>
           </AccordionSummary>

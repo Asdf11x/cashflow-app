@@ -2,7 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './app/layout/Layout';
 import InvestmentsList from './app/routes/InvestmentsList';
 import CreditsList from './app/routes/CreditsList';
-import Placeholder from './app/routes/Placeholder';
+import OptionsMenu from './app/routes/OptionsMenu.tsx';
 import CashflowList from './app/routes/CashflowList.tsx';
 
 export default function App() {
@@ -14,7 +14,7 @@ export default function App() {
         <Route index element={<InvestmentsList />} />
         <Route path="credits" element={<CreditsList />} />
         <Route path="cashflow" element={<CashflowList />} />
-        <Route path="options" element={<Placeholder title="Options" />} />
+        <Route path="options" element={<OptionsMenu title="Options" />} />
       </Route>
     </Routes>
   );

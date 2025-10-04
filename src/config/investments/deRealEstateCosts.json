@@ -81,7 +81,7 @@
     },
     "nonApportionableOperatingCosts": {
       "key": "nebenkosten_nicht_umlagefaehig",
-      "label_de": "nicht umlagefähige Nebenkosten (Hausgeld-Anteil, Verwaltung, Instandhaltungsrücklage)",
+      "label_de": "nicht umlagefähige Nebenkosten",
       "mode": "percentage",
       "percentageOfAnnualColdRent": 0.05,
       "manualAnnualAmount": 0,

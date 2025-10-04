@@ -36,7 +36,7 @@ export function CurrencySelect({ value, onChange }: CurrencySelectProps) {
     <Select value={value} onChange={onChange} sx={{ minWidth: 100 }}>
       <MenuItem value="€">€ EUR</MenuItem>
       <MenuItem value="CHF">CHF</MenuItem>
-      <MenuItem value="CZK">CZK</MenuItem>
+      <MenuItem value="Kč">Kč CZK</MenuItem>
     </Select>
   );
 }
