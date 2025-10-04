@@ -9,6 +9,8 @@ import {
   Stack,
   Autocomplete,
   Typography,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { useCreditStore } from '../../core/state/useCreditStore';
@@ -20,6 +22,8 @@ import type Decimal from 'decimal.js'; // Import Decimal type
 type Option = { id: string; label: string };
 
 export default function CashflowCreateDialog({ onClose }: { onClose: () => void }) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const objects = useInvestStore((s) => s.objects);
   const realEstates = useInvestStore((s) => s.realEstates);
   const credits = useCreditStore((s) => s.credits);
@@ -68,7 +72,7 @@ export default function CashflowCreateDialog({ onClose }: { onClose: () => void 
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open onClose={onClose} fullWidth maxWidth="sm" fullScreen={fullScreen}>
       <DialogTitle>Cashflow anlegen</DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
