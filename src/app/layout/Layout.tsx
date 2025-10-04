@@ -1,5 +1,3 @@
-// FILE: Layout.tsx (Original with Keyboard Fix)
-
 import * as React from 'react';
 import {
   AppBar,
@@ -23,6 +21,9 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 
+import KofiButton from '../components/KofiButton';
+// import Logo from '../components/Logo'; // Your custom SVG logo
+
 const drawerWidth = 260;
 
 const NAV = [
@@ -40,31 +41,42 @@ export default function Layout() {
   const loc = useLocation();
 
   const drawer = (
-    <Box sx={{ maxWidth: '1400px', mx: 'auto' }}>
-      <Box sx={{ p: 2 }}>
-        <Typography variant="h6" fontWeight={800}>
-          cashflow-app
-        </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* This Box contains the main navigation and logo */}
+      <Box>
+        {/* --- 2. Use your Logo and a title inside the AppBar's Toolbar space --- */}
+        <Toolbar>
+          {/*<Logo sx={{ mr: 1, width: 32, height: 32, color: 'primary.main' }} />*/}
+          <Typography variant="h6" fontWeight={800}>
+            cashflow-app
+          </Typography>
+        </Toolbar>
+        <Divider />
+        <List>
+          {NAV.map((item) => {
+            const active =
+              item.to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(item.to);
+            return (
+              <ListItemButton
+                key={item.to}
+                selected={active}
+                onClick={() => {
+                  nav(item.to);
+                  if (!isDesktop) setOpen(false);
+                }}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
+            );
+          })}
+        </List>
       </Box>
-      <Divider />
-      <List>
-        {NAV.map((item) => {
-          const active = item.to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(item.to);
-          return (
-            <ListItemButton
-              key={item.to}
-              selected={active}
-              onClick={() => {
-                nav(item.to);
-                if (!isDesktop) setOpen(false);
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          );
-        })}
-      </List>
+
+      {/* This Box contains the Ko-fi button and is pushed to the bottom */}
+      <Box sx={{ p: 2, mt: 'auto' }}>
+        <KofiButton id="cashy11" label="Support Me on Ko-fi" />
+      </Box>
     </Box>
   );
 
@@ -77,6 +89,7 @@ export default function Layout() {
         bgcolor: 'background.default',
       }}
     >
+      {/* --- 3. The AppBar is now CLEANER and ONLY for mobile/top bar --- */}
       <AppBar color="inherit" position="sticky" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Toolbar>
           {!isDesktop && (
@@ -84,7 +97,8 @@ export default function Layout() {
               <MenuIcon />
             </IconButton>
           )}
-          <Typography variant="h6" fontWeight={700}>
+          {/* This title is now only visible on mobile, as the drawer has its own */}
+          <Typography variant="h6" fontWeight={700} sx={{ display: { lg: 'none' } }}>
             cashflow-app
           </Typography>
         </Toolbar>
@@ -94,7 +108,7 @@ export default function Layout() {
         {isDesktop ? (
           <Drawer
             variant="permanent"
-            PaperProps={{ sx: { width: drawerWidth, position: 'relative' } }}
+            PaperProps={{ sx: { width: drawerWidth, position: 'relative', borderWidth: 0 } }}
           >
             {drawer}
           </Drawer>
@@ -108,14 +122,7 @@ export default function Layout() {
           </Drawer>
         )}
 
-        <Box
-          component="main"
-          sx={{
-            flex: 1,
-            p: 2,
-            minWidth: 0,
-          }}
-        >
+        <Box component="main" sx={{ flex: 1, p: 2, minWidth: 0 }}>
           <Outlet />
         </Box>
       </Box>
