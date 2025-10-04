@@ -4,7 +4,7 @@ import InvestmentsList from './app/routes/InvestmentsList';
 import CreditsList from './app/routes/CreditsList';
 import Placeholder from './app/routes/Placeholder';
 import CashflowList from './app/routes/CashflowList.tsx';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 export default function App() {
   useEffect(() => {
