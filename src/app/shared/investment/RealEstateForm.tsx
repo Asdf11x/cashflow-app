@@ -92,7 +92,11 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
                   {isPercent ? '%' : currency}
                 </Typography>
                 {isPercent && (
-                  <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: { xs: 'none', sm: 'block' } }}
+                  >
                     (= {fmtMoney(absoluteAmount.toString())})
                   </Typography>
                 )}
@@ -109,8 +113,12 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
         disabled={!enabled || !allowModeChange}
         sx={{ width: { xs: '100%', sm: 'auto' } }}
       >
-        <ToggleButton value="currency" sx={{ width: '50%' }}>{currency}</ToggleButton>
-        <ToggleButton value="percent" sx={{ width: '50%' }}>%</ToggleButton>
+        <ToggleButton value="currency" sx={{ width: '50%' }}>
+          {currency}
+        </ToggleButton>
+        <ToggleButton value="percent" sx={{ width: '50%' }}>
+          %
+        </ToggleButton>
       </ToggleButtonGroup>
     </Box>
   );
@@ -219,12 +227,16 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
             }}
           />
         </Box>
-        <Stack spacing={0.5} alignItems="center" sx={{
-          ml: { sm: 1.5 },
-          mt: { xs: 2, sm: 0 }, // Add margin top on mobile
-          width: { xs: '100%', sm: 'auto' }, // Take full width on mobile
-          minWidth: { sm: '80px' },
-        }}>
+        <Stack
+          spacing={0.5}
+          alignItems="center"
+          sx={{
+            ml: { sm: 1.5 },
+            mt: { xs: 2, sm: 0 }, // Add margin top on mobile
+            width: { xs: '100%', sm: 'auto' }, // Take full width on mobile
+            minWidth: { sm: '80px' },
+          }}
+        >
           <ToggleButtonGroup
             value={mode}
             exclusive
@@ -265,7 +277,14 @@ function CostSectionAccordion({
   return (
     <Accordion>
       <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            width: '100%',
+            alignItems: 'center',
+          }}
+        >
           <Typography fontWeight={700}>{title}</Typography>
           <Typography color="text.secondary">Kosten: {fmtMoney(total.toString())}</Typography>
         </Box>

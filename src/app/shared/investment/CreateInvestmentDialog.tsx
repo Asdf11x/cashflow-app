@@ -7,9 +7,8 @@ import {
   Button,
   Tabs,
   Tab,
-useTheme,
+  useTheme,
   useMediaQuery,
-
 } from '@mui/material';
 import RealEstateForm from './RealEstateForm';
 import ObjectForm from './ObjectForm';
