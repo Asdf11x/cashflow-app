@@ -30,10 +30,6 @@ import type {
   AdditionalRunningCostsRent,
 } from '../../../core/domain/types.ts';
 
-// (Helper components like CostInputRow remain unchanged)
-// ...
-
-// New type for a cost item that has a primary value and a secondary (deductible) value
 interface SplitCostItemState {
   enabled: boolean;
   value1: string; // e.g., total Hausgeld
@@ -70,7 +66,15 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
   };
   const isPercent = mode === 'percent';
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        gap: 1.5,
+        width: '100%',
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: { xs: 'flex-start', sm: 'center' },
+      }}
+    >
       <Checkbox checked={enabled} onChange={(e) => onItemChange({ enabled: e.target.checked })} />
       <TextField
         label={label}
@@ -88,7 +92,7 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
                   {isPercent ? '%' : currency}
                 </Typography>
                 {isPercent && (
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                     (= {fmtMoney(absoluteAmount.toString())})
                   </Typography>
                 )}
@@ -103,9 +107,10 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
         onChange={handleToggleMode}
         size="small"
         disabled={!enabled || !allowModeChange}
+        sx={{ width: { xs: '100%', sm: 'auto' } }}
       >
-        <ToggleButton value="currency">{currency}</ToggleButton>
-        <ToggleButton value="percent">%</ToggleButton>
+        <ToggleButton value="currency" sx={{ width: '50%' }}>{currency}</ToggleButton>
+        <ToggleButton value="percent" sx={{ width: '50%' }}>%</ToggleButton>
       </ToggleButtonGroup>
     </Box>
   );
@@ -154,7 +159,14 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
       <Checkbox checked={enabled} onChange={(e) => onItemChange({ enabled: e.target.checked })} />
 
-      <Stack sx={{ flexGrow: 1 }} direction="row" alignItems="center">
+      <Stack
+        sx={{
+          flexGrow: 1,
+          width: '100%',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { sm: 'center' },
+        }}
+      >
         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: { xs: 'column', sm: 'row' } }}>
           <TextField
             label={label1}
@@ -207,13 +219,19 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
             }}
           />
         </Box>
-        <Stack spacing={0.5} alignItems="center" sx={{ ml: 1.5, minWidth: '80px' }}>
+        <Stack spacing={0.5} alignItems="center" sx={{
+          ml: { sm: 1.5 },
+          mt: { xs: 2, sm: 0 }, // Add margin top on mobile
+          width: { xs: '100%', sm: 'auto' }, // Take full width on mobile
+          minWidth: { sm: '80px' },
+        }}>
           <ToggleButtonGroup
             value={mode}
             exclusive
             onChange={handleToggleMode}
             size="small"
             disabled={!enabled || !allowModeChange}
+            fullWidth
           >
             <ToggleButton value="currency">{currency}</ToggleButton>
             <ToggleButton value="percent">%</ToggleButton>
@@ -246,8 +264,8 @@ function CostSectionAccordion({
 }: CostSectionAccordionProps) {
   return (
     <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
+      <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
           <Typography fontWeight={700}>{title}</Typography>
           <Typography color="text.secondary">Kosten: {fmtMoney(total.toString())}</Typography>
         </Box>
