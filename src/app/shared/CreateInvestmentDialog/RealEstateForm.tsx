@@ -1,3 +1,4 @@
+// src/components/shared/CreateInvestmentDialog/RealEstateForm.tsx
 import * as React from 'react';
 import {
   TextField,
@@ -21,6 +22,16 @@ import { getDefaultCostsConfig } from '../../../config';
 import Decimal from 'decimal.js';
 import type { CostItemState, CostState } from './formHelpers';
 import { useInvestStore } from '../../../core/state/useInvestStore.ts';
+import type {
+  RealEstateInvestment,
+  PurchasePriceCosts,
+  AdditionalPurchasePriceCosts,
+  RunningCostsRent,
+  AdditionalRunningCostsRent,
+} from '../../../core/domain/types.ts';
+
+// (Helper components like CostInputRow remain unchanged)
+// ...
 
 // New type for a cost item that has a primary value and a secondary (deductible) value
 interface SplitCostItemState {
@@ -259,7 +270,6 @@ function CostSectionAccordion({
 }
 
 function DetailsAccordion() {
-  // ... (Your exact DetailsAccordion implementation)
   return (
     <Accordion>
       <AccordionSummary expandIcon={<ExpandMoreIcon />} disabled={true}>
@@ -283,6 +293,8 @@ const RealEstateForm = React.forwardRef(
     }: { onClose: () => void; existingNames: string[]; editId?: string },
     ref,
   ) => {
+    const { addRealEstate, updateRealEstate, realEstates } = useInvestStore.getState();
+
     const cfg = getDefaultCostsConfig();
     const [rName, setRName] = React.useState('');
     const [isNameTouched, setIsNameTouched] = React.useState(false);
@@ -390,8 +402,8 @@ const RealEstateForm = React.forwardRef(
     const [runningCostsSplit, setRunningCostsSplit] = React.useState({
       houseFee: {
         enabled: false,
-        value1: '0', // total
-        value2: '0', // apportionable
+        value1: '0',
+        value2: '0',
         mode: 'currency',
         allowModeChange: true,
         label1: 'Hausgeld',
@@ -408,8 +420,95 @@ const RealEstateForm = React.forwardRef(
         label: 'Sonstiges',
       },
     });
-
     const [isPriceTouched, setIsPriceTouched] = React.useState(false);
+
+    React.useEffect(() => {
+      if (!editId) {
+        setRName('Immobilie');
+        return;
+      }
+
+      const existing = realEstates.find((r) => r.id === editId);
+      if (!existing) return;
+
+      const reconstructCostState = (
+        initialState: CostState,
+        storedData: Record<string, string>,
+      ): CostState => {
+        const newState = { ...initialState };
+        for (const key in storedData) {
+          if (key in newState) {
+            const value = D(storedData[key]);
+            if (value.gt(0)) {
+              newState[key] = {
+                ...newState[key],
+                enabled: true,
+                value: value.toFixed(0),
+                mode: 'currency',
+              };
+            }
+          }
+        }
+        return newState;
+      };
+
+      setRName(existing.name);
+      setRCurrency(existing.currency);
+      setRPurchasePrice(D(existing.purchasePrice).toFixed(0));
+      setRMonthlyColdRent(D(existing.monthlyColdRent).toFixed(0));
+
+      setPurchaseCosts(reconstructCostState(purchaseCosts, existing.purchaseCosts));
+      setAdditionalCosts(reconstructCostState(additionalCosts, existing.additionalPurchaseCosts));
+
+      const taxData = existing.runningCostsRent;
+      setTaxDeductions({
+        ...taxDeductions,
+        incomeTax: { ...taxDeductions.incomeTax, enabled: D(taxData.incomeTax).gt(0) },
+        solidaritySurcharge: {
+          ...taxDeductions.solidaritySurcharge,
+          enabled: D(taxData.solidaritySurcharge).gt(0),
+        },
+        // --- FIX: Safely handle optional churchTax ---
+        churchTax: {
+          ...taxDeductions.churchTax,
+          enabled: D(taxData.churchTax ?? '0').gt(0),
+        },
+        // --- FIX: Safely handle optional otherDeductions ---
+        otherDeductions: {
+          ...taxDeductions.otherDeductions,
+          enabled: D(taxData.otherDeductions ?? '0').gt(0),
+          value: D(taxData.otherDeductions ?? '0').toFixed(0),
+          mode: 'currency',
+        },
+      });
+
+      const houseFeeValue = D(existing.additionalRunningCostsRent.houseFee);
+      if (houseFeeValue.gt(0)) {
+        setRunningCostsSplit((prev) => ({
+          ...prev,
+          houseFee: {
+            ...prev.houseFee,
+            enabled: true,
+            value1: houseFeeValue.toFixed(0),
+            value2: '0',
+            mode: 'currency',
+          },
+        }));
+      }
+      const otherRunningValue = D(existing.additionalRunningCostsRent.other);
+      if (otherRunningValue.gt(0)) {
+        setOtherRunningCosts((prev) => ({
+          ...prev,
+          other: {
+            ...prev.other,
+            enabled: true,
+            value: otherRunningValue.toFixed(0),
+            mode: 'currency',
+          },
+        }));
+      }
+    }, [editId, realEstates]);
+
     const rPurchasePriceD = D(normalize(rPurchasePrice));
     const rMonthlyColdRentD = D(normalize(rMonthlyColdRent));
     const rAnnualColdRentD = rMonthlyColdRentD.mul(12);
@@ -497,7 +596,6 @@ const RealEstateForm = React.forwardRef(
         total = total.add(val1.sub(val2));
       }
 
-      // 2. Add "Sonstiges" from standard state
       total = total.add(otherRunningCostsTotalMonthly);
 
       return total;
@@ -522,6 +620,11 @@ const RealEstateForm = React.forwardRef(
         ? 'Name bereits vergeben'
         : ' ';
 
+    const getCostValue = (item: CostItemState, base: Decimal): Decimal => {
+      if (!item.enabled) return D(0);
+      return item.mode === 'percent' ? base.mul(pctToFrac(item.value)) : D(normalize(item.value));
+    };
+
     React.useImperativeHandle(ref, () => ({
       submit: () => {
         setIsPriceTouched(true);
@@ -531,37 +634,112 @@ const RealEstateForm = React.forwardRef(
           return;
         }
 
+        const purchaseCostsData: PurchasePriceCosts = {
+          brokerCommission: getCostValue(purchaseCosts.brokerCommission, rPurchasePriceD).toFixed(
+            2,
+          ),
+          propertyTransferTax: getCostValue(
+            purchaseCosts.propertyTransferTax,
+            rPurchasePriceD,
+          ).toFixed(2),
+          notaryFees: getCostValue(purchaseCosts.notaryFees, rPurchasePriceD).toFixed(2),
+          landRegistryFees: getCostValue(purchaseCosts.landRegistryFees, rPurchasePriceD).toFixed(
+            2,
+          ),
+          total: purchaseCostsTotal.toFixed(2),
+        };
+
+        const additionalCostsData: AdditionalPurchasePriceCosts = {
+          renovationCosts: getCostValue(additionalCosts.renovationCosts, rPurchasePriceD).toFixed(
+            2,
+          ),
+          subvention: getCostValue(additionalCosts.subvention, rPurchasePriceD).toFixed(2),
+          otherAdditionalCosts: getCostValue(
+            additionalCosts.otherAdditionalCosts,
+            rPurchasePriceD,
+          ).toFixed(2),
+          appraisalFee: getCostValue(additionalCosts.appraisalFee, rPurchasePriceD).toFixed(2),
+          insuranceSetup: getCostValue(additionalCosts.insuranceSetup, rPurchasePriceD).toFixed(2),
+          total: additionalCostsTotal.toFixed(2),
+        };
+
+        const runningCostsRentData: RunningCostsRent = {
+          incomeTax: taxDeductions.incomeTax.enabled
+            ? rAnnualColdRentD.mul(pctToFrac(taxDeductions.incomeTax.value)).toFixed(2)
+            : '0.00',
+          solidaritySurcharge: taxDeductions.solidaritySurcharge.enabled
+            ? D(
+                taxDeductions.incomeTax.enabled
+                  ? rAnnualColdRentD.mul(pctToFrac(taxDeductions.incomeTax.value)).toFixed(2)
+                  : '0.00',
+              )
+                .mul(pctToFrac(taxDeductions.solidaritySurcharge.value))
+                .toFixed(2)
+            : '0.00',
+          churchTax: taxDeductions.churchTax.enabled
+            ? D(
+                taxDeductions.incomeTax.enabled
+                  ? rAnnualColdRentD.mul(pctToFrac(taxDeductions.incomeTax.value)).toFixed(2)
+                  : '0.00',
+              )
+                .mul(pctToFrac(taxDeductions.churchTax.value))
+                .toFixed(2)
+            : '0.00',
+          otherDeductions: getCostValue(taxDeductions.otherDeductions, rAnnualColdRentD).toFixed(2),
+          total: deductionsTotalAnnual.toFixed(2),
+        };
+
+        const houseFeeItem = runningCostsSplit.houseFee;
+        const houseFeeNet = houseFeeItem.enabled
+          ? (houseFeeItem.mode === 'percent'
+              ? rMonthlyColdRentD.mul(pctToFrac(houseFeeItem.value1))
+              : D(normalize(houseFeeItem.value1))
+            ).sub(
+              houseFeeItem.mode === 'percent'
+                ? rMonthlyColdRentD.mul(pctToFrac(houseFeeItem.value2))
+                : D(normalize(houseFeeItem.value2)),
+            )
+          : D(0);
+
+        const additionalRunningCostsData: AdditionalRunningCostsRent = {
+          houseFee: houseFeeNet.toFixed(2),
+          other: otherRunningCostsTotalMonthly.toFixed(2),
+          total: runningCostsTotalMonthly.toFixed(2),
+        };
+
+        const investmentData: RealEstateInvestment = {
+          id: editId || `re_${Date.now()}`,
+          name: trimmedName,
+          kind: 'REAL_ESTATE',
+          currency: rCurrency,
+          purchasePrice: rPurchasePriceD.toFixed(2),
+          totalPrice: grandTotalPrice.toFixed(2),
+          netGainMonthly: netRentMonthly.toFixed(2),
+          netGainYearly: netRentAnnual.toFixed(2),
+          returnPercent: yieldPct,
+          monthlyColdRent: rMonthlyColdRentD.toFixed(2),
+          purchaseCosts: purchaseCostsData,
+          additionalPurchaseCosts: additionalCostsData,
+          totalAdditionalPurchaseCosts: additionalCostsTotal.toFixed(2),
+          runningCostsRent: runningCostsRentData,
+          additionalRunningCostsRent: additionalRunningCostsData,
+          totalRunningCostsAnnually: runningCostsTotalAnnual.toFixed(2),
+          details: {
+            address: '',
+            landAreaSqm: 0,
+            link: '',
+            livingAreaSqm: 0,
+            numberOfFloors: 0,
+            rooms: 0,
+            type: '',
+            usableAreaSqm: 0,
+          },
+        };
+
         if (editId) {
-          useInvestStore.setState((s) => ({
-            realEstates: s.realEstates.map((o) =>
-              o.id === editId
-                ? {
-                    ...o,
-                    name: trimmedName,
-                    kind: 'REAL_ESTATE',
-                    purchasePrice: rPurchasePriceD.toFixed(2),
-                    netGainMonthly: netRentMonthly.toFixed(2),
-                    currency: rCurrency,
-                    totalPrice: grandTotalPrice.toFixed(2),
-                    netGainYearly: netRentAnnual.toFixed(2),
-                    returnPercent: yieldPct.toString(),
-                  }
-                : o,
-            ),
-          }));
+          updateRealEstate(investmentData);
         } else {
-          // Create new
-          useInvestStore.getState().addRealEstateRaw({
-            id: `obj_${Date.now()}`,
-            name: trimmedName,
-            kind: 'REAL_ESTATE',
-            purchasePrice: rPurchasePriceD.toFixed(2),
-            netGainMonthly: netRentMonthly.toFixed(2),
-            currency: rCurrency,
-            totalPrice: grandTotalPrice.toFixed(2),
-            netGainYearly: netRentAnnual.toFixed(2),
-            returnPercent: yieldPct.toString(),
-          });
+          addRealEstate(investmentData);
         }
 
         onClose();
@@ -669,7 +847,6 @@ const RealEstateForm = React.forwardRef(
             </Stack>
           </AccordionDetails>
         </Accordion>
-        {/* --- END NEW/MODIFIED --- */}
         <Stack
           spacing={1}
           sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}

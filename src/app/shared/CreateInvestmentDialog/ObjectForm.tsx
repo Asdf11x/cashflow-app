@@ -82,12 +82,13 @@ const ObjectForm = React.forwardRef(
           }));
         } else {
           // Create new
-          useInvestStore.getState().addObjectRaw({
+          useInvestStore.getState().addObject({
             id: `obj_${Date.now()}`,
             name: trimmedName,
             kind: 'OBJECT',
             purchasePrice: purchasePriceD.toFixed(2),
             netGainMonthly: monthlyGainD.toFixed(2),
+            costMonthly: '0',
             currency: oCurrency,
             totalPrice: purchasePriceD.toFixed(2),
             netGainYearly: annualGainD.toFixed(2),

@@ -1,3 +1,4 @@
+// src/components/InvestmentsList.tsx
 import * as React from 'react';
 import {
   Paper,
@@ -20,6 +21,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { fmtMoney, fmtNumberTrim } from '../../core/domain/calc';
 import CreateInvestmentDialog from '../shared/CreateInvestmentDialog/CreateInvestmentDialog.tsx';
+import type { ObjectInvestment, RealEstateInvestment } from '../../core/domain/types.ts';
 
 type Row = {
   id: string;
@@ -50,7 +52,7 @@ export default function InvestmentsList() {
     [objects, realEstates],
   );
   const [undoCtx, setUndoCtx] = React.useState<{
-    row: Row;
+    item: ObjectInvestment | RealEstateInvestment;
     subsetIndex: number; // index within its own collection at delete time
   } | null>(null);
 
@@ -68,7 +70,9 @@ export default function InvestmentsList() {
       ...realEstates.map((r) => ({
         id: r.id,
         name: r.name,
-        purchasePrice: fmtMoney(r.purchasePrice),
+        // --- FIX: Use totalPrice for Real Estate to show the grand total ---
+        purchasePrice: fmtMoney(r.totalPrice),
+        // --------------------------------------------------------------------
         netGainMonthly: fmtMoney(r.netGainMonthly),
         yieldPctYearly: fmtNumberTrim(r.returnPercent),
         kind: 'REAL_ESTATE' as const,
@@ -81,6 +85,12 @@ export default function InvestmentsList() {
   const handleDelete = (row: Row, visibleIndex: number) => {
     // compute the index within the *same* subset (OBJECT or REAL_ESTATE) at delete time
     const subsetIndex = rows.slice(0, visibleIndex).filter((r) => r.kind === row.kind).length;
+    const originalItem =
+      row.kind === 'OBJECT'
+        ? objects.find((o) => o.id === row.id)
+        : realEstates.find((r) => r.id === row.id);
+
+    if (!originalItem) return; // Should not happen
 
     if (row.kind === 'OBJECT') {
       removeObject(row.id);
@@ -88,47 +98,34 @@ export default function InvestmentsList() {
       removeRealEstate(row.id);
     }
 
-    setUndoCtx({ row, subsetIndex });
+    setUndoCtx({ item: originalItem, subsetIndex });
     setSnack({ open: true, msg: 'Investment gelöscht' });
   };
 
   // undo reinserts into the proper collection at the original subset index
   const handleUndo = () => {
     if (!undoCtx) return;
-    const { row, subsetIndex } = undoCtx;
+    const { item, subsetIndex } = undoCtx;
 
     useInvestStore.setState((s) => {
-      if (row.kind === 'OBJECT') {
+      if (item.kind === 'OBJECT') {
         const before = s.objects.slice(0, subsetIndex);
         const after = s.objects.slice(subsetIndex);
         return {
-          objects: [
-            ...before,
-            {
-              ...row,
-              // if your store keeps additional fields, spread them here or
-              // reconstruct as needed
-            } as any,
-            ...after,
-          ],
+          objects: [...before, item, ...after],
         };
       } else {
         const before = s.realEstates.slice(0, subsetIndex);
         const after = s.realEstates.slice(subsetIndex);
         return {
-          realEstates: [
-            ...before,
-            {
-              ...row,
-            } as any,
-            ...after,
-          ],
+          realEstates: [...before, item, ...after],
         };
       }
     });
 
     setUndoCtx(null);
-    setSnack({ open: true, msg: 'Rückgängig gemacht' });
+    setSnack({ open: false, msg: '' }); // close old snack before showing new
+    setTimeout(() => setSnack({ open: true, msg: 'Rückgängig gemacht' }), 100);
   };
 
   return (
@@ -138,8 +135,8 @@ export default function InvestmentsList() {
           <TableHead>
             <TableRow>
               <TableCell width={100}>Aktionen</TableCell>
-              <TableCell align="right">Name</TableCell>
-              <TableCell align="right">Kaufpreis</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell align="right">Gesamtpreis</TableCell>
               <TableCell align="right">Monatl. Gewinn</TableCell>
               <TableCell align="right">Rendite p.a.</TableCell>
             </TableRow>
@@ -165,7 +162,7 @@ export default function InvestmentsList() {
                     </Tooltip>
                   </Box>
                 </TableCell>
-                <TableCell align="right">{r.name}</TableCell>
+                <TableCell>{r.name}</TableCell>
                 <TableCell align="right">{r.purchasePrice}</TableCell>
                 <TableCell align="right">{r.netGainMonthly}</TableCell>
                 <TableCell align="right">{r.yieldPctYearly} %</TableCell>
@@ -212,8 +209,11 @@ export default function InvestmentsList() {
       )}
       <Snackbar
         open={snack.open}
-        autoHideDuration={3000}
-        onClose={() => setSnack({ open: false, msg: '' })}
+        autoHideDuration={4000}
+        onClose={() => {
+          setSnack({ open: false, msg: '' });
+          setUndoCtx(null); // Clear undo context if snackbar closes
+        }}
         message={snack.msg}
         action={
           undoCtx ? (

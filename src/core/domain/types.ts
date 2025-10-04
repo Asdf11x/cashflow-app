@@ -5,6 +5,7 @@ export type InvestmentKind = 'REAL_ESTATE' | 'STOCK' | 'OBJECT';
 export interface BaseInvestment {
   id: string;
   name: string;
+  purchasePrice: Money;
   currency: string;
   kind: InvestmentKind;
 
@@ -16,13 +17,11 @@ export interface BaseInvestment {
 
 export interface ObjectInvestment extends BaseInvestment {
   kind: 'OBJECT';
-  purchasePrice: Money;
   costMonthly: Money;
 }
 
 export interface RealEstateInvestment extends BaseInvestment {
   kind: 'REAL_ESTATE';
-  purchasePrice: Money;
   details: RealEstateInvestmentDetails;
   purchaseCosts: PurchasePriceCosts;
   additionalPurchaseCosts: AdditionalPurchasePriceCosts;
