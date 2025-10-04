@@ -76,36 +76,36 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1.5, flexGrow: 1 }}>
-      <Checkbox checked={enabled} onChange={(e) => onItemChange({ enabled: e.target.checked })} />
-      <TextField
-        label={label}
-        value={value}
-        onChange={(e) => onItemChange({ value: sanitizeDecimal(e.target.value) })}
-        disabled={!enabled}
-        type="text"
-        inputMode="decimal"
-        fullWidth
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="body2" color={enabled ? 'text.primary' : 'text.disabled'}>
-                  {isPercent ? '%' : currency}
-                </Typography>
-                {isPercent && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: { xs: 'none', sm: 'block' } }}
-                  >
-                    (= {fmtMoney(absoluteAmount.toString())})
+        <Checkbox checked={enabled} onChange={(e) => onItemChange({ enabled: e.target.checked })} />
+        <TextField
+          label={label}
+          value={value}
+          onChange={(e) => onItemChange({ value: sanitizeDecimal(e.target.value) })}
+          disabled={!enabled}
+          type="text"
+          inputMode="decimal"
+          fullWidth
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="body2" color={enabled ? 'text.primary' : 'text.disabled'}>
+                    {isPercent ? '%' : currency}
                   </Typography>
-                )}
-              </Stack>
-            </InputAdornment>
-          ),
-        }}
-      />
+                  {isPercent && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: { xs: 'none', sm: 'block' } }}
+                    >
+                      (= {fmtMoney(absoluteAmount.toString())})
+                    </Typography>
+                  )}
+                </Stack>
+              </InputAdornment>
+            ),
+          }}
+        />
       </Box>
       <ToggleButtonGroup
         value={mode}

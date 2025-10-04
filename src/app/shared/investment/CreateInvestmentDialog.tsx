@@ -8,7 +8,6 @@ import {
   Tabs,
   Tab,
   useTheme,
-  useMediaQuery,
 } from '@mui/material';
 import RealEstateForm from './RealEstateForm';
 import ObjectForm from './ObjectForm';
@@ -25,7 +24,6 @@ export default function CreateInvestmentDialog({
   const [tab, setTab] = React.useState<'REAL_ESTATE' | 'OBJECT'>(editItem?.kind || 'REAL_ESTATE');
   const formRef = React.useRef<{ submit: () => void; isValid: () => boolean }>(null);
   const theme = useTheme();
-  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [isValid, setIsValid] = React.useState(false);
   const handleTabChange = (_: any, v: 'REAL_ESTATE' | 'OBJECT') => {
     if (!editItem) {
@@ -49,7 +47,21 @@ export default function CreateInvestmentDialog({
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm" fullScreen={fullScreen}>
+    <Dialog
+      open
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      sx={{
+        [theme.breakpoints.down('sm')]: {
+          '& .MuiDialog-paper': {
+            margin: 0,
+            maxHeight: '100%',
+            borderRadius: 0,
+          },
+        },
+      }}
+    >
       <DialogTitle>{editItem ? 'investment bearbeiten' : 'investment hinzufügen'}</DialogTitle>
       <Tabs
         value={tab}

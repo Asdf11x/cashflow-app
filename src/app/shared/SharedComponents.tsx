@@ -51,19 +51,15 @@ interface PriceInputProps {
   helperText: string;
 }
 
-export function PriceInput({
-  label,
-  value,
-  onChange,
-  onBlur, // Added onBlur
-  error,
-  helperText,
-}: PriceInputProps) {
+export function PriceInput({ label, value, onChange, onBlur, error, helperText }: PriceInputProps) {
   return (
     <TextField
       label={label}
       type="text"
-      inputMode="decimal"
+      inputProps={{
+        inputMode: 'decimal',
+        pattern: '[0-9]*[.,]?[0-9]*',
+      }}
       value={value}
       onChange={onChange}
       onBlur={onBlur} // Added onBlur
