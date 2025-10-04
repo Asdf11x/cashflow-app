@@ -51,7 +51,10 @@ export default function PercentField({
       onBlur={handleBlur}
       // text instead of number → better selection/cursor/wheel behavior
       type="text"
-      inputMode="decimal"
+      inputProps={{
+        inputMode: 'decimal',
+        pattern: '[0-9]*[.,]?[0-9]*',
+      }}
       // select all on focus for fast overwrite
       onFocus={(e) => e.target.select()}
       disabled={disabled}

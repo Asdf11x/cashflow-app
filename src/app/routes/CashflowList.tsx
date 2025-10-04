@@ -12,6 +12,10 @@ import {
   Tooltip,
   Snackbar,
   Button,
+  useMediaQuery,
+  useTheme,
+  Box,
+  Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -23,12 +27,13 @@ import CashflowCreateDialog from '../shared/CashflowCreateDialog';
 import type { Cashflow } from '../../core/state/useCashflowStore';
 
 export default function CashflowList() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const cashflows = useCashflowStore((s) => s.cashflows);
   const removeCashflow = useCashflowStore((s) => s.removeCashflow);
-  // --- FIX 1: Select state slices individually to prevent infinite loops ---
   const objects = useInvestStore((s) => s.objects);
   const realEstates = useInvestStore((s) => s.realEstates);
-  // --------------------------------------------------------------------------
   const credits = useCreditStore((s) => s.credits);
 
   const allInvestments = React.useMemo(() => [...objects, ...realEstates], [objects, realEstates]);
@@ -63,12 +68,104 @@ export default function CashflowList() {
     setTimeout(() => setSnack({ open: true, msg: 'Rückgängig gemacht' }), 100);
   };
 
+  // Mobile card view
+  if (isMobile) {
+    return (
+      <>
+        <Box sx={{ pb: 10 }}>
+          {cashflows.map((cf) => (
+            <Paper key={cf.id} sx={{ p: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  mb: 1,
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  {cf.name}
+                </Typography>
+                <IconButton color="error" size="small" onClick={() => handleDelete(cf.id)}>
+                  <DeleteOutlineIcon />
+                </IconButton>
+              </Box>
+              <Box sx={{ display: 'grid', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Cashflow/Monat:
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    sx={{
+                      color: cf.cashflowMonthly.startsWith('-') ? 'error.main' : 'success.main',
+                    }}
+                  >
+                    {fmtMoney(cf.cashflowMonthly)}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Investment:
+                  </Typography>
+                  <Typography variant="body2">
+                    {nameById(allInvestments, cf.investmentId)}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography color="text.secondary" variant="body2">
+                    Kredit:
+                  </Typography>
+                  <Typography variant="body2">{nameById(credits, cf.creditId)}</Typography>
+                </Box>
+              </Box>
+            </Paper>
+          ))}
+          {cashflows.length === 0 && (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                Noch keine Cashflows. Klicke unten rechts auf „+".
+              </Typography>
+            </Paper>
+          )}
+        </Box>
+
+        <Fab
+          color="primary"
+          sx={{ position: 'fixed', right: 24, bottom: 24 }}
+          onClick={() => setOpenAdd(true)}
+        >
+          <AddIcon />
+        </Fab>
+
+        {openAdd && <CashflowCreateDialog onClose={() => setOpenAdd(false)} />}
+
+        <Snackbar
+          open={snack.open}
+          autoHideDuration={4000}
+          onClose={() => {
+            setSnack({ open: false, msg: '' });
+            setUndoCtx(null);
+          }}
+          message={snack.msg}
+          action={
+            undoCtx ? (
+              <Button color="inherit" size="small" onClick={handleUndo}>
+                Rückgängig
+              </Button>
+            ) : null
+          }
+        />
+      </>
+    );
+  }
+
+  // Desktop table view
   return (
     <>
-      {/* --- FIX 2: Correct the component prop typo --- */}
       <TableContainer component={Paper} sx={{ width: '100%' }}>
-        {/* ------------------------------------------- */}
-        <Table size="medium" sx={{ minWidth: 760 }}>
+        <Table size="medium">
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>

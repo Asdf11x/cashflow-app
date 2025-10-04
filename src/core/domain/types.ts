@@ -1,6 +1,6 @@
 export type Money = string; // decimal string, computed with decimal.js
 
-export type InvestmentKind = 'REAL_ESTATE' | 'STOCK' | 'OBJECT';
+export type InvestmentKind = 'REAL_ESTATE' | 'STOCK' | 'OBJECT' | 'FIXED_TERM_DEPOSIT';
 
 export interface BaseInvestment {
   id: string;
@@ -18,6 +18,18 @@ export interface BaseInvestment {
 export interface ObjectInvestment extends BaseInvestment {
   kind: 'OBJECT';
   costMonthly: Money;
+}
+
+export interface DepositInvestment extends BaseInvestment {
+  kind: 'FIXED_TERM_DEPOSIT';
+  interestRate: number;
+  termMonths: number;
+  runningCosts: RunningCostsDeposit;
+}
+
+export interface RunningCostsDeposit {
+  incomeTax: Money;
+  taxAllowence: Money;
 }
 
 export interface RealEstateInvestment extends BaseInvestment {

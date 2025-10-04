@@ -11,13 +11,18 @@
 }
 
 html,
-body,
+body {
+  margin: 0;
+  padding: 0;
+  /* Remove height: 100% to allow natural scrolling */
+}
+
 #root {
-  height: 100%;
+  /* Remove height: 100% - let it grow naturally */
+  min-height: 100vh;
 }
 
 body {
-  margin: 0;
   background: var(--bg);
   color: var(--ink);
   font-family:
@@ -105,9 +110,9 @@ body {
 .sheet {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: flex-end;
+  z-index: 1300; /* Above most content */
 }
 
 .sheet__panel {
@@ -119,6 +124,8 @@ body {
   padding: 16px;
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .grid {
@@ -137,6 +144,7 @@ body {
   border: 1px solid #c7d2fe;
   border-radius: 10px;
   outline: none;
+  font-size: 16px; /* Prevents zoom on iOS */
 }
 
 .row {
