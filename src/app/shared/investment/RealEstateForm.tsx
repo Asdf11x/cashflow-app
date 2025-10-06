@@ -13,6 +13,7 @@ import {
   AccordionDetails,
   ToggleButtonGroup,
   ToggleButton,
+  type TextFieldProps,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { D, normalize, sanitizeDecimal, cfgToPctStr, pctToFrac } from './formHelpers';
@@ -28,6 +29,7 @@ import type {
   AdditionalPurchasePriceCosts,
   RunningCostsRent,
   AdditionalRunningCostsRent,
+  RealEstateInvestmentDetails,
 } from '../../../core/domain/types.ts';
 
 interface SplitCostItemState {
@@ -96,11 +98,7 @@ function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRow
                     {isPercent ? '%' : currency}
                   </Typography>
                   {isPercent && (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: { xs: 'none', sm: 'block' } }}
-                    >
+                    <Typography variant="caption" color="text.secondary">
                       (= {fmtMoney(absoluteAmount.toString())})
                     </Typography>
                   )}
@@ -147,7 +145,6 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
     let nextValue2 = '0';
 
     if (newMode === 'percent') {
-      // from currency to percent
       nextValue1 = baseAmount.gt(0)
         ? D(normalize(value1)).div(baseAmount).mul(100).toDP(2).toString()
         : '0';
@@ -155,7 +152,6 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
         ? D(normalize(value2)).div(baseAmount).mul(100).toDP(2).toString()
         : '0';
     } else {
-      // from percent to currency
       nextValue1 = baseAmount.mul(pctToFrac(value1)).toDP(0).toString();
       nextValue2 = baseAmount.mul(pctToFrac(value2)).toDP(0).toString();
     }
@@ -243,8 +239,8 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
           alignItems="center"
           sx={{
             ml: { sm: 1.5 },
-            mt: { xs: 2, sm: 0 }, // Add margin top on mobile
-            width: { xs: '100%', sm: 'auto' }, // Take full width on mobile
+            mt: { xs: 2, sm: 0 },
+            width: { xs: '100%', sm: 'auto' },
             minWidth: { sm: '80px' },
           }}
         >
@@ -260,7 +256,7 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
             <ToggleButton value="percent">%</ToggleButton>
           </ToggleButtonGroup>
           <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-            netto: {fmtMoney(absoluteNet.toString())}
+            netto: {fmtMoney(absoluteNet.toString())} {currency}
           </Typography>
         </Stack>
       </Stack>
@@ -312,16 +308,29 @@ function CostSectionAccordion({
   );
 }
 
-function DetailsAccordion() {
+function DetailInput(props: TextFieldProps) {
+  return <TextField variant="outlined" size="small" {...props} />;
+}
+
+interface DetailsAccordionProps {
+  linkValue: string;
+  onLinkChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+function DetailsAccordion({ linkValue, onLinkChange }: DetailsAccordionProps) {
   return (
     <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />} disabled={true}>
+      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography fontWeight={700}>Objektdetails (optional)</Typography>
       </AccordionSummary>
       <AccordionDetails>
-        <Typography color="text.secondary">
-          Hier können Details wie Wohnfläche, Grundstücksgröße etc. erfasst werden.
-        </Typography>
+        <DetailInput
+          name="link"
+          label="Link zur Anzeige"
+          value={linkValue}
+          onChange={onLinkChange}
+          fullWidth
+        />
       </AccordionDetails>
     </Accordion>
   );
@@ -344,12 +353,14 @@ const RealEstateForm = React.forwardRef(
     const [rPurchasePrice, setRPurchasePrice] = React.useState('100000');
     const [rCurrency, setRCurrency] = React.useState('€');
     const [rMonthlyColdRent, setRMonthlyColdRent] = React.useState('1000');
+    const [rDetailsLink, setRDetailsLink] = React.useState('');
+
     const [purchaseCosts, setPurchaseCosts] = React.useState<CostState>({
       brokerCommission: {
         enabled: true,
         value: cfgToPctStr(cfg.purchaseCosts.basicCosts.brokerCommission.rateOfPurchasePrice),
         mode: 'percent',
-        allowModeChange: false,
+        allowModeChange: true,
         label: 'Maklerprovision',
       },
       propertyTransferTax: {
@@ -479,7 +490,10 @@ const RealEstateForm = React.forwardRef(
       setRPurchasePrice(D(existing.purchasePrice).toFixed(0));
       setRMonthlyColdRent(D(existing.monthlyColdRent).toFixed(0));
 
-      // --- FIX: Correctly restore purchase costs state ---
+      if (existing.details) {
+        setRDetailsLink(existing.link ?? '');
+      }
+
       const pcData = existing.purchaseCosts;
       setPurchaseCosts((prev) => ({
         ...prev,
@@ -492,7 +506,6 @@ const RealEstateForm = React.forwardRef(
         landRegistryFees: { ...prev.landRegistryFees, enabled: D(pcData.landRegistryFees).gt(0) },
       }));
 
-      // --- FIX: Correctly restore additional purchase costs state ---
       const acData = existing.additionalPurchaseCosts;
       setAdditionalCosts((prev) => {
         const newState = { ...prev };
@@ -518,7 +531,6 @@ const RealEstateForm = React.forwardRef(
         return newState;
       });
 
-      // --- FIX: Correctly restore tax deductions state ---
       const taxData = existing.runningCostsRent;
       setTaxDeductions((prev) => ({
         ...prev,
@@ -539,19 +551,24 @@ const RealEstateForm = React.forwardRef(
         },
       }));
 
-      const houseFeeValue = D(existing.additionalRunningCostsRent.houseFee);
-      if (houseFeeValue.gt(0)) {
+      const arcr = existing.additionalRunningCostsRent;
+      const houseFeeTotal = D(arcr.houseFeeTotal ?? '0');
+      const houseFeeApportionable = D(arcr.houseFeeApportionable ?? '0');
+      const houseFeeNet = D(arcr.houseFee);
+
+      if (houseFeeTotal.gt(0) || houseFeeApportionable.gt(0) || houseFeeNet.gt(0)) {
         setRunningCostsSplit((prev) => ({
           ...prev,
           houseFee: {
             ...prev.houseFee,
             enabled: true,
-            value1: houseFeeValue.toFixed(0),
-            value2: '0', // Note: apportionable part is not stored, resets to 0
+            value1: houseFeeTotal.gt(0) ? houseFeeTotal.toFixed(0) : houseFeeNet.toFixed(0),
+            value2: houseFeeApportionable.toFixed(0),
             mode: 'currency',
           },
         }));
       }
+
       const otherRunningValue = D(existing.additionalRunningCostsRent.other);
       if (otherRunningValue.gt(0)) {
         setOtherRunningCosts((prev) => ({
@@ -747,26 +764,42 @@ const RealEstateForm = React.forwardRef(
         };
 
         const houseFeeItem = runningCostsSplit.houseFee;
-        const houseFeeNet = houseFeeItem.enabled
-          ? (houseFeeItem.mode === 'percent'
-              ? rMonthlyColdRentD.mul(pctToFrac(houseFeeItem.value1))
-              : D(normalize(houseFeeItem.value1))
-            ).sub(
-              houseFeeItem.mode === 'percent'
-                ? rMonthlyColdRentD.mul(pctToFrac(houseFeeItem.value2))
-                : D(normalize(houseFeeItem.value2)),
-            )
+        const houseFeeVal1 = houseFeeItem.enabled
+          ? houseFeeItem.mode === 'percent'
+            ? rMonthlyColdRentD.mul(pctToFrac(houseFeeItem.value1))
+            : D(normalize(houseFeeItem.value1))
           : D(0);
+
+        const houseFeeVal2 = houseFeeItem.enabled
+          ? houseFeeItem.mode === 'percent'
+            ? rMonthlyColdRentD.mul(pctToFrac(houseFeeItem.value2))
+            : D(normalize(houseFeeItem.value2))
+          : D(0);
+
+        const houseFeeNet = houseFeeVal1.sub(houseFeeVal2);
 
         const additionalRunningCostsData: AdditionalRunningCostsRent = {
           houseFee: houseFeeNet.toFixed(2),
+          houseFeeTotal: houseFeeVal1.toFixed(2),
+          houseFeeApportionable: houseFeeVal2.toFixed(2),
           other: otherRunningCostsTotalMonthly.toFixed(2),
           total: runningCostsTotalMonthly.toFixed(2),
+        };
+
+        const detailsData: RealEstateInvestmentDetails = {
+          address: '',
+          propertyType: '',
+          numberOfFloors: 0,
+          livingAreaSqm: 0,
+          usableAreaSqm: 0,
+          landAreaSqm: 0,
+          rooms: 0,
         };
 
         const investmentData: RealEstateInvestment = {
           id: editId || `re_${Date.now()}`,
           name: trimmedName,
+          link: rDetailsLink,
           kind: 'REAL_ESTATE',
           currency: rCurrency,
           purchasePrice: rPurchasePriceD.toFixed(2),
@@ -781,16 +814,7 @@ const RealEstateForm = React.forwardRef(
           runningCostsRent: runningCostsRentData,
           additionalRunningCostsRent: additionalRunningCostsData,
           totalRunningCostsAnnually: runningCostsTotalAnnual.toFixed(2),
-          details: {
-            address: '',
-            landAreaSqm: 0,
-            link: '',
-            livingAreaSqm: 0,
-            numberOfFloors: 0,
-            rooms: 0,
-            type: '',
-            usableAreaSqm: 0,
-          },
+          details: detailsData,
         };
 
         if (editId) {
@@ -827,7 +851,10 @@ const RealEstateForm = React.forwardRef(
           />
           <CurrencySelect value={rCurrency} onChange={(e) => setRCurrency(e.target.value)} />
         </Box>
-        <DetailsAccordion />
+        <DetailsAccordion
+          linkValue={rDetailsLink}
+          onLinkChange={(e) => setRDetailsLink(e.target.value)}
+        />
         <CostSectionAccordion
           title="Kaufnebenkosten"
           costs={purchaseCosts}
