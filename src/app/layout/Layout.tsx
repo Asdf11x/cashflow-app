@@ -22,15 +22,14 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 
 import KofiButton from '../components/KofiButton';
-// import Logo from '../components/Logo'; // Your custom SVG logo
 
 const drawerWidth = 260;
 
 const NAV = [
   { to: '/', text: 'Investments', icon: <AccountTreeIcon /> },
-  { to: '/credits', text: 'Credits', icon: <CreditScoreIcon /> },
-  { to: '/cashflow', text: 'Cashflow', icon: <InsightsIcon /> },
-  { to: '/options', text: 'Options', icon: <SettingsIcon /> },
+  { to: '/credits', text: 'Kredite', icon: <CreditScoreIcon /> },
+  { to: '/cashflow', text: 'Abschätzung', icon: <InsightsIcon /> },
+  { to: '/options', text: 'Optionen', icon: <SettingsIcon /> },
 ];
 
 export default function Layout() {
@@ -40,15 +39,18 @@ export default function Layout() {
   const nav = useNavigate();
   const loc = useLocation();
 
+  // --- 1. Find the current page's title ---
+  const currentPage = NAV.find((item) =>
+    item.to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(item.to),
+  );
+  const pageTitle = currentPage ? currentPage.text : 'Menu'; // Fallback title
+
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* This Box contains the main navigation and logo */}
       <Box>
-        {/* --- 2. Use your Logo and a title inside the AppBar's Toolbar space --- */}
         <Toolbar>
-          {/*<Logo sx={{ mr: 1, width: 32, height: 32, color: 'primary.main' }} />*/}
           <Typography variant="h6" fontWeight={800}>
-            cashflow-app
+            Nearly. Estimation.
           </Typography>
         </Toolbar>
         <Divider />
@@ -73,7 +75,6 @@ export default function Layout() {
         </List>
       </Box>
 
-      {/* This Box contains the Ko-fi button and is pushed to the bottom */}
       <Box sx={{ p: 2, mt: 'auto' }}>
         <KofiButton id="cashy11" label="Support Me on Ko-fi" />
       </Box>
@@ -89,7 +90,6 @@ export default function Layout() {
         bgcolor: 'background.default',
       }}
     >
-      {/* --- 3. The AppBar is now CLEANER and ONLY for mobile/top bar --- */}
       <AppBar color="inherit" position="sticky" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Toolbar>
           {!isDesktop && (
@@ -97,9 +97,9 @@ export default function Layout() {
               <MenuIcon />
             </IconButton>
           )}
-          {/* This title is now only visible on mobile, as the drawer has its own */}
+          {/* --- 2. Display the dynamic page title --- */}
           <Typography variant="h6" fontWeight={700} sx={{ display: { lg: 'none' } }}>
-            cashflow-app
+            {pageTitle}
           </Typography>
         </Toolbar>
       </AppBar>

@@ -474,56 +474,70 @@ const RealEstateForm = React.forwardRef(
       const existing = realEstates.find((r) => r.id === editId);
       if (!existing) return;
 
-      const reconstructCostState = (
-        initialState: CostState,
-        storedData: Record<string, string>,
-      ): CostState => {
-        const newState = { ...initialState };
-        for (const key in storedData) {
-          if (key in newState) {
-            const value = D(storedData[key]);
-            if (value.gt(0)) {
-              newState[key] = {
-                ...newState[key],
-                enabled: true,
-                value: value.toFixed(0),
-                mode: 'currency',
-              };
-            }
-          }
-        }
-        return newState;
-      };
-
       setRName(existing.name);
       setRCurrency(existing.currency);
       setRPurchasePrice(D(existing.purchasePrice).toFixed(0));
       setRMonthlyColdRent(D(existing.monthlyColdRent).toFixed(0));
 
-      setPurchaseCosts(reconstructCostState(purchaseCosts, existing.purchaseCosts));
-      setAdditionalCosts(reconstructCostState(additionalCosts, existing.additionalPurchaseCosts));
+      // --- FIX: Correctly restore purchase costs state ---
+      const pcData = existing.purchaseCosts;
+      setPurchaseCosts((prev) => ({
+        ...prev,
+        brokerCommission: { ...prev.brokerCommission, enabled: D(pcData.brokerCommission).gt(0) },
+        propertyTransferTax: {
+          ...prev.propertyTransferTax,
+          enabled: D(pcData.propertyTransferTax).gt(0),
+        },
+        notaryFees: { ...prev.notaryFees, enabled: D(pcData.notaryFees).gt(0) },
+        landRegistryFees: { ...prev.landRegistryFees, enabled: D(pcData.landRegistryFees).gt(0) },
+      }));
 
+      // --- FIX: Correctly restore additional purchase costs state ---
+      const acData = existing.additionalPurchaseCosts;
+      setAdditionalCosts((prev) => {
+        const newState = { ...prev };
+        Object.keys(newState).forEach((key) => {
+          const storedValueRaw = acData[key as keyof typeof acData];
+          if (typeof storedValueRaw !== 'undefined' && key !== 'total') {
+            const storedValue = D(storedValueRaw);
+            if (storedValue.gt(0)) {
+              newState[key] = {
+                ...newState[key],
+                enabled: true,
+                value: storedValue.toFixed(0),
+                mode: 'currency',
+              };
+            } else {
+              newState[key] = {
+                ...newState[key],
+                enabled: false,
+              };
+            }
+          }
+        });
+        return newState;
+      });
+
+      // --- FIX: Correctly restore tax deductions state ---
       const taxData = existing.runningCostsRent;
-      setTaxDeductions({
-        ...taxDeductions,
-        incomeTax: { ...taxDeductions.incomeTax, enabled: D(taxData.incomeTax).gt(0) },
+      setTaxDeductions((prev) => ({
+        ...prev,
+        incomeTax: { ...prev.incomeTax, enabled: D(taxData.incomeTax).gt(0) },
         solidaritySurcharge: {
-          ...taxDeductions.solidaritySurcharge,
+          ...prev.solidaritySurcharge,
           enabled: D(taxData.solidaritySurcharge).gt(0),
         },
-        // --- FIX: Safely handle optional churchTax ---
         churchTax: {
-          ...taxDeductions.churchTax,
+          ...prev.churchTax,
           enabled: D(taxData.churchTax ?? '0').gt(0),
         },
-        // --- FIX: Safely handle optional otherDeductions ---
         otherDeductions: {
-          ...taxDeductions.otherDeductions,
+          ...prev.otherDeductions,
           enabled: D(taxData.otherDeductions ?? '0').gt(0),
           value: D(taxData.otherDeductions ?? '0').toFixed(0),
           mode: 'currency',
         },
-      });
+      }));
 
       const houseFeeValue = D(existing.additionalRunningCostsRent.houseFee);
       if (houseFeeValue.gt(0)) {
@@ -533,7 +547,7 @@ const RealEstateForm = React.forwardRef(
             ...prev.houseFee,
             enabled: true,
             value1: houseFeeValue.toFixed(0),
-            value2: '0',
+            value2: '0', // Note: apportionable part is not stored, resets to 0
             mode: 'currency',
           },
         }));

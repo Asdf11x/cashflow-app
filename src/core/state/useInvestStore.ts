@@ -24,7 +24,6 @@ export const useInvestStore = create<State & Actions>()(
       objects: [],
       realEstates: [],
 
-      // --- Object Actions ---
       addObject: (newObject) => set((s) => ({ objects: [...s.objects, newObject] })),
 
       updateObject: (updatedObject) =>
