@@ -3,7 +3,8 @@ import { Stack, TextField, Box, Divider, InputAdornment, Typography } from '@mui
 import { D, normalize, sanitizeDecimal } from './formHelpers';
 import { ResultRow, CurrencySelect, PriceInput } from '../SharedComponents.tsx';
 import { fmtMoney } from '../../../core/domain/calc';
-import { useInvestStore } from '../../../core/state/useInvestStore.ts'; // Assuming path is correct
+import { useInvestStore } from '../../../core/state/useInvestStore.ts';
+import { type ObjectInvestment } from '../../../core/domain/types.ts';
 
 const ObjectForm = React.forwardRef(
   (
@@ -18,11 +19,11 @@ const ObjectForm = React.forwardRef(
     },
     ref,
   ) => {
-    const existingObject = useInvestStore((s) =>
-      editId ? s.objects.find((o) => o.id === editId) : undefined,
-    );
+    const { addObject, updateObject, objects } = useInvestStore.getState();
+    const existingObject = editId ? objects.find((o) => o.id === editId) : undefined;
 
     const [oName, setOName] = React.useState(existingObject?.name || 'Objekt');
+    const [oLink, setOLink] = React.useState(existingObject?.link || '');
     const [oPurchasePrice, setOPurchasePrice] = React.useState(
       existingObject?.purchasePrice ? D(existingObject.purchasePrice).toFixed(0) : '10000',
     );
@@ -43,6 +44,7 @@ const ObjectForm = React.forwardRef(
 
     // Validation
     const trimmedName = oName.trim();
+    const trimmedLink = oLink.trim();
     const purchasePriceError = purchasePriceD.lte(0);
     const nameError = !trimmedName || existingNames.includes(trimmedName);
     const nameHelperText = !trimmedName
@@ -61,39 +63,24 @@ const ObjectForm = React.forwardRef(
           return;
         }
 
+        const investmentData: ObjectInvestment = {
+          id: editId || `obj_${Date.now()}`,
+          name: trimmedName,
+          link: trimmedLink,
+          kind: 'OBJECT',
+          purchasePrice: purchasePriceD.toFixed(2),
+          netGainMonthly: monthlyGainD.toFixed(2),
+          costMonthly: '0',
+          currency: oCurrency,
+          totalPrice: purchasePriceD.toFixed(2),
+          netGainYearly: annualGainD.toFixed(2),
+          returnPercent: yieldPct.toString(),
+        };
+
         if (editId) {
-          useInvestStore.setState((s) => ({
-            objects: s.objects.map((o) =>
-              o.id === editId
-                ? {
-                    ...o,
-                    name: trimmedName,
-                    kind: 'OBJECT',
-                    purchasePrice: purchasePriceD.toFixed(2),
-                    // monthlyGain: monthlyGainD.toFixed(2),
-                    netGainMonthly: monthlyGainD.toFixed(2),
-                    currency: oCurrency,
-                    totalPrice: purchasePriceD.toFixed(2),
-                    netGainYearly: annualGainD.toFixed(2),
-                    returnPercent: yieldPct.toString(),
-                  }
-                : o,
-            ),
-          }));
+          updateObject(investmentData);
         } else {
-          // Create new
-          useInvestStore.getState().addObject({
-            id: `obj_${Date.now()}`,
-            name: trimmedName,
-            kind: 'OBJECT',
-            purchasePrice: purchasePriceD.toFixed(2),
-            netGainMonthly: monthlyGainD.toFixed(2),
-            costMonthly: '0',
-            currency: oCurrency,
-            totalPrice: purchasePriceD.toFixed(2),
-            netGainYearly: annualGainD.toFixed(2),
-            returnPercent: yieldPct.toString(),
-          });
+          addObject(investmentData);
         }
 
         onClose();
@@ -112,6 +99,14 @@ const ObjectForm = React.forwardRef(
           helperText={isNameTouched ? nameHelperText : ' '}
           fullWidth
           required
+        />
+        {/* --- NEW: Link input field --- */}
+        <TextField
+          label="Link (optional)"
+          value={oLink}
+          onChange={(e) => setOLink(e.target.value)}
+          placeholder="https://beispiel.de/mein-objekt"
+          fullWidth
         />
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           <PriceInput
@@ -148,7 +143,10 @@ const ObjectForm = React.forwardRef(
           sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
         >
           <Typography variant="h6">Zusammenfassung</Typography>
-          <ResultRow label="Jährlicher Gewinn" value={fmtMoney(annualGainD.toString())} />
+          <ResultRow
+            label="Jährlicher Gewinn"
+            value={`${fmtMoney(annualGainD.toString())} ${oCurrency}`}
+          />
           <ResultRow label="Anfangsrendite p.a." value={`${yieldPct} %`} isBold />
         </Stack>
       </Stack>

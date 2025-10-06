@@ -5,6 +5,7 @@ export type InvestmentKind = 'REAL_ESTATE' | 'STOCK' | 'OBJECT' | 'FIXED_TERM_DE
 export interface BaseInvestment {
   id: string;
   name: string;
+  link: string;
   purchasePrice: Money;
   currency: string;
   kind: InvestmentKind;
@@ -47,9 +48,8 @@ export interface RealEstateInvestment extends BaseInvestment {
 }
 
 export interface RealEstateInvestmentDetails {
-  link: string;
   address: string;
-  type: string;
+  propertyType: string;
   numberOfFloors: number;
   livingAreaSqm: number;
   usableAreaSqm: number;
@@ -81,8 +81,11 @@ export interface RunningCostsRent {
   otherDeductions?: Money;
   total: Money;
 }
+
 export interface AdditionalRunningCostsRent {
-  houseFee: Money;
+  houseFee: Money; // This will continue to store the NET value
+  houseFeeTotal?: Money; // NEW: Stores the gross Hausgeld amount
+  houseFeeApportionable?: Money; // NEW: Stores the apportionable part
   other: Money;
   total: Money;
 }

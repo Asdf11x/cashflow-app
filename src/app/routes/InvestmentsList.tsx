@@ -17,6 +17,7 @@ import {
   useTheme,
   Typography,
   Chip,
+  Link, // --- NEW: Import Link component for clickable names ---
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -26,6 +27,7 @@ import { fmtMoney, fmtNumberTrim } from '../../core/domain/calc';
 import CreateInvestmentDialog from '../shared/investment/CreateInvestmentDialog.tsx';
 import type { ObjectInvestment, RealEstateInvestment } from '../../core/domain/types.ts';
 
+// --- UPDATED: Row type now includes link and currency ---
 type Row = {
   id: string;
   name: string;
@@ -33,6 +35,20 @@ type Row = {
   netGainMonthly: string;
   yieldPctYearly: string;
   kind: 'OBJECT' | 'REAL_ESTATE';
+  link?: string;
+  currency: string;
+};
+
+// --- NEW: Helper component to render name as a link if available ---
+const NameCell = ({ name, link }: { name: string; link?: string }) => {
+  if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
+    return (
+      <Link href={link} target="_blank" rel="noopener noreferrer" underline="hover">
+        {name}
+      </Link>
+    );
+  }
+  return <>{name}</>;
 };
 
 export default function InvestmentsList() {
@@ -67,18 +83,22 @@ export default function InvestmentsList() {
       ...objects.map((o) => ({
         id: o.id,
         name: o.name,
+        link: o.link,
         purchasePrice: fmtMoney(o.purchasePrice),
         netGainMonthly: fmtMoney(o.netGainMonthly),
         yieldPctYearly: fmtNumberTrim(o.returnPercent),
         kind: 'OBJECT' as const,
+        currency: o.currency,
       })),
       ...realEstates.map((r) => ({
         id: r.id,
         name: r.name,
+        link: r.link,
         purchasePrice: fmtMoney(r.totalPrice),
         netGainMonthly: fmtMoney(r.netGainMonthly),
         yieldPctYearly: fmtNumberTrim(r.returnPercent),
         kind: 'REAL_ESTATE' as const,
+        currency: r.currency,
       })),
     ],
     [objects, realEstates],
@@ -145,7 +165,8 @@ export default function InvestmentsList() {
               >
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {r.name}
+                    {/* --- UPDATED: Use NameCell component --- */}
+                    <NameCell name={r.name} link={r.link} />
                   </Typography>
                   <Chip
                     label={r.kind === 'OBJECT' ? 'Objekt' : 'Immobilie'}
@@ -172,7 +193,8 @@ export default function InvestmentsList() {
                     Gesamtpreis:
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
-                    {r.purchasePrice}
+                    {/* --- UPDATED: Added currency --- */}
+                    {r.purchasePrice} {r.currency}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -180,7 +202,8 @@ export default function InvestmentsList() {
                     Monatl. Gewinn:
                   </Typography>
                   <Typography variant="body2" fontWeight={600} color="success.main">
-                    {r.netGainMonthly}
+                    {/* --- UPDATED: Added currency --- */}
+                    {r.netGainMonthly} {r.currency}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -284,9 +307,17 @@ export default function InvestmentsList() {
                     </Tooltip>
                   </Box>
                 </TableCell>
-                <TableCell>{r.name}</TableCell>
-                <TableCell align="right">{r.purchasePrice}</TableCell>
-                <TableCell align="right">{r.netGainMonthly}</TableCell>
+                <TableCell>
+                  {/* --- UPDATED: Use NameCell component --- */}
+                  <NameCell name={r.name} link={r.link} />
+                </TableCell>
+                {/* --- UPDATED: Added currency --- */}
+                <TableCell align="right">
+                  {r.purchasePrice} {r.currency}
+                </TableCell>
+                <TableCell align="right">
+                  {r.netGainMonthly} {r.currency}
+                </TableCell>
                 <TableCell align="right">{r.yieldPctYearly} %</TableCell>
               </TableRow>
             ))}
