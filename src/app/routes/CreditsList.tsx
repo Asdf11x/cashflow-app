@@ -16,6 +16,7 @@ import {
   useTheme,
   Box,
   Typography,
+  TableSortLabel,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -24,6 +25,35 @@ import { useCreditStore } from '../../core/state/useCreditStore';
 import { fmtMoney } from '../../core/domain/calc';
 import CreditCreateDialog from '../shared/credit/CreditCreateDialog.tsx';
 import type { Credit } from '../../core/domain/types.ts';
+
+type Order = 'asc' | 'desc';
+
+// Define the structure for our table headers for type safety
+interface HeadCell {
+  id: keyof Credit;
+  label: string;
+  align?: 'left' | 'right' | 'center' | 'justify';
+}
+
+// Generic sorter functions
+function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
+  if (b[orderBy] < a[orderBy]) return -1;
+  if (b[orderBy] > a[orderBy]) return 1;
+  return 0;
+}
+
+function getComparator<T>(order: Order, orderBy: keyof T): (a: T, b: T) => number {
+  return order === 'desc'
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
+const headCells: readonly HeadCell[] = [
+  { id: 'name', label: 'Name' },
+  { id: 'principal', label: 'Kredithöhe', align: 'right' },
+  { id: 'totalMonthly', label: 'Monatliche Rate', align: 'right' },
+  { id: 'rateAnnualPct', label: 'Sollzins p.a.', align: 'right' },
+];
 
 export default function CreditsList() {
   const theme = useTheme();
@@ -39,8 +69,22 @@ export default function CreditsList() {
     msg: '',
   });
   const [undoCtx, setUndoCtx] = React.useState<{ item: Credit; index: number } | null>(null);
-
+  // Sorting State
+  const [order, setOrder] = React.useState<Order>('asc');
+  const [orderBy, setOrderBy] = React.useState<keyof Credit>('name');
   const existingNames = React.useMemo(() => credits.map((c) => c.name), [credits]);
+
+  const handleRequestSort = (property: keyof Credit) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  // Memoize the sorted rows
+  const rows = React.useMemo(
+    () => [...credits].sort(getComparator(order, orderBy)),
+    [credits, order, orderBy],
+  );
 
   const handleOpenEdit = (credit: Credit) => {
     setEditItem(credit);
@@ -174,14 +218,31 @@ export default function CreditsList() {
           <TableHead>
             <TableRow>
               <TableCell width={100}>Aktionen</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell align="right">Kredithöhe</TableCell>
-              <TableCell align="right">Monatliche Rate</TableCell>
-              <TableCell align="right">Sollzins p.a.</TableCell>
+              {headCells.map((headCell) => (
+                <TableCell
+                  key={headCell.id}
+                  align={headCell.align || 'left'}
+                  sortDirection={orderBy === headCell.id ? order : false}
+                >
+                  <TableSortLabel
+                    active={orderBy === headCell.id}
+                    direction={orderBy === headCell.id ? order : 'asc'}
+                    onClick={() => handleRequestSort(headCell.id)}
+                    sx={{
+                      flexDirection: 'row',
+                      justifyContent: headCell.align === 'right' ? 'flex-end' : 'flex-start',
+                      '&': { width: '100%' },
+                      '& .MuiTableSortLabel-icon': { marginLeft: 0.5 },
+                    }}
+                  >
+                    {headCell.label}
+                  </TableSortLabel>
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {credits.map((c) => (
+            {rows.map((c) => (
               <TableRow key={c.id} hover>
                 <TableCell>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -203,7 +264,7 @@ export default function CreditsList() {
                 <TableCell align="right">{c.rateAnnualPct} %</TableCell>
               </TableRow>
             ))}
-            {credits.length === 0 && (
+            {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} sx={{ textAlign: 'center', color: '#94a3b8', py: 3 }}>
                   Noch keine Kredite. Klicken Sie unten rechts auf „+", um einen zu erstellen.
@@ -221,7 +282,6 @@ export default function CreditsList() {
       >
         <AddIcon />
       </Fab>
-
       {(openAdd || editItem) && (
         <CreditCreateDialog
           onClose={handleCloseDialog}
@@ -229,7 +289,6 @@ export default function CreditsList() {
           existingNames={existingNames.filter((n) => n !== editItem?.name)}
         />
       )}
-
       <Snackbar
         open={snack.open}
         autoHideDuration={4000}

@@ -1,16 +1,15 @@
-// src/core/state/useCashflowStore.ts
 import { create } from 'zustand';
 import { useInvestStore } from './useInvestStore';
 import { useCreditStore } from './useCreditStore';
 import { computeCashflowMonthly } from '../domain/calc';
 import { persist } from 'zustand/middleware';
-import type { ObjectInvestment, RealEstateInvestment } from '../domain/types';
+import type { ObjectInvestment, RealEstateInvestment, Credit } from '../domain/types';
 
 export type Cashflow = {
   id: string;
   name: string;
   investmentId: string;
-  creditId: string;
+  creditId: string | null;
   cashflowMonthly: string;
 };
 
@@ -19,8 +18,17 @@ type State = {
 };
 
 type Actions = {
-  addCashflow: (name: string, investmentId: string, creditId: string) => void;
+  addCashflow: (name: string, investmentId: string, creditId: string | null) => void;
+  updateCashflow: (id: string, name: string, investmentId: string, creditId: string | null) => void;
   removeCashflow: (id: string) => void;
+};
+
+// The signature of this function remains the same
+const calculateCashflow = (
+  investment: ObjectInvestment | RealEstateInvestment,
+  credit: Credit | null,
+) => {
+  return computeCashflowMonthly(investment, credit).toFixed(2);
 };
 
 export const useCashflowStore = create<State & Actions>()(
@@ -29,38 +37,57 @@ export const useCashflowStore = create<State & Actions>()(
       cashflows: [],
 
       addCashflow: (name, investmentId, creditId) => {
-        // Get the current state from the other stores
         const { objects, realEstates } = useInvestStore.getState();
         const { credits } = useCreditStore.getState();
-
-        // Combine all investments into one list to search
         const allInvestments = [...objects, ...realEstates];
 
         const investment = allInvestments.find((i) => i.id === investmentId);
-        const credit = credits.find((c) => c.id === creditId);
+        // FIX: Use the nullish coalescing operator (??) to ensure that if `find`
+        // returns `undefined`, it's converted to `null`. This satisfies TypeScript.
+        const credit = credits.find((c) => c.id === creditId) ?? null;
 
-        // Only proceed if both the investment and credit are found
-        if (!investment || !credit) {
-          console.error('Could not create cashflow: Investment or Credit not found.');
+        if (!investment) {
+          console.error('Could not create cashflow: Investment not found.');
           return;
         }
-
-        // Perform the calculation
-        const cashflowMonthlyDecimal = computeCashflowMonthly(
-          investment as ObjectInvestment | RealEstateInvestment,
-          credit,
-        );
 
         const newCashflow: Cashflow = {
           id: `cf_${Date.now()}`,
           name,
           investmentId,
           creditId,
-          cashflowMonthly: cashflowMonthlyDecimal.toFixed(2),
+          cashflowMonthly: calculateCashflow(investment, credit),
         };
 
+        set((state) => ({ cashflows: [...state.cashflows, newCashflow] }));
+      },
+
+      updateCashflow: (id, name, investmentId, creditId) => {
+        const { objects, realEstates } = useInvestStore.getState();
+        const { credits } = useCreditStore.getState();
+        const allInvestments = [...objects, ...realEstates];
+
+        const investment = allInvestments.find((i) => i.id === investmentId);
+        // FIX: Apply the same logic here for type safety.
+        const credit = credits.find((c) => c.id === creditId) ?? null;
+
+        if (!investment) {
+          console.error('Could not update cashflow: Investment not found.');
+          return;
+        }
+
         set((state) => ({
-          cashflows: [...state.cashflows, newCashflow],
+          cashflows: state.cashflows.map((cf) =>
+            cf.id === id
+              ? {
+                  ...cf,
+                  name,
+                  investmentId,
+                  creditId,
+                  cashflowMonthly: calculateCashflow(investment, credit),
+                }
+              : cf,
+          ),
         }));
       },
 
