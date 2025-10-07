@@ -2,159 +2,196 @@ import * as React from 'react';
 import { Stack, TextField, Box, Divider, InputAdornment, Typography } from '@mui/material';
 import { D, normalize, sanitizeDecimal } from '../investment/formHelpers';
 import { ResultRow, CurrencySelect, PriceInput } from './../SharedComponents';
-import { creditInterestMonthly, creditInterestYearly, fmtMoney } from '../../../core/domain/calc';
+import { creditInterestMonthly, creditTotalMonthly, fmtMoney } from '../../../core/domain/calc';
 import { useCreditStore } from '../../../core/state/useCreditStore';
 import type { Credit } from '../../../core/domain/types';
 
-const CreditForm = React.forwardRef(({ onClose }: { onClose: () => void }, ref) => {
-  const addCredit = useCreditStore((s) => s.addCreditRaw); // Assuming you have/add this action
+const CreditForm = React.forwardRef(
+  (
+    {
+      onClose,
+      editId,
+      existingNames,
+    }: { onClose: () => void; editId?: string; existingNames: string[] },
+    ref,
+  ) => {
+    const { addCredit, updateCredit, credits } = useCreditStore.getState();
+    const existingCredit = editId ? credits.find((c) => c.id === editId) : undefined;
 
-  // Form State
-  const [cName, setCName] = React.useState('Immobilienkredit');
-  const [cPrincipal, setCPrincipal] = React.useState('200000');
-  const [cEquity, setCEquity] = React.useState('50000');
-  const [cRateAnnualPct, setCRateAnnualPct] = React.useState('3.5');
-  const [cAmortMonthly, setCAmortMonthly] = React.useState('600');
-  const [cCurrency, setCCurrency] = React.useState('€');
+    // Form State
+    const [cName, setCName] = React.useState(existingCredit?.name || 'Immobilienkredit');
+    const [cPrincipal, setCPrincipal] = React.useState(
+      existingCredit ? D(existingCredit.principal).toFixed(0) : '200000',
+    );
+    const [cRateAnnualPct, setCRateAnnualPct] = React.useState(
+      existingCredit?.rateAnnualPct || '3.5',
+    );
+    const [cAmortMonthly, setCAmortMonthly] = React.useState(
+      existingCredit ? D(existingCredit.amortMonthly).toFixed(0) : '600',
+    );
+    const [cTermMonths, setCTermMonths] = React.useState(
+      existingCredit?.termMonths ? String(existingCredit.termMonths) : '120',
+    );
+    const [cFixedRateYears, setCFixedRateYears] = React.useState(
+      existingCredit?.fixedRateYears ? String(existingCredit.fixedRateYears) : '10',
+    );
+    const [cSpecialRepayment, setCSpecialRepayment] = React.useState(
+      existingCredit?.specialRepaymentYearly
+        ? D(existingCredit.specialRepaymentYearly).toFixed(0)
+        : '0',
+    );
+    const [cCurrency, setCCurrency] = React.useState(existingCredit?.currency || '€');
 
-  // Touched State for Validation
-  const [isNameTouched, setIsNameTouched] = React.useState(false);
-  const [isPrincipalTouched, setIsPrincipalTouched] = React.useState(false);
+    // Touched State for Validation
+    const [isNameTouched, setIsNameTouched] = React.useState(false);
+    const [isPrincipalTouched, setIsPrincipalTouched] = React.useState(false);
 
-  // Calculations using Decimal.js
-  const principalD = D(normalize(cPrincipal));
-  const equityD = D(normalize(cEquity));
-  const rateD = D(normalize(cRateAnnualPct));
-  const amortD = D(normalize(cAmortMonthly));
+    // Calculations
+    const principalD = D(normalize(cPrincipal));
+    const rateD = D(normalize(cRateAnnualPct));
+    const amortD = D(normalize(cAmortMonthly));
 
-  const draftCredit: Credit = React.useMemo(
-    () => ({
-      id: 'draft',
-      name: cName,
-      principal: principalD.toFixed(2),
-      equity: equityD.toFixed(2),
-      rateAnnualPct: rateD.toString(),
-      amortMonthly: amortD.toFixed(2),
-      interestMonthly: '0',
-      interestYearly: '0',
-    }),
-    [cName, principalD, equityD, rateD, amortD],
-  );
-
-  const interestMonthlyD = D(creditInterestMonthly(draftCredit));
-  const interestYearlyD = D(creditInterestYearly(draftCredit));
-  const totalPaymentMonthlyD = interestMonthlyD.add(amortD);
-  const totalFinancingD = principalD.add(equityD);
-
-  // Validation
-  const trimmedName = cName.trim();
-  const nameError = !trimmedName;
-  const principalError = principalD.lte(0);
-
-  // Expose submit function via ref
-  React.useImperativeHandle(ref, () => ({
-    submit: () => {
-      setIsNameTouched(true);
-      setIsPrincipalTouched(true);
-
-      if (nameError || principalError) {
-        return;
-      }
-
-      addCredit({
-        id: `crd_${Date.now()}`,
-        name: trimmedName,
+    const draftCredit: Credit = React.useMemo(
+      () => ({
+        id: 'draft',
+        name: cName,
+        currency: cCurrency,
         principal: principalD.toFixed(2),
-        equity: equityD.toFixed(2),
         rateAnnualPct: rateD.toString(),
         amortMonthly: amortD.toFixed(2),
-        // interestMonthly: interestMonthlyD.toFixed(2),
-        // interestYearly: interestYearlyD.toFixed(2),
-      });
+        termMonths: parseInt(cTermMonths, 10) || 0,
+      }),
+      [cName, cCurrency, principalD, rateD, amortD, cTermMonths],
+    );
 
-      onClose();
-    },
-    isValid: () => !nameError && !principalError,
-  }));
+    const interestMonthlyD = D(creditInterestMonthly(draftCredit));
+    const totalPaymentMonthlyD = D(creditTotalMonthly(draftCredit));
 
-  return (
-    <Stack spacing={3} sx={{ mt: 1 }}>
-      <TextField
-        label="Name des Kredits"
-        value={cName}
-        onChange={(e) => setCName(e.target.value)}
-        onBlur={() => setIsNameTouched(true)}
-        error={isNameTouched && nameError}
-        helperText={isNameTouched && nameError ? 'Name darf nicht leer sein' : ' '}
-        fullWidth
-        required
-      />
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+    // Validation
+    const trimmedName = cName.trim();
+    const nameError = !trimmedName || existingNames.includes(trimmedName);
+    const principalError = principalD.lte(0);
+    const nameHelperText = !trimmedName
+      ? 'Name darf nicht leer sein'
+      : existingNames.includes(trimmedName)
+        ? 'Name bereits vergeben'
+        : '';
+
+    React.useImperativeHandle(ref, () => ({
+      submit: () => {
+        setIsNameTouched(true);
+        setIsPrincipalTouched(true);
+
+        if (nameError || principalError) {
+          return;
+        }
+
+        const creditData: Omit<Credit, 'id'> = {
+          name: trimmedName,
+          currency: cCurrency,
+          principal: principalD.toFixed(2),
+          rateAnnualPct: rateD.toString(),
+          amortMonthly: amortD.toFixed(2),
+          termMonths: parseInt(cTermMonths, 10) || 0,
+          fixedRateYears: parseInt(cFixedRateYears, 10) || undefined,
+          specialRepaymentYearly: D(normalize(cSpecialRepayment)).gt(0)
+            ? D(normalize(cSpecialRepayment)).toFixed(2)
+            : undefined,
+        };
+
+        if (editId) {
+          updateCredit({ id: editId, ...creditData });
+        } else {
+          addCredit(creditData);
+        }
+
+        onClose();
+      },
+      isValid: () => !nameError && !principalError,
+    }));
+
+    return (
+      <Stack spacing={3} sx={{ mt: 1 }}>
+        <TextField
+          label="Name des Kredits"
+          value={cName}
+          onChange={(e) => setCName(e.target.value)}
+          onBlur={() => setIsNameTouched(true)}
+          error={isNameTouched && nameError}
+          helperText={isNameTouched && nameHelperText}
+          fullWidth
+          required
+        />
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+          <PriceInput
+            label="Kreditsumme (Darlehen)"
+            value={cPrincipal}
+            onChange={(e) => setCPrincipal(sanitizeDecimal(e.target.value))}
+            onBlur={() => setIsPrincipalTouched(true)}
+            error={isPrincipalTouched && principalError}
+            helperText={isPrincipalTouched && principalError ? 'Kreditsumme muss > 0 sein' : ' '}
+          />
+          <CurrencySelect value={cCurrency} onChange={(e) => setCCurrency(e.target.value)} />
+        </Box>
+        <Divider />
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+          <TextField
+            label="Sollzinssatz p.a."
+            value={cRateAnnualPct}
+            onChange={(e) => setCRateAnnualPct(sanitizeDecimal(e.target.value))}
+            type="text"
+            inputProps={{ inputMode: 'decimal' }}
+            InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+          />
+          <TextField
+            label="Monatliche Tilgung"
+            value={cAmortMonthly}
+            onChange={(e) => setCAmortMonthly(sanitizeDecimal(e.target.value))}
+            type="text"
+            inputProps={{ inputMode: 'decimal' }}
+            InputProps={{
+              endAdornment: <InputAdornment position="end">{cCurrency}</InputAdornment>,
+            }}
+          />
+          <TextField
+            label="Gesamtlaufzeit (Monate)"
+            value={cTermMonths}
+            onChange={(e) => setCTermMonths(e.target.value)}
+            type="number"
+          />
+          <TextField
+            label="Zinsbindung (Jahre)"
+            value={cFixedRateYears}
+            onChange={(e) => setCFixedRateYears(e.target.value)}
+            type="number"
+          />
+        </Box>
         <PriceInput
-          label="Kreditsumme (Darlehen)"
-          value={cPrincipal}
-          onChange={(e) => setCPrincipal(sanitizeDecimal(e.target.value))}
-          onBlur={() => setIsPrincipalTouched(true)}
-          error={isPrincipalTouched && principalError}
-          helperText={isPrincipalTouched && principalError ? 'Kreditsumme muss > 0 sein' : ' '}
+          label="Sondertilgung (jährlich)"
+          value={cSpecialRepayment}
+          onChange={(e) => setCSpecialRepayment(sanitizeDecimal(e.target.value))}
+          helperText=" "
+          error={false}
         />
-        <CurrencySelect value={cCurrency} onChange={(e) => setCCurrency(e.target.value)} />
-      </Box>
-      <PriceInput
-        label="Eingesetztes Eigenkapital"
-        value={cEquity}
-        onChange={(e) => setCEquity(sanitizeDecimal(e.target.value))}
-        helperText=" "
-        error={false}
-      />
-      <Divider />
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-        <TextField
-          label="Sollzinssatz p.a."
-          value={cRateAnnualPct}
-          onChange={(e) => setCRateAnnualPct(sanitizeDecimal(e.target.value))}
-          type="text"
-          inputProps={{
-            inputMode: 'decimal',
-            pattern: '[0-9]*[.,]?[0-9]*',
-          }}
-          InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
-        />
-        <TextField
-          label="Monatliche Tilgung"
-          value={cAmortMonthly}
-          onChange={(e) => setCAmortMonthly(sanitizeDecimal(e.target.value))}
-          type="text"
-          inputProps={{
-            inputMode: 'decimal',
-            pattern: '[0-9]*[.,]?[0-9]*',
-          }}
-          InputProps={{
-            endAdornment: <InputAdornment position="end">{cCurrency}</InputAdornment>,
-          }}
-        />
-      </Box>
 
-      <Stack
-        spacing={1}
-        sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-      >
-        <Typography variant="h6">Zusammenfassung</Typography>
-        <ResultRow label="Gesamtfinanzierung" value={fmtMoney(totalFinancingD.toString())} isBold />
-        <Divider sx={{ my: 1 }} />
-        <ResultRow label="Monatliche Zinsen" value={fmtMoney(interestMonthlyD.toString())} />
-        <ResultRow
-          label="Monatliche Rate (Zins + Tilgung)"
-          value={fmtMoney(totalPaymentMonthlyD.toString())}
-          isBold
-        />
-        <ResultRow
-          label="Jährliche Zinslast (1. Jahr)"
-          value={fmtMoney(interestYearlyD.toString())}
-        />
+        <Stack
+          spacing={1}
+          sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+        >
+          <Typography variant="h6">Zusammenfassung</Typography>
+          <ResultRow
+            label="Monatliche Zinsen (1. Monat)"
+            value={`${fmtMoney(interestMonthlyD.toString())} ${cCurrency}`}
+          />
+          <ResultRow
+            label="Monatliche Rate (Zins + Tilgung)"
+            value={`${fmtMoney(totalPaymentMonthlyD.toString())} ${cCurrency}`}
+            isBold
+          />
+        </Stack>
       </Stack>
-    </Stack>
-  );
-});
+    );
+  },
+);
 
 export default CreditForm;

@@ -36,24 +36,35 @@ export const fmtNumberTrim = (v: string | number) => {
   }).format(num);
 };
 
-/* --- NEW: Credit math --- */
-// Zinsen auf (Kredithöhe - Eigenkapital)
+/* --- UPDATED: Credit math --- */
+
+/** Calculates the interest for the first month based on the total principal. */
 export function creditInterestMonthly(c: Credit): Money {
-  const debt = D(c.principal).minus(D(c.equity)); // Restschuld
-  const r = D(c.rateAnnualPct).div(100).div(12); // Monatszins
-  return debt.mul(r).toFixed(2);
+  const principal = D(c.principal);
+  const monthlyRate = D(c.rateAnnualPct).div(100).div(12); // Monthly interest rate
+  return principal.mul(monthlyRate).toFixed(2);
 }
+
+/** Calculates the total interest for the first year. */
 export function creditInterestYearly(c: Credit): Money {
+  // This is a simplification for display; a real amortization schedule would be more precise.
   return D(creditInterestMonthly(c)).mul(12).toFixed(2);
+}
+
+/** Calculates the total monthly payment (interest + amortization). */
+export function creditTotalMonthly(c: Credit): Money {
+  const interest = D(creditInterestMonthly(c));
+  const amortization = D(c.amortMonthly);
+  return interest.add(amortization).toFixed(2);
 }
 
 export function computeCashflowMonthly(
   investment: ObjectInvestment | RealEstateInvestment,
   credit: Credit,
 ): Decimal {
-  const iGain = new Decimal(investment.netGainMonthly ?? '0');
-  const cInterest = new Decimal(credit.interestMonthly ?? '0');
-  const cAmort = new Decimal(credit.amortMonthly ?? '0');
+  const investmentNetGain = new Decimal(investment.netGainMonthly ?? '0');
+  const creditTotalPayment = new Decimal(credit.totalMonthly ?? '0');
 
-  return iGain.sub(cInterest).sub(cAmort);
+  // Cashflow is the investment's net gain minus the total credit payment
+  return investmentNetGain.sub(creditTotalPayment);
 }
