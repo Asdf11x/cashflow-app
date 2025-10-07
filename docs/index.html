@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rendite Rechner – Potenziale vergleichen, smarter entscheiden</title>
+  <meta name="description" content="Rendite Rechner: Vergleiche schnell die potenzielle Rendite von Immobilien, Aktien & mehr – inkl. Kredit-/Finanzierungskosten. Keine Anlageberatung.">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="icon" href="https://i.imgur.com/KxFRLgC.png">
+  <link rel="apple-touch-icon" href="https://i.imgur.com/KxFRLgC.png">
+
+  <style>
+    :root {
+      --rr-primary: #0ea5e9;
+      --rr-primary-dark: #0284c7;
+      --rr-bg: #0b1220;
+      --rr-text: #e2e8f0;
+      --rr-accent: #22d3ee;
+      --shadow-soft: 0 20px 60px rgba(2,6,23,.25);
+    }
+
+    body {
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(14,165,233,.15), transparent 60%),
+                  radial-gradient(1000px 500px at 90% 10%, rgba(34,211,238,.12), transparent 60%),
+                  radial-gradient(1000px 600px at 50% 90%, rgba(34,197,94,.10), transparent 60%),
+                  linear-gradient(180deg, var(--rr-bg), #0a0f1a 30%, #0b1326 100%);
+      color: var(--rr-text);
+    }
+
+    .navbar { background: transparent !important; backdrop-filter: blur(10px); transition: background .25s ease, box-shadow .25s ease; box-shadow: none; }
+    .navbar.scrolled { background: rgba(15, 23, 42, .85) !important; box-shadow: 0 10px 30px rgba(2,6,23,.35); }
+
+    .btn-primary { background: var(--rr-primary); border-color: var(--rr-primary); font-weight:600; }
+    .btn-primary:hover { background: var(--rr-primary-dark); border-color: var(--rr-primary-dark); }
+
+    .icon-chip { display:inline-flex; align-items:center; gap:.5rem; padding:.4rem .7rem; border-radius:50rem; background:rgba(14,165,233,.12); border:1px solid rgba(14,165,233,.35); color:#e6f6ff; font-weight:700; box-shadow:0 6px 22px rgba(14,165,233,.25); letter-spacing:.02em; }
+
+    .card { background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05)); border: 1px solid rgba(255,255,255,.14); box-shadow: var(--shadow-soft); }
+    .card p, .card small, .card .text-secondary { color: #e1e8f3 !important; }
+    .card h5, .card h3, .card h4 { color: #f5f7fb; }
+
+    .text-gradient { background: linear-gradient(90deg, #ffffff, var(--rr-accent)); -webkit-background-clip: text; color: transparent; }
+
+    .section { padding: 4.5rem 0; }
+    @media (min-width: 992px){ .section { padding: 5.5rem 0; } }
+
+    .icon-primary { color: var(--rr-primary) !important; }
+    .gradient-border { position: relative; border:1px solid transparent; background-clip: padding-box; }
+    .gradient-border::before { content:""; position:absolute; inset:0; border-radius:inherit; padding:1px; background: linear-gradient(90deg, #ffffff, var(--rr-accent)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+    .logo { height:28px; width:auto; display:block; }
+    .logo-footer { height:24px; width:auto; display:block; }
+  .hero-shot{ max-height:500px; height:clamp(260px, 70vh, 500px); width:auto; transform: rotate(-2deg); filter: drop-shadow(0 20px 40px rgba(2,6,23,.45)); }
+    @media (min-width: 992px){ .hero-shot{ height: clamp(320px, 62vh, 500px); } }
+    .hero-shot-wrapper{ padding: .5rem; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <img src="https://i.imgur.com/KxFRLgC.png" alt="Rendite Rechner Logo" class="logo">
+        <span class="fw-bold">Rendite Rechner</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Navigation umschalten">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          <li class="nav-item"><a class="nav-link" href="#features">Funktionen</a></li>
+          <li class="nav-item"><a class="nav-link" href="#how">So funktioniert's</a></li>
+          <li class="nav-item"><a class="nav-link" href="#social">Erfahrungen</a></li>
+          <li class="nav-item ms-lg-3"><a class="btn btn-sm btn-primary" href="https://cashflow-app-nine.vercel.app">Kostenlos starten</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero section pt-5">
+    <div class="container py-2">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-6">
+          <span class="icon-chip"><i class="bi bi-stars"></i> Smarter vergleichen. Schneller entscheiden.</span>
+          <h1 class="display-5 fw-bold mt-3 text-gradient">Berechne Renditen. Vergleiche Szenarien. Triff smartere Entscheidungen.</h1>
+          <p class="lead text-secondary mt-3">Mit <strong>Rendite Rechner</strong> analysierst du Immobilien, Aktien & weitere Asset‑Klassen – inklusive <u>Kreditkosten</u>, Steuern & Gebühren. Transparent, schnell und ohne Finanz‑Deutsch.</p>
+          <div class="d-flex flex-wrap gap-3 mt-3">
+            <a href="https://cashflow-app-nine.vercel.app" class="btn btn-primary btn-lg">Kostenlos starten</a>
+            <a href="#features" class="btn btn-outline-light btn-lg">Mehr erfahren</a>
+          </div>
+          <div class="d-flex align-items-center gap-3 mt-4">
+            <div class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success"></i><small>Keine Anlageberatung</small></div>
+            <div class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success"></i><small>Rechtssicher</small></div>
+            <div class="d-flex align-items-center gap-2"><i class="bi bi-check2-circle text-success"></i><small>DSGVO‑freundlich</small></div>
+          </div>
+        </div>
+        <div class="col-lg-6 text-center">
+          <div class="hero-shot-wrapper d-flex align-items-center justify-content-center h-100">
+            <img src="https://i.imgur.com/V8lQ7YU.png" alt="App Screenshot Rendite Rechner" class="hero-shot img-fluid">
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="features" class="section">
+    <div class="container">
+      <div class="text-center mb-5">
+        <span class="icon-chip"><i class="bi bi-stars"></i> Funktionen</span>
+        <h2 class="display-6 fw-bold mt-3">Alles, was du für fundierte <span class="text-gradient">Rendite‑Vergleiche</span> brauchst</h2>
+        <p class="text-secondary">Vergleiche Immobilien, Aktien, ETFs und weitere Asset‑Klassen. Beziehe Finanzierung, laufende Kosten, Gebühren und erwartete Ausschüttungen ein.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+          <div class="card card-hover gradient-border h-100 p-4 text-center">
+            <i class="bi bi-houses fs-2 icon-primary"></i>
+            <h5 class="mt-3">Immobilien</h5>
+            <p>Nebenkosten, Kredite, Steuern – alles im Blick.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="card card-hover gradient-border h-100 p-4 text-center">
+            <i class="bi bi-graph-up fs-2 icon-primary"></i>
+            <h5 class="mt-3">Aktien & ETFs</h5>
+            <p>Rendite‑Szenarien mit Dividenden, Gebühren & Sparplan.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="card card-hover gradient-border h-100 p-4 text-center">
+            <i class="bi bi-bank fs-2 icon-primary"></i>
+            <h5 class="mt-3">Kredite</h5>
+            <p>Annuität, Tilgung, Zinsbindung – Auswirkungen live.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="card card-hover gradient-border h-100 p-4 text-center">
+            <i class="bi bi-speedometer2 fs-2 icon-primary"></i>
+            <h5 class="mt-3">Analysen</h5>
+            <p>IRR, ROI, Cashflows und Break‑Even einfach erklärt.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="section">
+    <div class="container text-center">
+      <span class="icon-chip"><i class="bi bi-magic"></i> So funktioniert's</span>
+      <h2 class="display-6 fw-bold mt-3">Von der Idee zur Entscheidung – in wenigen Klicks</h2>
+      <p class="text-secondary lead mt-3">Szenario anlegen, Finanzierung & Kosten ergänzen, Alternativen vergleichen – alles in einer klaren Oberfläche.</p>
+      <img src="workflow.png" alt="Ablauf Rendite Rechner" class="img-fluid rounded mt-4" style="max-width:800px; box-shadow:var(--shadow-soft); border:1px solid rgba(255,255,255,.10);">
+    </div>
+  </section>
+
+  <section id="social" class="section">
+    <div class="container">
+      <div class="text-center mb-5">
+        <span class="icon-chip"><i class="bi bi-emoji-smile"></i> Erfahrungen</span>
+        <h2 class="display-6 fw-bold mt-3">Was Nutzer:innen sagen</h2>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+          <div class="card h-100 p-4">
+            <p>„Endlich sehe ich, wie Kredit, Tilgung und Nebenkosten die Rendite wirklich beeinflussen.“</p>
+            <small class="text-secondary">– Lea, Immobilien‑Einsteigerin</small>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="card h-100 p-4">
+            <p>„Die Vergleichsansicht hat mir geholfen, realistische Erwartungen zu setzen – ohne Marketing‑Hype.“</p>
+            <small class="text-secondary">– David, ETF‑Sparer</small>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="card h-100 p-4">
+            <p>„Sensitivitäten & Stress‑Tests sind Gold wert. Super für Worst‑Case‑Denken.“</p>
+            <small class="text-secondary">– Samira, Finance‑Nerd</small>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="card h-100 p-4">
+            <p>„Mit dem Rendite Rechner konnte ich bequem mehrere Objekte vergleichen und besser verhandeln.“</p>
+            <small class="text-secondary">– Jan, Vermieter</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="cta" class="section">
+    <div class="container text-center">
+      <span class="icon-chip"><i class="bi bi-rocket-takeoff"></i> Starte jetzt</span>
+      <h2 class="display-6 fw-bold mt-3">Teste den Rendite Rechner – kostenlos & unverbindlich</h2>
+      <p class="text-secondary mb-4">Kein Risiko, jederzeit kündbar. Rechtssicher & DSGVO‑konform.</p>
+      <a href="https://cashflow-app-nine.vercel.app" class="btn btn-primary btn-lg">Jetzt kostenlos starten</a>
+    </div>
+  </section>
+
+  <section id="legal" class="section">
+    <div class="container">
+      <div class="card p-4 p-md-5">
+        <h2 class="h4 fw-bold text-white">Haftungsausschluss & rechtliche Hinweise</h2>
+        <p class="mb-2" style="color:#cbd5e1;">
+          Der <strong>Rendite Rechner</strong> ist ein Informations‑ und Simulations‑Werkzeug. Er ersetzt <strong>keine</strong> individuelle Anlage‑, Steuer‑, Finanzierungs‑ oder Rechtsberatung. Ergebnisse hängen von deinen Eingaben und Modellannahmen ab und stellen <strong>keine Zusage</strong> für zukünftige Entwicklungen dar. <strong>Vergangene Wertentwicklungen sind keine Garantie</strong> für künftige Ergebnisse. Wir übernehmen keine Haftung für Investitionsentscheidungen, Verluste oder Schäden, die aus der Nutzung der Anwendung entstehen, außer bei Vorsatz oder grober Fahrlässigkeit und bei Verletzung von Leben, Körper oder Gesundheit. Bitte prüfe Informationen eigenständig und hole bei Bedarf unabhängigen fachkundigen Rat ein. Durch Nutzung der App akzeptierst du diese Bedingungen sowie unsere <a href="#">AGB</a> und <a href="#">Datenschutz</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-5">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <img src="https://i.imgur.com/KxFRLgC.png" alt="Rendite Rechner Logo" class="logo-footer">
+            <strong>Rendite Rechner</strong>
+          </div>
+          <p class="text-secondary">Smarter vergleichen. Schneller entscheiden.</p>
+          <div class="d-flex gap-3 small">
+            <a class="link-muted" href="#">Impressum</a>
+            <a class="link-muted" href="#">Datenschutz</a>
+            <a class="link-muted" href="#">AGB</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const nav=document.querySelector('.navbar');
+    function onScroll(){if(window.scrollY>8){nav.classList.add('scrolled');}else{nav.classList.remove('scrolled');}}
+    window.addEventListener('scroll',onScroll);onScroll();
+  </script>
+</body>
+</html>
