@@ -62,6 +62,7 @@ function getComparator<T>(order: Order, orderBy: keyof T): (a: T, b: T) => numbe
 }
 
 const headCells: readonly HeadCell[] = [
+  { id: 'name', label: 'Name der Abschätzung' },
   { id: 'investmentName', label: 'Investment' },
   { id: 'creditName', label: 'Kredit' },
   { id: 'cashflowMonthly', label: 'Netto-Gewinn / Monat', align: 'right' },
@@ -75,17 +76,14 @@ export default function AbschaetzungenList() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // State from stores
   const cashflows = useCashflowStore((s) => s.cashflows);
   const removeCashflow = useCashflowStore((s) => s.removeCashflow);
   const objects = useInvestStore((s) => s.objects);
   const realEstates = useInvestStore((s) => s.realEstates);
   const credits = useCreditStore((s) => s.credits);
 
-  // FIX: Align this with the store's logic. Don't include deposits.
   const allInvestments = React.useMemo(() => [...objects, ...realEstates], [objects, realEstates]);
 
-  // Dialog and Snackbar State
   const [openDialog, setOpenDialog] = React.useState(false);
   const [editItem, setEditItem] = React.useState<Cashflow | null>(null);
   const [snack, setSnack] = React.useState<{ open: boolean; msg: string }>({
@@ -94,9 +92,8 @@ export default function AbschaetzungenList() {
   });
   const [undoCtx, setUndoCtx] = React.useState<{ item: Cashflow; index: number } | null>(null);
 
-  // Sorting State
   const [order, setOrder] = React.useState<Order>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof EnrichedRow>('investmentName');
+  const [orderBy, setOrderBy] = React.useState<keyof EnrichedRow>('name');
 
   const existingNames = React.useMemo(() => cashflows.map((cf) => cf.name), [cashflows]);
 
@@ -106,13 +103,10 @@ export default function AbschaetzungenList() {
     setOrderBy(property);
   };
 
-  // Enriched data for rendering
   const rows = React.useMemo(() => {
     const enriched: EnrichedRow[] = cashflows.map((cf) => {
       const investment = allInvestments.find((i) => i.id === cf.investmentId);
       const credit = cf.creditId ? credits.find((c) => c.id === cf.creditId) : null;
-
-      // ... other calculations remain the same
       const monthlyLoss = credit ? parseFloat(credit.totalMonthly || '0') : 0;
       const purchasePrice = parseFloat(investment?.totalPrice || '0');
       const cashflowMonthlyNum = parseFloat(cf.cashflowMonthly);
@@ -121,7 +115,6 @@ export default function AbschaetzungenList() {
       return {
         ...cf,
         investmentName: investment?.name || '—',
-        // FIX: Display a dash for consistency when no credit is selected.
         creditName: credit?.name || '—',
         purchasePrice,
         investmentGain: parseFloat(investment?.netGainMonthly || '0'),
@@ -129,27 +122,21 @@ export default function AbschaetzungenList() {
         yieldPct,
       };
     });
-
-    // Apply sorting
     return enriched.sort(getComparator(order, orderBy));
   }, [cashflows, allInvestments, credits, order, orderBy]);
 
-  // Handlers
   const handleOpenEdit = (item: Cashflow) => {
     setEditItem(item);
     setOpenDialog(true);
   };
-
   const handleOpenAdd = () => {
     setEditItem(null);
     setOpenDialog(true);
   };
-
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditItem(null);
   };
-
   const handleDelete = (id: string) => {
     const index = cashflows.findIndex((c) => c.id === id);
     if (index === -1) return;
@@ -158,7 +145,6 @@ export default function AbschaetzungenList() {
     setUndoCtx({ item, index });
     setSnack({ open: true, msg: 'Abschätzung gelöscht' });
   };
-
   const handleUndo = () => {
     if (!undoCtx) return;
     const { item, index } = undoCtx;
@@ -172,140 +158,134 @@ export default function AbschaetzungenList() {
     setTimeout(() => setSnack({ open: true, msg: 'Rückgängig gemacht' }), 100);
   };
 
-  // Mobile view
-  if (isMobile) {
-    // A more complete mobile view could be built here, for now, it's a placeholder
-    return (
-      <Box sx={{ pb: 10 }}>
-        {rows.map((row) => (
-          <Paper key={row.id} sx={{ p: 2, mb: 2 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                mb: 1,
-              }}
-            >
-              <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
-                {row.investmentName}
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 0.5 }}>
-                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            </Box>
-            <Stack spacing={1}>
-              <ResultRow
-                label="Netto-Gewinn / Monat"
-                value={`${fmtMoney(row.cashflowMonthly)} €`}
-              />
-              <ResultRow label="Kredit" value={row.creditName} />
-            </Stack>
-          </Paper>
-        ))}
-        <Fab
-          color="primary"
-          sx={{ position: 'fixed', right: 24, bottom: 24 }}
-          onClick={handleOpenAdd}
-        >
-          <AddIcon />
-        </Fab>
-      </Box>
-    );
-  }
-
-  // Desktop table view
   return (
     <>
-      <TableContainer component={Paper} sx={{ width: '100%' }}>
-        <Table size="medium">
-          <TableHead>
-            <TableRow>
-              <TableCell style={{ width: 100 }}>Aktionen</TableCell>
-              {headCells.map((headCell) => (
-                <TableCell
-                  key={headCell.id}
-                  align={headCell.align || 'left'}
-                  sortDirection={orderBy === headCell.id ? order : false}
-                >
-                  <TableSortLabel
-                    active={orderBy === headCell.id}
-                    direction={orderBy === headCell.id ? order : 'asc'}
-                    onClick={() => handleRequestSort(headCell.id)}
+      {isMobile ? (
+        // --- MOBILE VIEW ---
+        <Box sx={{ pb: 10 }}>
+          {rows.map((row) => (
+            <Paper key={row.id} sx={{ p: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  mb: 1,
+                }}
+              >
+                {/* FIX: Show cashflow name as the main title */}
+                <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, mr: 1 }}>
+                  {row.name}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                  <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Box>
+              <Stack spacing={1}>
+                {/* FIX: Add the underlying investment name as a row */}
+                <ResultRow label="Investment" value={row.investmentName} />
+                <ResultRow
+                  label="Netto-Gewinn / Monat"
+                  value={`${fmtMoney(String(row.cashflowMonthly))} €`}
+                />
+                <ResultRow label="Kredit" value={row.creditName} />
+              </Stack>
+            </Paper>
+          ))}
+        </Box>
+      ) : (
+        // --- DESKTOP VIEW ---
+        <TableContainer component={Paper} sx={{ width: '100%' }}>
+          <Table size="medium">
+            <TableHead>
+              <TableRow>
+                <TableCell style={{ width: 100 }}>Aktionen</TableCell>
+                {headCells.map((headCell) => (
+                  <TableCell
+                    key={headCell.id}
+                    align={headCell.align || 'left'}
+                    sortDirection={orderBy === headCell.id ? order : false}
+                  >
+                    <TableSortLabel
+                      active={orderBy === headCell.id}
+                      direction={orderBy === headCell.id ? order : 'asc'}
+                      onClick={() => handleRequestSort(headCell.id)}
+                      sx={{
+                        flexDirection: 'row',
+                        justifyContent: headCell.align === 'right' ? 'flex-end' : 'flex-start',
+                        '&': { width: '100%' },
+                        '& .MuiTableSortLabel-icon': { marginLeft: 0.5 },
+                      }}
+                    >
+                      {headCell.label}
+                    </TableSortLabel>
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.id} hover>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <Tooltip title="Bearbeiten">
+                        <IconButton
+                          color="primary"
+                          size="small"
+                          onClick={() => handleOpenEdit(row)}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Löschen">
+                        <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                  {/* FIX: Add the cell for the cashflow name */}
+                  <TableCell sx={{ fontWeight: 500 }}>{row.name}</TableCell>
+                  <TableCell>{row.investmentName}</TableCell>
+                  <TableCell>{row.creditName}</TableCell>
+                  <TableCell
+                    align="right"
                     sx={{
-                      // Force the flex direction to be a normal row
-                      flexDirection: 'row',
-                      // Let justifyContent handle the alignment inside the flex container
-                      justifyContent: headCell.align === 'right' ? 'flex-end' : 'flex-start',
-                      // Ensure the label takes up the full width of the cell
-                      '&': {
-                        width: '100%',
-                      },
-                      // Ensure the icon always has a small margin on its left
-                      '& .MuiTableSortLabel-icon': {
-                        marginLeft: 0.5,
-                      },
+                      color: parseFloat(row.cashflowMonthly) < 0 ? 'error.main' : 'success.main',
                     }}
                   >
-                    {headCell.label}
-                  </TableSortLabel>
-                </TableCell>
+                    {fmtMoney(String(row.cashflowMonthly))} €
+                  </TableCell>
+                  <TableCell align="right">{fmtMoney(String(row.yieldPct))} %</TableCell>
+                  <TableCell align="right">{fmtMoney(String(row.purchasePrice))} €</TableCell>
+                  <TableCell align="right" sx={{ color: 'success.main' }}>
+                    {fmtMoney(String(row.investmentGain))} €
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: 'error.main' }}>
+                    {fmtMoney(String(row.monthlyLoss))} €
+                  </TableCell>
+                </TableRow>
               ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.id} hover>
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Tooltip title="Bearbeiten">
-                      <IconButton color="primary" size="small" onClick={() => handleOpenEdit(row)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Löschen">
-                      <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
-                        <DeleteOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-                <TableCell>{row.investmentName}</TableCell>
-                <TableCell>{row.creditName}</TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    color: parseFloat(row.cashflowMonthly) < 0 ? 'error.main' : 'success.main',
-                  }}
-                >
-                  {fmtMoney(row.cashflowMonthly)} €
-                </TableCell>
-                <TableCell align="right">{fmtMoney(String(row.yieldPct))} %</TableCell>
-                <TableCell align="right">{fmtMoney(String(row.purchasePrice))} €</TableCell>
-                <TableCell align="right" sx={{ color: 'success.main' }}>
-                  {fmtMoney(String(row.investmentGain))} €
-                </TableCell>
-                <TableCell align="right" sx={{ color: 'error.main' }}>
-                  {fmtMoney(String(row.monthlyLoss))} €
-                </TableCell>
-              </TableRow>
-            ))}
-            {rows.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={8} sx={{ textAlign: 'center', color: '#94a3b8', py: 3 }}>
-                  Noch keine Abschätzungen. Klicken Sie unten rechts auf „+", um eine zu erstellen.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              {rows.length === 0 && (
+                <TableRow>
+                  {/* FIX: Increment colSpan to 9 to account for the new column */}
+                  <TableCell colSpan={9} sx={{ textAlign: 'center', color: '#94a3b8', py: 3 }}>
+                    Noch keine Abschätzungen. Klicken Sie unten rechts auf „+", um eine zu
+                    erstellen.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
+      {/* SHARED COMPONENTS */}
       <Fab
         color="primary"
         sx={{ position: 'fixed', right: 24, bottom: 24 }}
@@ -313,7 +293,6 @@ export default function AbschaetzungenList() {
       >
         <AddIcon />
       </Fab>
-
       {openDialog && (
         <CashflowDialog
           onClose={handleCloseDialog}
@@ -321,7 +300,6 @@ export default function AbschaetzungenList() {
           existingNames={existingNames.filter((n) => n !== editItem?.name)}
         />
       )}
-
       <Snackbar
         open={snack.open}
         autoHideDuration={4000}
