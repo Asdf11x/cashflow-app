@@ -39,11 +39,10 @@ export default function Layout() {
   const nav = useNavigate();
   const loc = useLocation();
 
-  // --- 1. Find the current page's title ---
   const currentPage = NAV.find((item) =>
     item.to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(item.to),
   );
-  const pageTitle = currentPage ? currentPage.text : 'Menu'; // Fallback title
+  const pageTitle = currentPage ? currentPage.text : 'Menu';
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -86,7 +85,8 @@ export default function Layout() {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh',
+        height: '100vh',
+        overflow: 'hidden',
         bgcolor: 'background.default',
       }}
     >
@@ -104,7 +104,7 @@ export default function Layout() {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ display: 'flex', flex: 1 }}>
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {isDesktop ? (
           <Drawer
             variant="permanent"
@@ -122,7 +122,15 @@ export default function Layout() {
           </Drawer>
         )}
 
-        <Box component="main" sx={{ flex: 1, p: 2, minWidth: 0 }}>
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            p: 2,
+            minWidth: 0,
+            overflowY: 'auto',
+          }}
+        >
           <Outlet />
         </Box>
       </Box>
