@@ -19,6 +19,8 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.3",
     "@mui/material": "^7.3.3",
+    "@nivo/core": "^0.99.0",
+    "@nivo/line": "^0.99.0",
     "decimal.js": "^10.6.0",
     "dexie": "^4.2.0",
     "react": "^19.1.1",

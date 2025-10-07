@@ -18,6 +18,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import CreditScoreIcon from '@mui/icons-material/CreditScore';
 import InsightsIcon from '@mui/icons-material/Insights';
 import SettingsIcon from '@mui/icons-material/Settings';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 
@@ -29,15 +30,16 @@ const NAV = [
   { to: '/', text: 'Investments', icon: <AccountTreeIcon /> },
   { to: '/credits', text: 'Kredite', icon: <CreditScoreIcon /> },
   { to: '/cashflow', text: 'Abschätzung', icon: <InsightsIcon /> },
+  { to: '/visualization', text: 'Visualisierung', icon: <ShowChartIcon /> }, // New Link
   { to: '/options', text: 'Optionen', icon: <SettingsIcon /> },
 ];
-
 export default function Layout() {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const [open, setOpen] = React.useState(false);
   const nav = useNavigate();
   const loc = useLocation();
+  const isVisualization = loc.pathname.startsWith('/visualization');
 
   const currentPage = NAV.find((item) =>
     item.to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(item.to),
@@ -97,7 +99,6 @@ export default function Layout() {
               <MenuIcon />
             </IconButton>
           )}
-          {/* --- 2. Display the dynamic page title --- */}
           <Typography variant="h6" fontWeight={700} sx={{ display: { lg: 'none' } }}>
             {pageTitle}
           </Typography>
@@ -126,9 +127,11 @@ export default function Layout() {
           component="main"
           sx={{
             flex: 1,
-            p: 2,
             minWidth: 0,
-            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: isVisualization ? 'hidden' : 'auto',
+            p: isVisualization ? 0 : 2,
           }}
         >
           <Outlet />
