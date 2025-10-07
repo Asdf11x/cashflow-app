@@ -18,12 +18,12 @@ import {
   Typography,
   Chip,
   Link,
+  TableSortLabel,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import { useInvestStore } from '../../core/state/useInvestStore';
-import { fmtMoney, fmtNumberTrim } from '../../core/domain/calc';
 import CreateInvestmentDialog from '../shared/investment/CreateInvestmentDialog.tsx';
 import type {
   ObjectInvestment,
@@ -31,16 +31,45 @@ import type {
   Depositvestment,
 } from '../../core/domain/types.ts';
 
+type Order = 'asc' | 'desc';
+
 type Row = {
   id: string;
   name: string;
-  purchasePrice: string;
-  netGainMonthly: string;
-  yieldPctYearly: string;
+  purchasePrice: number; // Changed to number for sorting
+  netGainMonthly: number; // Changed to number for sorting
+  yieldPctYearly: number; // Changed to number for sorting
   kind: 'OBJECT' | 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT';
   link?: string;
   currency: string;
 };
+
+// Define the structure for our table headers for type safety
+interface HeadCell {
+  id: keyof Row;
+  label: string;
+  align?: 'left' | 'right' | 'center' | 'justify';
+}
+
+// Generic sorter functions
+function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
+  if (b[orderBy] < a[orderBy]) return -1;
+  if (b[orderBy] > a[orderBy]) return 1;
+  return 0;
+}
+
+function getComparator<T>(order: Order, orderBy: keyof T): (a: T, b: T) => number {
+  return order === 'desc'
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
+const headCells: readonly HeadCell[] = [
+  { id: 'name', label: 'Name' },
+  { id: 'purchasePrice', label: 'Anlagebetrag', align: 'right' },
+  { id: 'netGainMonthly', label: 'Monatl. Gewinn', align: 'right' },
+  { id: 'yieldPctYearly', label: 'Rendite p.a.', align: 'right' },
+];
 
 const NameCell = ({ name, link }: { name: string; link?: string }) => {
   if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
@@ -82,41 +111,50 @@ export default function InvestmentsList() {
     subsetIndex: number;
   } | null>(null);
 
-  const rows: Row[] = React.useMemo(
-    () => [
+  const [order, setOrder] = React.useState<Order>('asc');
+  const [orderBy, setOrderBy] = React.useState<keyof Row>('name');
+
+  const handleRequestSort = (property: keyof Row) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  const rows: Row[] = React.useMemo(() => {
+    const combined = [
       ...objects.map((o) => ({
         id: o.id,
         name: o.name,
         link: o.link,
-        purchasePrice: fmtMoney(o.startAmount),
-        netGainMonthly: fmtMoney(o.netGainMonthly),
-        yieldPctYearly: fmtNumberTrim(o.returnPercent),
         kind: 'OBJECT' as const,
         currency: o.currency,
+        purchasePrice: parseFloat(o.startAmount),
+        netGainMonthly: parseFloat(o.netGainMonthly),
+        yieldPctYearly: parseFloat(o.returnPercent),
       })),
       ...realEstates.map((r) => ({
         id: r.id,
         name: r.name,
         link: r.link,
-        purchasePrice: fmtMoney(r.totalPrice),
-        netGainMonthly: fmtMoney(r.netGainMonthly),
-        yieldPctYearly: fmtNumberTrim(r.returnPercent),
         kind: 'REAL_ESTATE' as const,
         currency: r.currency,
+        purchasePrice: parseFloat(r.totalPrice),
+        netGainMonthly: parseFloat(r.netGainMonthly),
+        yieldPctYearly: parseFloat(r.returnPercent),
       })),
       ...deposits.map((d) => ({
         id: d.id,
         name: d.name,
         link: d.link,
-        purchasePrice: fmtMoney(d.startAmount),
-        netGainMonthly: fmtMoney(d.netGainMonthly),
-        yieldPctYearly: fmtNumberTrim(d.returnPercent),
         kind: 'FIXED_TERM_DEPOSIT' as const,
         currency: d.currency,
+        purchasePrice: parseFloat(d.startAmount),
+        netGainMonthly: parseFloat(d.netGainMonthly),
+        yieldPctYearly: parseFloat(d.returnPercent),
       })),
-    ],
-    [objects, realEstates, deposits],
-  );
+    ];
+    return combined.sort(getComparator(order, orderBy));
+  }, [objects, realEstates, deposits, order, orderBy]);
 
   const handleDelete = (row: Row, visibleIndex: number) => {
     const subsetIndex = rows.slice(0, visibleIndex).filter((r) => r.kind === row.kind).length;
@@ -311,10 +349,27 @@ export default function InvestmentsList() {
           <TableHead>
             <TableRow>
               <TableCell width={100}>Aktionen</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell align="right">Anlagebetrag</TableCell>
-              <TableCell align="right">Monatl. Gewinn</TableCell>
-              <TableCell align="right">Rendite p.a.</TableCell>
+              {headCells.map((headCell) => (
+                <TableCell
+                  key={headCell.id}
+                  align={headCell.align || 'left'}
+                  sortDirection={orderBy === headCell.id ? order : false}
+                >
+                  <TableSortLabel
+                    active={orderBy === headCell.id}
+                    direction={orderBy === headCell.id ? order : 'asc'}
+                    onClick={() => handleRequestSort(headCell.id)}
+                    sx={{
+                      flexDirection: 'row',
+                      justifyContent: headCell.align === 'right' ? 'flex-end' : 'flex-start',
+                      '&': { width: '100%' },
+                      '& .MuiTableSortLabel-icon': { marginLeft: 0.5 },
+                    }}
+                  >
+                    {headCell.label}
+                  </TableSortLabel>
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
