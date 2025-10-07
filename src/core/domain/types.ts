@@ -96,13 +96,20 @@ export interface AdditionalRunningCostsRent {
 export interface Credit {
   id: string;
   name: string;
-  principal: Money;
-  equity: Money;
-  rateAnnualPct: string;
-  amortMonthly: Money;
+  currency: string;
 
-  interestMonthly: Money;
-  interestYearly: Money;
+  principal: Money; // Darlehensbetrag
+  rateAnnualPct: string; // Sollzins p.a.
+  amortMonthly: Money; // Monatliche Tilgung
+  termMonths: number; // Gesamtlaufzeit
+  startDate?: string; // Für Zeitachsen/Restschuld
+  fixedRateYears?: number; // Zinsbindung (optional)
+  specialRepaymentYearly?: Money; // Sondertilgung optional
+
+  // optionale Anzeige-/Hilfswerte
+  interestMonthly?: Money;
+  interestYearly?: Money;
+  totalMonthly?: Money; // Rate (Zins + Tilgung)
 }
 
 export interface Cashflow {
