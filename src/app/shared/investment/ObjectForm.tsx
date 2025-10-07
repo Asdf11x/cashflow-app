@@ -25,7 +25,7 @@ const ObjectForm = React.forwardRef(
     const [oName, setOName] = React.useState(existingObject?.name || 'Objekt');
     const [oLink, setOLink] = React.useState(existingObject?.link || '');
     const [oPurchasePrice, setOPurchasePrice] = React.useState(
-      existingObject?.purchasePrice ? D(existingObject.purchasePrice).toFixed(0) : '10000',
+      existingObject?.startAmount ? D(existingObject.startAmount).toFixed(0) : '10000',
     );
     const [oCurrency, setOCurrency] = React.useState(existingObject?.currency || '€');
     const [oMonthlyGain, setOMonthlyGain] = React.useState(
@@ -68,7 +68,7 @@ const ObjectForm = React.forwardRef(
           name: trimmedName,
           link: trimmedLink,
           kind: 'OBJECT',
-          purchasePrice: purchasePriceD.toFixed(2),
+          startAmount: purchasePriceD.toFixed(2),
           netGainMonthly: monthlyGainD.toFixed(2),
           costMonthly: '0',
           currency: oCurrency,

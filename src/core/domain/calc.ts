@@ -12,7 +12,7 @@ export function netYearly(i: ObjectInvestment): Money {
 }
 
 export function yieldPctYearly(i: ObjectInvestment): string {
-  const totalvested = D(i.purchasePrice);
+  const totalvested = D(i.startAmount);
   const yearlyGain = D(i.netGainMonthly).mul(12);
   return totalvested.gt(0) ? yearlyGain.div(totalvested).mul(100).toFixed(2) : '0.00';
 }

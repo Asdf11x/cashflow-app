@@ -84,7 +84,7 @@ export default function InvestmentsList() {
         id: o.id,
         name: o.name,
         link: o.link,
-        purchasePrice: fmtMoney(o.purchasePrice),
+        purchasePrice: fmtMoney(o.startAmount),
         netGainMonthly: fmtMoney(o.netGainMonthly),
         yieldPctYearly: fmtNumberTrim(o.returnPercent),
         kind: 'OBJECT' as const,

@@ -6,7 +6,7 @@ export interface BaseInvestment {
   id: string;
   name: string;
   link: string;
-  purchasePrice: Money;
+  startAmount: Money;
   currency: string;
   kind: InvestmentKind;
 
@@ -21,11 +21,14 @@ export interface ObjectInvestment extends BaseInvestment {
   costMonthly: Money;
 }
 
-export interface DepositInvestment extends BaseInvestment {
+export interface Depositvestment extends BaseInvestment {
   kind: 'FIXED_TERM_DEPOSIT';
-  interestRate: number;
   termMonths: number;
-  runningCosts: RunningCostsDeposit;
+  rateNominal: number;
+  compounding: 'NONE' | 'YEARLY' | 'MONTHLY';
+  withholdingTaxRate?: number;
+  taxFreeAllowance?: Money;
+  feesAccount?: Money;
 }
 
 export interface RunningCostsDeposit {
