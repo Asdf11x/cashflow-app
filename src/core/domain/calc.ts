@@ -71,6 +71,5 @@ export function computeCashflowMonthly(
 
   const creditTotalPayment = new Decimal(credit.totalMonthly ?? '0');
 
-  // Cashflow is the investment's net gain minus the total credit payment
   return investmentNetGain.sub(creditTotalPayment);
 }

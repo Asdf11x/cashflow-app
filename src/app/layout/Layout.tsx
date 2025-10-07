@@ -131,6 +131,7 @@ export default function Layout() {
             display: 'flex',
             flexDirection: 'column',
             overflowY: isVisualization ? 'hidden' : 'auto',
+            height: isVisualization ? '100%' : 'auto',
             p: isVisualization ? 0 : 2,
           }}
         >
