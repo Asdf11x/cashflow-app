@@ -237,6 +237,20 @@ export default function AbschaetzungenList() {
                     active={orderBy === headCell.id}
                     direction={orderBy === headCell.id ? order : 'asc'}
                     onClick={() => handleRequestSort(headCell.id)}
+                    sx={{
+                      // Force the flex direction to be a normal row
+                      flexDirection: 'row',
+                      // Let justifyContent handle the alignment inside the flex container
+                      justifyContent: headCell.align === 'right' ? 'flex-end' : 'flex-start',
+                      // Ensure the label takes up the full width of the cell
+                      '&': {
+                        width: '100%',
+                      },
+                      // Ensure the icon always has a small margin on its left
+                      '& .MuiTableSortLabel-icon': {
+                        marginLeft: 0.5,
+                      },
+                    }}
                   >
                     {headCell.label}
                   </TableSortLabel>
