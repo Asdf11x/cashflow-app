@@ -17,7 +17,7 @@ import {
   useTheme,
   Typography,
   Chip,
-  Link, // --- NEW: Import Link component for clickable names ---
+  Link,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -25,21 +25,23 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { fmtMoney, fmtNumberTrim } from '../../core/domain/calc';
 import CreateInvestmentDialog from '../shared/investment/CreateInvestmentDialog.tsx';
-import type { ObjectInvestment, RealEstateInvestment } from '../../core/domain/types.ts';
+import type {
+  ObjectInvestment,
+  RealEstateInvestment,
+  Depositvestment,
+} from '../../core/domain/types.ts';
 
-// --- UPDATED: Row type now includes link and currency ---
 type Row = {
   id: string;
   name: string;
   purchasePrice: string;
   netGainMonthly: string;
   yieldPctYearly: string;
-  kind: 'OBJECT' | 'REAL_ESTATE';
+  kind: 'OBJECT' | 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT';
   link?: string;
   currency: string;
 };
 
-// --- NEW: Helper component to render name as a link if available ---
 const NameCell = ({ name, link }: { name: string; link?: string }) => {
   if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
     return (
@@ -55,26 +57,28 @@ export default function InvestmentsList() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const objects = useInvestStore((s) => s.objects);
-  const realEstates = useInvestStore((s) => s.realEstates);
-  const removeObject = useInvestStore((s) => s.removeObject);
-  const removeRealEstate = useInvestStore((s) => s.removeRealEstate);
+  const { objects, realEstates, deposits, removeObject, removeRealEstate, removeDeposit } =
+    useInvestStore();
 
   const [openAdd, setOpenAdd] = React.useState(false);
   const [editItem, setEditItem] = React.useState<{
     id: string;
-    kind: 'OBJECT' | 'REAL_ESTATE';
+    kind: Row['kind'];
   } | null>(null);
   const [snack, setSnack] = React.useState<{ open: boolean; msg: string }>({
     open: false,
     msg: '',
   });
   const existingNames = React.useMemo(
-    () => [...objects.map((o) => o.name), ...realEstates.map((r) => r.name)],
-    [objects, realEstates],
+    () => [
+      ...objects.map((o) => o.name),
+      ...realEstates.map((r) => r.name),
+      ...deposits.map((d) => d.name),
+    ],
+    [objects, realEstates, deposits],
   );
   const [undoCtx, setUndoCtx] = React.useState<{
-    item: ObjectInvestment | RealEstateInvestment;
+    item: ObjectInvestment | RealEstateInvestment | Depositvestment;
     subsetIndex: number;
   } | null>(null);
 
@@ -84,7 +88,7 @@ export default function InvestmentsList() {
         id: o.id,
         name: o.name,
         link: o.link,
-        purchasePrice: fmtMoney(o.purchasePrice),
+        purchasePrice: fmtMoney(o.startAmount),
         netGainMonthly: fmtMoney(o.netGainMonthly),
         yieldPctYearly: fmtNumberTrim(o.returnPercent),
         kind: 'OBJECT' as const,
@@ -100,27 +104,43 @@ export default function InvestmentsList() {
         kind: 'REAL_ESTATE' as const,
         currency: r.currency,
       })),
+      ...deposits.map((d) => ({
+        id: d.id,
+        name: d.name,
+        link: d.link,
+        purchasePrice: fmtMoney(d.startAmount),
+        netGainMonthly: fmtMoney(d.netGainMonthly),
+        yieldPctYearly: fmtNumberTrim(d.returnPercent),
+        kind: 'FIXED_TERM_DEPOSIT' as const,
+        currency: d.currency,
+      })),
     ],
-    [objects, realEstates],
+    [objects, realEstates, deposits],
   );
 
   const handleDelete = (row: Row, visibleIndex: number) => {
     const subsetIndex = rows.slice(0, visibleIndex).filter((r) => r.kind === row.kind).length;
-    const originalItem =
-      row.kind === 'OBJECT'
-        ? objects.find((o) => o.id === row.id)
-        : realEstates.find((r) => r.id === row.id);
+    let originalItem: ObjectInvestment | RealEstateInvestment | Depositvestment | undefined;
 
-    if (!originalItem) return;
-
-    if (row.kind === 'OBJECT') {
-      removeObject(row.id);
-    } else {
-      removeRealEstate(row.id);
+    switch (row.kind) {
+      case 'OBJECT':
+        originalItem = objects.find((i) => i.id === row.id);
+        if (originalItem) removeObject(row.id);
+        break;
+      case 'REAL_ESTATE':
+        originalItem = realEstates.find((i) => i.id === row.id);
+        if (originalItem) removeRealEstate(row.id);
+        break;
+      case 'FIXED_TERM_DEPOSIT':
+        originalItem = deposits.find((i) => i.id === row.id);
+        if (originalItem) removeDeposit(row.id);
+        break;
     }
 
-    setUndoCtx({ item: originalItem, subsetIndex });
-    setSnack({ open: true, msg: 'Investment gelöscht' });
+    if (originalItem) {
+      setUndoCtx({ item: originalItem, subsetIndex });
+      setSnack({ open: true, msg: 'Investment gelöscht' });
+    }
   };
 
   const handleUndo = () => {
@@ -131,21 +151,33 @@ export default function InvestmentsList() {
       if (item.kind === 'OBJECT') {
         const before = s.objects.slice(0, subsetIndex);
         const after = s.objects.slice(subsetIndex);
-        return {
-          objects: [...before, item, ...after],
-        };
-      } else {
+        return { objects: [...before, item, ...after] };
+      } else if (item.kind === 'REAL_ESTATE') {
         const before = s.realEstates.slice(0, subsetIndex);
         const after = s.realEstates.slice(subsetIndex);
-        return {
-          realEstates: [...before, item, ...after],
-        };
+        return { realEstates: [...before, item, ...after] };
+      } else if (item.kind === 'FIXED_TERM_DEPOSIT') {
+        const before = s.deposits.slice(0, subsetIndex);
+        const after = s.deposits.slice(subsetIndex);
+        return { deposits: [...before, item, ...after] };
       }
+      return s;
     });
 
     setUndoCtx(null);
     setSnack({ open: false, msg: '' });
     setTimeout(() => setSnack({ open: true, msg: 'Rückgängig gemacht' }), 100);
+  };
+
+  const getKindLabel = (kind: Row['kind']) => {
+    switch (kind) {
+      case 'OBJECT':
+        return 'Objekt';
+      case 'REAL_ESTATE':
+        return 'Immobilie';
+      case 'FIXED_TERM_DEPOSIT':
+        return 'Festgeld';
+    }
   };
 
   // Mobile card view
@@ -165,11 +197,10 @@ export default function InvestmentsList() {
               >
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {/* --- UPDATED: Use NameCell component --- */}
                     <NameCell name={r.name} link={r.link} />
                   </Typography>
                   <Chip
-                    label={r.kind === 'OBJECT' ? 'Objekt' : 'Immobilie'}
+                    label={getKindLabel(r.kind)}
                     size="small"
                     color={r.kind === 'OBJECT' ? 'primary' : 'secondary'}
                   />
@@ -190,10 +221,9 @@ export default function InvestmentsList() {
               <Box sx={{ display: 'grid', gap: 1 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography color="text.secondary" variant="body2">
-                    Gesamtpreis:
+                    Anlagebetrag:
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
-                    {/* --- UPDATED: Added currency --- */}
                     {r.purchasePrice} {r.currency}
                   </Typography>
                 </Box>
@@ -202,7 +232,6 @@ export default function InvestmentsList() {
                     Monatl. Gewinn:
                   </Typography>
                   <Typography variant="body2" fontWeight={600} color="success.main">
-                    {/* --- UPDATED: Added currency --- */}
                     {r.netGainMonthly} {r.currency}
                   </Typography>
                 </Box>
@@ -241,13 +270,15 @@ export default function InvestmentsList() {
           <CreateInvestmentDialog
             onClose={() => setEditItem(null)}
             existingNames={existingNames.filter((n) => {
+              let originalName: string | undefined;
               if (editItem.kind === 'OBJECT') {
-                const obj = objects.find((o) => o.id === editItem.id);
-                return obj ? n !== obj.name : true;
+                originalName = objects.find((o) => o.id === editItem.id)?.name;
+              } else if (editItem.kind === 'REAL_ESTATE') {
+                originalName = realEstates.find((r) => r.id === editItem.id)?.name;
               } else {
-                const re = realEstates.find((r) => r.id === editItem.id);
-                return re ? n !== re.name : true;
+                originalName = deposits.find((d) => d.id === editItem.id)?.name;
               }
+              return originalName ? n !== originalName : true;
             })}
             editItem={editItem}
           />
@@ -281,7 +312,7 @@ export default function InvestmentsList() {
             <TableRow>
               <TableCell width={100}>Aktionen</TableCell>
               <TableCell>Name</TableCell>
-              <TableCell align="right">Gesamtpreis</TableCell>
+              <TableCell align="right">Anlagebetrag</TableCell>
               <TableCell align="right">Monatl. Gewinn</TableCell>
               <TableCell align="right">Rendite p.a.</TableCell>
             </TableRow>
@@ -308,10 +339,8 @@ export default function InvestmentsList() {
                   </Box>
                 </TableCell>
                 <TableCell>
-                  {/* --- UPDATED: Use NameCell component --- */}
                   <NameCell name={r.name} link={r.link} />
                 </TableCell>
-                {/* --- UPDATED: Added currency --- */}
                 <TableCell align="right">
                   {r.purchasePrice} {r.currency}
                 </TableCell>
@@ -347,13 +376,15 @@ export default function InvestmentsList() {
         <CreateInvestmentDialog
           onClose={() => setEditItem(null)}
           existingNames={existingNames.filter((n) => {
+            let originalName: string | undefined;
             if (editItem.kind === 'OBJECT') {
-              const obj = objects.find((o) => o.id === editItem.id);
-              return obj ? n !== obj.name : true;
+              originalName = objects.find((o) => o.id === editItem.id)?.name;
+            } else if (editItem.kind === 'REAL_ESTATE') {
+              originalName = realEstates.find((r) => r.id === editItem.id)?.name;
             } else {
-              const re = realEstates.find((r) => r.id === editItem.id);
-              return re ? n !== re.name : true;
+              originalName = deposits.find((d) => d.id === editItem.id)?.name;
             }
+            return originalName ? n !== originalName : true;
           })}
           editItem={editItem}
         />

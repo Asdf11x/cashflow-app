@@ -49,7 +49,7 @@ interface CostInputRowProps {
   currency: string;
 }
 
-function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRowProps) {
+export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRowProps) {
   const { enabled, value, mode, allowModeChange, label } = item;
   const absoluteAmount = React.useMemo(
     () => (mode === 'percent' ? baseAmount.mul(pctToFrac(value)) : D(normalize(value))),
@@ -487,7 +487,7 @@ const RealEstateForm = React.forwardRef(
 
       setRName(existing.name);
       setRCurrency(existing.currency);
-      setRPurchasePrice(D(existing.purchasePrice).toFixed(0));
+      setRPurchasePrice(D(existing.startAmount).toFixed(0));
       setRMonthlyColdRent(D(existing.monthlyColdRent).toFixed(0));
 
       if (existing.details) {
@@ -802,7 +802,7 @@ const RealEstateForm = React.forwardRef(
           link: rDetailsLink,
           kind: 'REAL_ESTATE',
           currency: rCurrency,
-          purchasePrice: rPurchasePriceD.toFixed(2),
+          startAmount: rPurchasePriceD.toFixed(2),
           totalPrice: grandTotalPrice.toFixed(2),
           netGainMonthly: netRentMonthly.toFixed(2),
           netGainYearly: netRentAnnual.toFixed(2),

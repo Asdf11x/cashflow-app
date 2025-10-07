@@ -22,24 +22,37 @@ const ObjectForm = React.forwardRef(
     const { addObject, updateObject, objects } = useInvestStore.getState();
     const existingObject = editId ? objects.find((o) => o.id === editId) : undefined;
 
+    // Initialize values based on existing object or defaults
+    // If editing, reconstruct Revenue from Net + Cost.
+    const initCost = existingObject?.costMonthly ? D(existingObject.costMonthly) : D(0);
+    const initNet = existingObject?.netGainMonthly ? D(existingObject.netGainMonthly) : D(120);
+    const initRevenue = existingObject ? initNet.add(initCost) : D(120);
+
     const [oName, setOName] = React.useState(existingObject?.name || 'Objekt');
     const [oLink, setOLink] = React.useState(existingObject?.link || '');
     const [oPurchasePrice, setOPurchasePrice] = React.useState(
-      existingObject?.purchasePrice ? D(existingObject.purchasePrice).toFixed(0) : '10000',
+      existingObject?.startAmount ? D(existingObject.startAmount).toFixed(0) : '10000',
     );
     const [oCurrency, setOCurrency] = React.useState(existingObject?.currency || '€');
-    const [oMonthlyGain, setOMonthlyGain] = React.useState(
-      existingObject?.netGainMonthly ? D(existingObject.netGainMonthly).toFixed(0) : '120',
-    );
+
+    // States for Revenue and Cost
+    const [oMonthlyRevenue, setOMonthlyRevenue] = React.useState(initRevenue.toFixed(0));
+    const [oMonthlyCost, setOMonthlyCost] = React.useState(initCost.toFixed(0));
+
     const [isPriceTouched, setIsPriceTouched] = React.useState(false);
     const [isNameTouched, setIsNameTouched] = React.useState(false);
 
     // Calculations
     const purchasePriceD = D(normalize(oPurchasePrice));
-    const monthlyGainD = D(normalize(oMonthlyGain));
-    const annualGainD = monthlyGainD.mul(12);
+    const monthlyRevenueD = D(normalize(oMonthlyRevenue));
+    const monthlyCostD = D(normalize(oMonthlyCost));
+
+    // Net = Revenue - Cost
+    const monthlyNetGainD = monthlyRevenueD.sub(monthlyCostD);
+    const annualNetGainD = monthlyNetGainD.mul(12);
+
     const yieldPct = purchasePriceD.gt(0)
-      ? annualGainD.div(purchasePriceD).mul(100).toDP(2).toString()
+      ? annualNetGainD.div(purchasePriceD).mul(100).toDP(2).toString()
       : '0';
 
     // Validation
@@ -51,7 +64,7 @@ const ObjectForm = React.forwardRef(
       ? 'Name darf nicht leer sein'
       : existingNames.includes(trimmedName)
         ? 'Name bereits vergeben'
-        : ' ';
+        : ''; // Removed space to fix layout gap
 
     // Expose submit function
     React.useImperativeHandle(ref, () => ({
@@ -68,12 +81,13 @@ const ObjectForm = React.forwardRef(
           name: trimmedName,
           link: trimmedLink,
           kind: 'OBJECT',
-          purchasePrice: purchasePriceD.toFixed(2),
-          netGainMonthly: monthlyGainD.toFixed(2),
-          costMonthly: '0',
+          startAmount: purchasePriceD.toFixed(2),
           currency: oCurrency,
           totalPrice: purchasePriceD.toFixed(2),
-          netGainYearly: annualGainD.toFixed(2),
+          // Save updated calculated values
+          costMonthly: monthlyCostD.toFixed(2),
+          netGainMonthly: monthlyNetGainD.toFixed(2),
+          netGainYearly: annualNetGainD.toFixed(2),
           returnPercent: yieldPct.toString(),
         };
 
@@ -96,11 +110,10 @@ const ObjectForm = React.forwardRef(
           onChange={(e) => setOName(e.target.value)}
           onBlur={() => setIsNameTouched(true)}
           error={isNameTouched && nameError}
-          helperText={isNameTouched ? nameHelperText : ' '}
+          helperText={isNameTouched && nameHelperText}
           fullWidth
           required
         />
-        {/* --- NEW: Link input field --- */}
         <TextField
           label="Link (optional)"
           value={oLink}
@@ -115,28 +128,51 @@ const ObjectForm = React.forwardRef(
             onChange={(e) => setOPurchasePrice(sanitizeDecimal(e.target.value))}
             onBlur={() => setIsPriceTouched(true)}
             error={isPriceTouched && purchasePriceError}
-            helperText={isPriceTouched && purchasePriceError ? 'Kaufpreis muss > 0 sein' : ' '}
+            helperText={isPriceTouched && purchasePriceError ? 'Kaufpreis muss > 0 sein' : ''}
           />
           <CurrencySelect value={oCurrency} onChange={(e) => setOCurrency(e.target.value)} />
         </Box>
-        <TextField
-          label="Monatlicher Gewinn"
-          type="text"
-          inputProps={{
-            inputMode: 'decimal',
-            pattern: '[0-9]*[.,]?[0-9]*',
-          }}
-          value={oMonthlyGain}
-          onChange={(e) => setOMonthlyGain(sanitizeDecimal(e.target.value))}
-          fullWidth
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <Typography>{oCurrency}</Typography>
-              </InputAdornment>
-            ),
-          }}
-        />
+
+        {/* Revenue and Cost fields side-by-side */}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <TextField
+            label="Monatliche Einnahmen"
+            type="text"
+            inputProps={{
+              inputMode: 'decimal',
+              pattern: '[0-9]*[.,]?[0-9]*',
+            }}
+            value={oMonthlyRevenue}
+            onChange={(e) => setOMonthlyRevenue(sanitizeDecimal(e.target.value))}
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Typography>{oCurrency}</Typography>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            label="Monatliche Kosten"
+            type="text"
+            inputProps={{
+              inputMode: 'decimal',
+              pattern: '[0-9]*[.,]?[0-9]*',
+            }}
+            value={oMonthlyCost}
+            onChange={(e) => setOMonthlyCost(sanitizeDecimal(e.target.value))}
+            fullWidth
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Typography>{oCurrency}</Typography>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+
         <Divider />
         <Stack
           spacing={1}
@@ -144,8 +180,12 @@ const ObjectForm = React.forwardRef(
         >
           <Typography variant="h6">Zusammenfassung</Typography>
           <ResultRow
-            label="Jährlicher Gewinn"
-            value={`${fmtMoney(annualGainD.toString())} ${oCurrency}`}
+            label="Monatlicher Gewinn (netto)"
+            value={`${fmtMoney(monthlyNetGainD.toString())} ${oCurrency}`}
+          />
+          <ResultRow
+            label="Jährlicher Gewinn (netto)"
+            value={`${fmtMoney(annualNetGainD.toString())} ${oCurrency}`}
           />
           <ResultRow label="Anfangsrendite p.a." value={`${yieldPct} %`} isBold />
         </Stack>

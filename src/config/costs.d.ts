@@ -49,9 +49,19 @@ export interface RunningCostsConfig {
   nonApportionableOperatingCosts: RunningCostBlock; // nicht umlagefähig
 }
 
+export interface TaxesDepositConfig {
+  withholdingTaxRate: number;
+  taxFreeAllowance: number;
+}
+
+export interface FixedTermDepositConfig {
+  taxes: TaxesDepositConfig;
+}
+
 export interface RealEstateCostsConfig {
   meta: { country: 'DE'; currency: 'EUR'; version: number; notes?: string };
   purchaseCosts: PurchaseCostsConfig;
   rent: RentTaxesConfig;
   runningCosts: RunningCostsConfig;
+  fixedTermDeposit: FixedTermDepositConfig;
 }
