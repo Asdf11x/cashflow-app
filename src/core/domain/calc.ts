@@ -60,9 +60,15 @@ export function creditTotalMonthly(c: Credit): Money {
 
 export function computeCashflowMonthly(
   investment: ObjectInvestment | RealEstateInvestment,
-  credit: Credit,
+  credit: Credit | null, // <-- Now accepts null
 ): Decimal {
   const investmentNetGain = new Decimal(investment.netGainMonthly ?? '0');
+
+  // If there's no credit, the cashflow is simply the investment's net gain.
+  if (!credit) {
+    return investmentNetGain;
+  }
+
   const creditTotalPayment = new Decimal(credit.totalMonthly ?? '0');
 
   // Cashflow is the investment's net gain minus the total credit payment
