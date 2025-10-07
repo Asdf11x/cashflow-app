@@ -87,5 +87,12 @@
       "manualAnnualAmount": 0,
       "allowManualOverride": true
     }
+  },
+
+  "fixedTermDeposit": {
+    "taxes": {
+      "withholdingTaxRate": 26.38,
+      "taxFreeAllowance": 0
+    }
   }
 }

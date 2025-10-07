@@ -49,7 +49,7 @@ interface CostInputRowProps {
   currency: string;
 }
 
-function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRowProps) {
+export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRowProps) {
   const { enabled, value, mode, allowModeChange, label } = item;
   const absoluteAmount = React.useMemo(
     () => (mode === 'percent' ? baseAmount.mul(pctToFrac(value)) : D(normalize(value))),

@@ -1,4 +1,4 @@
-import deCosts from './investments/deRealEstateCosts.json';
+import deCosts from './investments/deDefaultValues.json';
 import type { RealEstateCostsConfig } from './costs';
 
 export function getDefaultCostsConfig(): RealEstateCostsConfig {

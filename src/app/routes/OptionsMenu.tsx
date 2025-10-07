@@ -1,4 +1,4 @@
-import deRealEstateCosts from '../../config/investments/deRealEstateCosts.json';
+import deRealEstateCosts from '../../config/investments/deDefaultValues.json';
 
 const getDisplayValue = (item: any): string => {
   const rate = item.rateOfPurchasePrice ?? item.rate ?? item.percentageOfAnnualColdRent;

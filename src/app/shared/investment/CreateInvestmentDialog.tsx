@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import RealEstateForm from './RealEstateForm';
 import ObjectForm from './ObjectForm';
+import DepositForm from './DepositForm';
 
 export default function CreateInvestmentDialog({
   onClose,
@@ -20,15 +21,20 @@ export default function CreateInvestmentDialog({
 }: {
   onClose: () => void;
   existingNames: string[];
-  editItem?: { id: string; kind: 'OBJECT' | 'REAL_ESTATE' } | null;
+  editItem?: { id: string; kind: 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT' | 'OBJECT' } | null;
 }) {
-  const [tab, setTab] = React.useState<'REAL_ESTATE' | 'OBJECT'>(editItem?.kind || 'REAL_ESTATE');
+  const [tab, setTab] = React.useState<'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT' | 'OBJECT'>(
+    editItem?.kind || 'REAL_ESTATE',
+  );
   const formRef = React.useRef<{ submit: () => void; isValid: () => boolean }>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [isValid, setIsValid] = React.useState(false);
 
-  const handleTabChange = (_: any, v: 'REAL_ESTATE' | 'OBJECT') => {
+  const handleTabChange = (
+    _: React.SyntheticEvent,
+    v: 'REAL_ESTATE' | 'OBJECT' | 'FIXED_TERM_DEPOSIT',
+  ) => {
     if (!editItem) {
       setTab(v);
     }
@@ -73,6 +79,7 @@ export default function CreateInvestmentDialog({
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
         <Tab value="REAL_ESTATE" label="Immobilie" disabled={!!editItem} />
+        <Tab value="FIXED_TERM_DEPOSIT" label="Festgeld" disabled={!!editItem} />
         <Tab value="OBJECT" label="Objekt" disabled={!!editItem} />
       </Tabs>
 
@@ -90,6 +97,14 @@ export default function CreateInvestmentDialog({
             onClose={onClose}
             existingNames={existingNames}
             editId={editItem?.kind === 'REAL_ESTATE' ? editItem.id : undefined}
+          />
+        )}
+        {tab === 'FIXED_TERM_DEPOSIT' && (
+          <DepositForm
+            ref={formRef}
+            onClose={onClose}
+            existingNames={existingNames}
+            editId={editItem?.kind === 'FIXED_TERM_DEPOSIT' ? editItem.id : undefined}
           />
         )}
         {tab === 'OBJECT' && (
