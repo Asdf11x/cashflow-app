@@ -24,6 +24,24 @@
     "editTitle": "Kredit bearbeiten",
     "createTitle": "Kredit anlegen"
   },
+  "investmentsList": {
+    "actions": "Aktionen",
+    "name": "Name",
+    "investmentAmount": "Anlagebetrag",
+    "monthlyProfit": "Monatl. Gewinn",
+    "yield": "Rendite p.a.",
+    "investmentDeleted": "Investment gelöscht",
+    "undone": "Rückgängig gemacht",
+    "undo": "Rückgängig",
+    "noInvestments": "Noch keine Investments. Klicke unten rechts auf „+\".",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "kinds": {
+      "object": "Objekt",
+      "realEstate": "Immobilie",
+      "fixedTermDeposit": "Festgeld"
+    }
+  },
   "realEstateForm": {
     "nameLabel": "Name",
     "nameHelperEmpty": "Name darf nicht leer sein",

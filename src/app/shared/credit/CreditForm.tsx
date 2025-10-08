@@ -68,7 +68,9 @@ const CreditForm = React.forwardRef(
         ? D(existingCredit.specialRepaymentYearly).toFixed(0)
         : '0',
     );
-    const [cCurrency, setCCurrency] = React.useState(existingCredit?.currency || defaults.meta.currency);
+    const [cCurrency, setCCurrency] = React.useState(
+      existingCredit?.currency || defaults.meta.currency,
+    );
 
     // Touched State for Validation
     const [isNameTouched, setIsNameTouched] = React.useState(false);

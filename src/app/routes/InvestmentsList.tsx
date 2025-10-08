@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Paper,
   Table,
@@ -36,9 +37,9 @@ type Order = 'asc' | 'desc';
 type Row = {
   id: string;
   name: string;
-  purchasePrice: number; // Changed to number for sorting
-  netGainMonthly: number; // Changed to number for sorting
-  yieldPctYearly: number; // Changed to number for sorting
+  purchasePrice: number;
+  netGainMonthly: number;
+  yieldPctYearly: number;
   kind: 'OBJECT' | 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT';
   link?: string;
   currency: string;
@@ -64,13 +65,6 @@ function getComparator<T>(order: Order, orderBy: keyof T): (a: T, b: T) => numbe
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-const headCells: readonly HeadCell[] = [
-  { id: 'name', label: 'Name' },
-  { id: 'purchasePrice', label: 'Anlagebetrag', align: 'right' },
-  { id: 'netGainMonthly', label: 'Monatl. Gewinn', align: 'right' },
-  { id: 'yieldPctYearly', label: 'Rendite p.a.', align: 'right' },
-];
-
 const NameCell = ({ name, link }: { name: string; link?: string }) => {
   if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
     return (
@@ -83,6 +77,7 @@ const NameCell = ({ name, link }: { name: string; link?: string }) => {
 };
 
 export default function InvestmentsList() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -113,6 +108,16 @@ export default function InvestmentsList() {
 
   const [order, setOrder] = React.useState<Order>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof Row>('name');
+
+  const headCells: readonly HeadCell[] = React.useMemo(
+    () => [
+      { id: 'name', label: t('investmentsList.name') },
+      { id: 'purchasePrice', label: t('investmentsList.investmentAmount'), align: 'right' },
+      { id: 'netGainMonthly', label: t('investmentsList.monthlyProfit'), align: 'right' },
+      { id: 'yieldPctYearly', label: t('investmentsList.yield'), align: 'right' },
+    ],
+    [t],
+  );
 
   const handleRequestSort = (property: keyof Row) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -177,7 +182,7 @@ export default function InvestmentsList() {
 
     if (originalItem) {
       setUndoCtx({ item: originalItem, subsetIndex });
-      setSnack({ open: true, msg: 'Investment gelöscht' });
+      setSnack({ open: true, msg: t('investmentsList.investmentDeleted') });
     }
   };
 
@@ -204,17 +209,17 @@ export default function InvestmentsList() {
 
     setUndoCtx(null);
     setSnack({ open: false, msg: '' });
-    setTimeout(() => setSnack({ open: true, msg: 'Rückgängig gemacht' }), 100);
+    setTimeout(() => setSnack({ open: true, msg: t('investmentsList.undone') }), 100);
   };
 
   const getKindLabel = (kind: Row['kind']) => {
     switch (kind) {
       case 'OBJECT':
-        return 'Objekt';
+        return t('investmentsList.kinds.object');
       case 'REAL_ESTATE':
-        return 'Immobilie';
+        return t('investmentsList.kinds.realEstate');
       case 'FIXED_TERM_DEPOSIT':
-        return 'Festgeld';
+        return t('investmentsList.kinds.fixedTermDeposit');
     }
   };
 
@@ -259,7 +264,7 @@ export default function InvestmentsList() {
               <Box sx={{ display: 'grid', gap: 1 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography color="text.secondary" variant="body2">
-                    Anlagebetrag:
+                    {t('investmentsList.investmentAmount')}:
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
                     {r.purchasePrice} {r.currency}
@@ -267,7 +272,7 @@ export default function InvestmentsList() {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography color="text.secondary" variant="body2">
-                    Monatl. Gewinn:
+                    {t('investmentsList.monthlyProfit')}:
                   </Typography>
                   <Typography variant="body2" fontWeight={600} color="success.main">
                     {r.netGainMonthly} {r.currency}
@@ -275,7 +280,7 @@ export default function InvestmentsList() {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography color="text.secondary" variant="body2">
-                    Rendite p.a.:
+                    {t('investmentsList.yield')}:
                   </Typography>
                   <Typography variant="body2" fontWeight={700} color="primary.main">
                     {r.yieldPctYearly} %
@@ -286,9 +291,7 @@ export default function InvestmentsList() {
           ))}
           {rows.length === 0 && (
             <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Typography color="text.secondary">
-                Noch keine Investments. Klicke unten rechts auf „+".
-              </Typography>
+              <Typography color="text.secondary">{t('investmentsList.noInvestments')}</Typography>
             </Paper>
           )}
         </Box>
@@ -332,7 +335,7 @@ export default function InvestmentsList() {
           action={
             undoCtx ? (
               <Button color="inherit" size="small" onClick={handleUndo}>
-                Rückgängig
+                {t('investmentsList.undo')}
               </Button>
             ) : null
           }
@@ -348,7 +351,7 @@ export default function InvestmentsList() {
         <Table size="medium">
           <TableHead>
             <TableRow>
-              <TableCell width={100}>Aktionen</TableCell>
+              <TableCell width={100}>{t('investmentsList.actions')}</TableCell>
               {headCells.map((headCell) => (
                 <TableCell
                   key={headCell.id}
@@ -377,7 +380,7 @@ export default function InvestmentsList() {
               <TableRow key={`${r.kind}:${r.id}`} hover>
                 <TableCell>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Tooltip title="Bearbeiten">
+                    <Tooltip title={t('investmentsList.edit')}>
                       <IconButton
                         color="primary"
                         size="small"
@@ -386,7 +389,7 @@ export default function InvestmentsList() {
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Löschen">
+                    <Tooltip title={t('investmentsList.delete')}>
                       <IconButton color="error" size="small" onClick={() => handleDelete(r, idx)}>
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
@@ -408,7 +411,7 @@ export default function InvestmentsList() {
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} sx={{ textAlign: 'center', color: '#94a3b8', py: 3 }}>
-                  Noch keine Investments. Klicke unten rechts auf „+".
+                  {t('investmentsList.noInvestments')}
                 </TableCell>
               </TableRow>
             )}
@@ -455,7 +458,7 @@ export default function InvestmentsList() {
         action={
           undoCtx ? (
             <Button color="inherit" size="small" onClick={handleUndo}>
-              Rückgängig
+              {t('investmentsList.undo')}
             </Button>
           ) : null
         }

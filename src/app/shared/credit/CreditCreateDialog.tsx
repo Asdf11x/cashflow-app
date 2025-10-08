@@ -41,7 +41,9 @@ export default function CreditCreateDialog({ onClose, editItem, existingNames }:
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm" fullScreen={fullScreen}>
-      <DialogTitle>{t(editItem ? 'creditDialog.editTitle' : 'creditDialog.createTitle')}</DialogTitle>
+      <DialogTitle>
+        {t(editItem ? 'creditDialog.editTitle' : 'creditDialog.createTitle')}
+      </DialogTitle>
       <DialogContent>
         <CreditForm
           ref={formRef}
