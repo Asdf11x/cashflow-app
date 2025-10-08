@@ -7,8 +7,6 @@ import CashflowList from './app/routes/CashflowList.tsx';
 import CashflowVisualization from './app/routes/CashflowVisualization.tsx';
 
 export default function App() {
-  // useVisualViewport();
-
   return (
     <Routes>
       <Route element={<Layout />}>
