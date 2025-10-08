@@ -22,10 +22,23 @@ import { useInvestStore } from '../../../core/state/useInvestStore.ts';
 import { type Depositvestment } from '../../../core/domain/types.ts';
 import Decimal from 'decimal.js';
 import { CostInputRow } from './RealEstateForm.tsx';
+
+// Import default value configurations
 import deDefaults from '../../../config/defaults/de/default-values.json';
 import chDefaults from '../../../config/defaults/ch/default-values.json';
 import czDefaults from '../../../config/defaults/cz/default-values.json';
+
 import { useSettingsStore } from '../../../core/state/useSettingsStore.ts';
+
+// Define a type for the structure of the default values JSON files
+type DefaultsConfig = typeof deDefaults;
+
+// Create a record mapping country codes to their default configuration
+const allDefaults: Record<string, DefaultsConfig> = {
+  de: deDefaults,
+  cz: czDefaults,
+  ch: chDefaults,
+};
 
 const DepositForm = React.forwardRef(
   (
@@ -42,10 +55,15 @@ const DepositForm = React.forwardRef(
   ) => {
     const { t } = useTranslation();
     const { countryProfile } = useSettingsStore();
+
+    // Determine which set of defaults to use based on countryProfile
     const defaults = React.useMemo(() => {
-      const allDefaults = { de: deDefaults, ch: chDefaults, cz: czDefaults };
-      return allDefaults[countryProfile as keyof typeof allDefaults] || deDefaults;
+      return allDefaults[countryProfile] || deDefaults;
     }, [countryProfile]);
+
+    // Access the specific fixed term deposit defaults and meta currency
+    const depositDefaults = defaults.investments.fixedTermDeposit.basic;
+    const { currency: metaCurrency } = defaults.meta;
 
     const { addDeposit, updateDeposit, deposits } = useInvestStore.getState();
     const existingDeposit = editId ? deposits.find((d) => d.id === editId) : undefined;
@@ -53,22 +71,29 @@ const DepositForm = React.forwardRef(
     const [dName, setDName] = React.useState(existingDeposit?.name || t('depositForm.defaultName'));
     const [dLink, setDLink] = React.useState(existingDeposit?.link || '');
     const [dStartAmount, setDStartAmount] = React.useState(
-      existingDeposit?.startAmount ? D(existingDeposit.startAmount).toFixed(0) : '10000',
+      existingDeposit?.startAmount
+        ? D(existingDeposit.startAmount).toFixed(0)
+        : String(depositDefaults.startAmount.value), // Use default
     );
-    const [dCurrency, setDCurrency] = React.useState(existingDeposit?.currency || '€');
+    const [dCurrency, setDCurrency] = React.useState(existingDeposit?.currency || metaCurrency); // Use default from meta
     const [dTermMonths, setDTermMonths] = React.useState(
-      existingDeposit?.termMonths ? String(existingDeposit.termMonths) : '12',
+      existingDeposit?.termMonths
+        ? String(existingDeposit.termMonths)
+        : String(depositDefaults.termMonths.value), // Use default
     );
     const [dRateNominal, setDRateNominal] = React.useState(
-      existingDeposit?.rateNominal ? String(existingDeposit.rateNominal) : '3.5',
+      existingDeposit?.rateNominal
+        ? String(existingDeposit.rateNominal)
+        : String(depositDefaults.rateNominal.value), // Use default
     );
     const [dCompounding, setDCompounding] = React.useState<Depositvestment['compounding']>(
-      existingDeposit?.compounding || 'NONE',
+      existingDeposit?.compounding ||
+      (depositDefaults.compounding.value as Depositvestment['compounding']), // Use default
     );
     const [isNameTouched, setIsNameTouched] = React.useState(false);
     const [isPriceTouched, setIsPriceTouched] = React.useState(false);
 
-    // Optional fields
+    // Optional fields (taxes) - these were already correctly sourced from defaults
     const [taxEnabled, setTaxEnabled] = React.useState(
       !!existingDeposit?.withholdingTaxRate || !!existingDeposit?.taxFreeAllowance,
     );

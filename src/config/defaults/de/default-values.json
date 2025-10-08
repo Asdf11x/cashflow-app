@@ -61,6 +61,28 @@
       }
     },
     "fixedTermDeposit": {
+      "basic": {
+        "startAmount": {
+          "label": "Startkapital",
+          "i18nKey": "depositForm.startAmountLabel",
+          "value": 10000
+        },
+        "termMonths": {
+          "label": "Laufzeit (Monate)",
+          "i18nKey": "depositForm.termLabel",
+          "value": 12
+        },
+        "rateNominal": {
+          "label": "Nominalzins p.a.",
+          "i18nKey": "depositForm.rateLabel",
+          "value": 3.5
+        },
+        "compounding": {
+          "label": "Zinseszins",
+          "i18nKey": "depositForm.compoundingTitle",
+          "value": "NONE"
+        }
+      },
       "taxes": {
         "withholdingTaxRate": 26,
         "taxFreeAllowance": 0
