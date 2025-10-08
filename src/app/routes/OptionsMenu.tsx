@@ -321,7 +321,7 @@ export default function OptionsMenu() {
             )}
             <DataSection
               title={t('optionsMenu.purchaseCosts')}
-              data={{ ...purchaseCosts.basicCosts, ...purchaseCosts.additionalCosts }}
+              data={{ ...purchaseCosts.basic, ...purchaseCosts.additional }}
               currency={meta.currency}
               isEditable={isCustomProfile}
             />
