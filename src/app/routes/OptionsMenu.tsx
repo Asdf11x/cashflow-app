@@ -11,7 +11,7 @@ import {
   Box,
   Typography,
   Paper,
-  Grid as GridLegacy, // <-- FIX: Import the legacy Grid to match the 'item' prop usage
+  Grid,
   FormControl,
   InputLabel,
   Select,
@@ -27,9 +27,6 @@ import {
   Divider,
 } from '@mui/material';
 import RestoreIcon from '@mui/icons-material/Restore';
-
-// For clarity and to avoid changing the rest of the file, we'll use GridLegacy as Grid.
-const Grid = GridLegacy;
 
 // Define a type for the structure of the default values JSON files
 type DefaultsConfig = typeof deDefaultValues;
@@ -206,8 +203,7 @@ export default function OptionsMenu() {
         </Typography>
 
         <Grid container spacing={4}>
-          {/* Core Settings Section */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 {t('optionsMenu.coreSettings')}
@@ -260,8 +256,7 @@ export default function OptionsMenu() {
             </Paper>
           </Grid>
 
-          {/* Exchange Rates Section */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 {t('optionsMenu.exchangeRates')}
