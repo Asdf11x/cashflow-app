@@ -58,6 +58,44 @@
             "allowModeChange": true
           }
         }
+      },
+      "runningCosts": {
+        "taxes": {
+          "incomeTax": {
+            "label": "Einkommensteuer",
+            "i18nKey": "realEstateForm.costLabels.incomeTax",
+            "enabled": true,
+            "value": 0.42,
+            "mode": "percent",
+            "allowModeChange": false
+          },
+          "solidaritySurcharge": {
+            "label": "Solidaritätszuschlag",
+            "i18nKey": "realEstateForm.costLabels.solidaritySurcharge",
+            "enabled": true,
+            "value": 0.055,
+            "mode": "percent",
+            "allowModeChange": false
+          },
+          "churchTax": {
+            "label": "Kirchensteuer",
+            "i18nKey": "realEstateForm.costLabels.churchTax",
+            "enabled": false,
+            "value": 0.08,
+            "mode": "percent",
+            "allowModeChange": false
+          }
+        },
+        "other": {
+          "otherDeductions": {
+            "label": "Sonstige Abzüge (monatl.)",
+            "i18nKey": "realEstateForm.costLabels.otherDeductions",
+            "enabled": false,
+            "value": 0,
+            "mode": "currency",
+            "allowModeChange": true
+          }
+        }
       }
     },
     "fixedTermDeposit": {

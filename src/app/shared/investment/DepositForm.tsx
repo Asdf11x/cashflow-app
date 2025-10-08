@@ -88,7 +88,7 @@ const DepositForm = React.forwardRef(
     );
     const [dCompounding, setDCompounding] = React.useState<Depositvestment['compounding']>(
       existingDeposit?.compounding ||
-      (depositDefaults.compounding.value as Depositvestment['compounding']), // Use default
+        (depositDefaults.compounding.value as Depositvestment['compounding']), // Use default
     );
     const [isNameTouched, setIsNameTouched] = React.useState(false);
     const [isPriceTouched, setIsPriceTouched] = React.useState(false);
