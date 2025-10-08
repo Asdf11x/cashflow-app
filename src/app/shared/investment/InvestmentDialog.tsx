@@ -15,7 +15,7 @@ import RealEstateForm from './RealEstateForm';
 import ObjectForm from './ObjectForm';
 import DepositForm from './DepositForm';
 
-export default function CreateInvestmentDialog({
+export default function InvestmentDialog({
   onClose,
   existingNames,
   editItem,

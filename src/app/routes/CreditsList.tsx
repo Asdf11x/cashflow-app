@@ -4,7 +4,7 @@ import { TableCell, Typography, Box } from '@mui/material';
 import { useCreditStore } from '../../core/state/useCreditStore';
 import { fmtMoney } from '../../core/domain/calc';
 import type { Credit } from '../../core/domain/types.ts';
-import CreditCreateDialog from '../shared/credit/CreditCreateDialog.tsx';
+import CreditDialog from '../shared/credit/CreditDialog.tsx';
 import ResourceList, { type HeadCell } from '../shared/ResourceList'; // <-- IMPORT
 
 export default function CreditsList() {
@@ -55,7 +55,7 @@ export default function CreditsList() {
       items={credits}
       headCells={headCells}
       i18nKeys={i18nKeys}
-      DialogComponent={CreditCreateDialog}
+      DialogComponent={CreditDialog}
       onDelete={handleDelete}
       onUndo={handleUndo}
       getUndoContext={() => !!undoCtx}

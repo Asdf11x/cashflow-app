@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableCell, Typography, Box, Chip, Link } from '@mui/material';
 import { useInvestStore } from '../../core/state/useInvestStore';
-import CreateInvestmentDialog from '../shared/investment/CreateInvestmentDialog.tsx';
+import InvestmentDialog from '../shared/investment/InvestmentDialog.tsx';
 import type {
   ObjectInvestment,
   RealEstateInvestment,
@@ -155,7 +155,7 @@ export default function InvestmentsList() {
       items={rows}
       headCells={headCells}
       i18nKeys={i18nKeys}
-      DialogComponent={CreateInvestmentDialog as any} // Cast as `any` because its props are slightly different
+      DialogComponent={InvestmentDialog as any} // Cast as `any` because its props are slightly different
       onDelete={handleDelete}
       onUndo={handleUndo}
       getUndoContext={() => !!undoCtx}
