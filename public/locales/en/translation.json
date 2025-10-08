@@ -215,7 +215,6 @@
   },
   "optionsMenu": {
     "title": "Options",
-    "descriptionChoose": "Choose your preferred settings and default calculation values.",
     "coreSettings": "Core Settings",
     "language": "Language",
     "mainCurrency": "Main Currency",
@@ -226,10 +225,19 @@
     "currency": "Currency",
     "customProfileInfo": "You are in the 'Custom' profile. All values below are editable.",
     "purchaseCosts": "Purchase Side Costs",
-    "annualRunningCosts": "Annual Running Costs",
+    "additionalPurchaseCosts": "Additional Purchase Costs",
+    "taxDeductions": "Tax Deductions",
+    "otherRunningCosts": "Other Running Costs",
     "resetAll": "Reset All",
-    "description": "Description",
-    "defaultValue": "Default Value"
+    "realEstate": "Real Estate",
+    "realEstateBasic": "Basics (Real Estate)",
+    "fixedTermDeposit": "Fixed-Term Deposit",
+    "depositBasic": "Basics (Fixed-Term Deposit)",
+    "depositTaxes": "Taxes & Fees",
+    "fields": {
+      "withholdingTaxRate": "Withholding tax incl. solidarity surcharge",
+      "taxFreeAllowance": "Saver's allowance (annual)"
+    }
   },
   "countries": {
     "de": "Germany",

@@ -2,7 +2,7 @@
   "meta": {
     "country": "DE",
     "currency": "EUR",
-    "version": 2
+    "version": 1
   },
   "investments": {
     "realEstate": {
@@ -10,8 +10,8 @@
         "name": {
           "i18nKey": "realEstateForm.defaultName"
         },
-        "purchasePrice": "",
-        "monthlyColdRent": "",
+        "purchasePrice": "250000",
+        "monthlyColdRent": "1200",
         "detailsLink": ""
       },
       "purchaseCosts": {
@@ -49,36 +49,36 @@
           "renovationCosts": {
             "i18nKey": "realEstateForm.costLabels.renovationCosts",
             "enabled": false,
-            "value": 0,
+            "value": "0",
             "mode": "currency",
             "allowModeChange": true
           },
           "subvention": {
             "i18nKey": "realEstateForm.costLabels.subvention",
             "enabled": false,
-            "value": 0,
+            "value": "0",
             "mode": "currency",
             "allowModeChange": true
           },
           "otherAdditionalCosts": {
             "i18nKey": "realEstateForm.costLabels.otherAdditionalCosts",
             "enabled": false,
-            "value": 0,
+            "value": "0",
             "mode": "percent",
             "allowModeChange": true
           },
           "appraisalFee": {
             "i18nKey": "realEstateForm.costLabels.appraisalFee",
             "enabled": false,
-            "value": 0.5,
-            "mode": "percent",
+            "value": "1500",
+            "mode": "currency",
             "allowModeChange": true
           },
           "insuranceSetup": {
             "i18nKey": "realEstateForm.costLabels.insuranceSetup",
             "enabled": false,
-            "value": 0.2,
-            "mode": "percent",
+            "value": "0",
+            "mode": "currency",
             "allowModeChange": true
           }
         }
@@ -88,7 +88,7 @@
           "incomeTax": {
             "i18nKey": "realEstateForm.costLabels.incomeTax",
             "enabled": true,
-            "value": 33,
+            "value": 30,
             "mode": "percent",
             "allowModeChange": false
           },
@@ -102,14 +102,14 @@
           "churchTax": {
             "i18nKey": "realEstateForm.costLabels.churchTax",
             "enabled": false,
-            "value": 8.0,
+            "value": 9.0,
             "mode": "percent",
             "allowModeChange": false
           },
           "otherDeductions": {
             "i18nKey": "realEstateForm.costLabels.otherDeductions",
             "enabled": false,
-            "value": 0,
+            "value": "0",
             "mode": "currency",
             "allowModeChange": true
           }
@@ -118,9 +118,9 @@
           "houseFee": {
             "i18nKeyTotal": "realEstateForm.costLabels.houseFee",
             "i18nKeyApportionable": "realEstateForm.costLabels.houseFeeApportionable",
-            "enabled": false,
-            "value1": "0",
-            "value2": "0",
+            "enabled": true,
+            "value1": "250",
+            "value2": "150",
             "mode": "currency",
             "allowModeChange": true
           },
@@ -137,46 +137,39 @@
     "fixedTermDeposit": {
       "basic": {
         "startAmount": {
-          "label": "Startkapital",
           "i18nKey": "depositForm.startAmountLabel",
           "value": 10000
         },
         "termMonths": {
-          "label": "Laufzeit (Monate)",
           "i18nKey": "depositForm.termLabel",
           "value": 12
         },
         "rateNominal": {
-          "label": "Nominalzins p.a.",
           "i18nKey": "depositForm.rateLabel",
           "value": 3.5
         },
         "compounding": {
-          "label": "Zinseszins",
           "i18nKey": "depositForm.compoundingTitle",
           "value": "NONE"
         }
       },
       "taxes": {
-        "withholdingTaxRate": 26,
-        "taxFreeAllowance": 0
+        "withholdingTaxRate": 26.375,
+        "taxFreeAllowance": 1000
       }
     }
   },
   "credit": {
     "basic": {
       "rateAnnualPct": {
-        "label": "Sollzinssatz p.a.",
         "i18nKey": "creditForm.labels.rateAnnualPct",
         "value": 3.5
       },
       "fixedRateYears": {
-        "label": "Zinsbindung (Jahre)",
         "i18nKey": "creditForm.labels.fixedRateYears",
         "value": 10
       },
       "amortizationInitial": {
-        "label": "Anfängliche Tilgung p.a.",
         "i18nKey": "creditForm.labels.amortizationInitial",
         "value": 0.02,
         "mode": "percent"

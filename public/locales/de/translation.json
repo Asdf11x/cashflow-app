@@ -215,7 +215,6 @@
   },
   "optionsMenu": {
     "title": "Optionen",
-    "descriptionChoose": "Wählen Sie Ihre bevorzugten Einstellungen und Standardberechnungswerte aus.",
     "coreSettings": "Kerneinstellungen",
     "language": "Sprache",
     "mainCurrency": "Hauptwährung",
@@ -226,10 +225,19 @@
     "currency": "Währung",
     "customProfileInfo": "Sie befinden sich im „Benutzerdefiniert“-Profil. Alle Werte unten sind bearbeitbar.",
     "purchaseCosts": "Kaufnebenkosten",
-    "annualRunningCosts": "Laufende jährliche Kosten",
+    "additionalPurchaseCosts": "Weitere Kaufnebenkosten",
+    "taxDeductions": "Steuerliche Abzüge",
+    "otherRunningCosts": "Weitere Laufende Kosten",
     "resetAll": "Alles zurücksetzen",
-    "description": "Bezeichnung",
-    "defaultValue": "Standardwert"
+    "realEstate": "Immobilien",
+    "realEstateBasic": "Grundlagen (Immobilie)",
+    "fixedTermDeposit": "Festgeld",
+    "depositBasic": "Grundlagen (Festgeld)",
+    "depositTaxes": "Steuern & Gebühren",
+    "fields": {
+      "withholdingTaxRate": "Abgeltungssteuer inkl. Soli",
+      "taxFreeAllowance": "Sparer-Pauschbetrag (jährlich)"
+    }
   },
   "countries": {
     "de": "Deutschland",

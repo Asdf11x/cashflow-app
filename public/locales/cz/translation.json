@@ -14,26 +14,26 @@
     "kofiButtonLabel": "Podpořte mě na Ko-fi"
   },
   "creditForm": {
-    "defaultName": "Immobilienkredit",
+    "defaultName": "Úvěr na nemovitost",
     "labels": {
-      "name": "Name des Kredits",
-      "principal": "Kreditsumme (Darlehen)",
-      "rateAnnualPct": "Sollzinssatz p.a.",
-      "fixedRateYears": "Zinsbindung (Jahre)",
-      "amortizationInitial": "Anfängliche Tilgung p.a.",
-      "amortizationMonthly": "Monatliche Tilgung",
-      "termMonths": "Gesamtlaufzeit (Monate)",
-      "specialRepaymentYearly": "Sondertilgung (jährlich)"
+      "name": "Název úvěru",
+      "principal": "Výše úvěru (jistina)",
+      "rateAnnualPct": "Úroková sazba p.a.",
+      "fixedRateYears": "Fixace úrokové sazby (roky)",
+      "amortizationInitial": "Počáteční splátka p.a.",
+      "amortizationMonthly": "Měsíční splátka",
+      "termMonths": "Celková doba splatnosti (měsíce)",
+      "specialRepaymentYearly": "Mimořádná splátka (ročně)"
     },
     "helpers": {
-      "nameEmpty": "Name darf nicht leer sein",
-      "nameInUse": "Name bereits vergeben",
-      "principalError": "Kreditsumme muss > 0 sein"
+      "nameEmpty": "Název nesmí být prázdný",
+      "nameInUse": "Název se již používá",
+      "principalError": "Výše úvěru musí být > 0"
     },
     "summary": {
-      "title": "Zusammenfassung",
-      "interestMonthly": "Monatliche Zinsen (1. Monat)",
-      "totalMonthly": "Monatliche Rate (Zins + Tilgung)"
+      "title": "Shrnutí",
+      "interestMonthly": "Měsíční úrok (1. měsíc)",
+      "totalMonthly": "Měsíční splátka (úrok + splátka)"
     }
   },
   "creditDialog": {
@@ -215,7 +215,6 @@
   },
   "optionsMenu": {
     "title": "Možnosti",
-    "descriptionChoose": "Vyberte si preferovaná nastavení a výchozí hodnoty pro výpočty.",
     "coreSettings": "Základní nastavení",
     "language": "Jazyk",
     "mainCurrency": "Hlavní měna",
@@ -226,10 +225,19 @@
     "currency": "Měna",
     "customProfileInfo": "Nacházíte se v profilu „Vlastní“. Všechny níže uvedené hodnoty lze upravit.",
     "purchaseCosts": "Pořizovací náklady",
-    "annualRunningCosts": "Roční provozní náklady",
+    "additionalPurchaseCosts": "Další pořizovací náklady",
+    "taxDeductions": "Daňové odpočty",
+    "otherRunningCosts": "Ostatní provozní náklady",
     "resetAll": "Resetovat vše",
-    "description": "Popis",
-    "defaultValue": "Výchozí hodnota"
+    "realEstate": "Nemovitosti",
+    "realEstateBasic": "Základy (Nemovitost)",
+    "fixedTermDeposit": "Termínovaný vklad",
+    "depositBasic": "Základy (Termínovaný vklad)",
+    "depositTaxes": "Daně a poplatky",
+    "fields": {
+      "withholdingTaxRate": "Srážková daň vč. solidární přirážky",
+      "taxFreeAllowance": "Nezdanitelná částka pro střadatele (ročně)"
+    }
   },
   "countries": {
     "de": "Německo",

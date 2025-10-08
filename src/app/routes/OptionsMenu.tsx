@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../../core/state/useSettingsStore';
 
@@ -27,6 +27,7 @@ import {
   Divider,
 } from '@mui/material';
 import RestoreIcon from '@mui/icons-material/Restore';
+import { set } from 'lodash';
 
 // Define a type for the structure of the default values JSON files
 type DefaultsConfig = typeof deDefaultValues;
@@ -38,33 +39,85 @@ const allDefaults: Record<string, DefaultsConfig> = {
   ch: chDefaultValues,
 };
 
-// DataSection component displays tables of default values
+// --- Helper function to parse default values for display ---
+const processSectionForDisplay = (sectionData: Record<string, any>, t: (key: string) => string) => {
+  const results: any[] = [];
+  if (!sectionData) return results;
+
+  for (const [key, item] of Object.entries(sectionData)) {
+    // Handle complex items (objects with value, mode, etc.)
+    if (typeof item === 'object' && item !== null && 'value' in item) {
+      results.push({
+        key,
+        label: t(item.i18nKey),
+        value: item.value,
+        mode: item.mode,
+      });
+    }
+    // Handle simple key-value pairs (like in the 'taxes' section)
+    else if (typeof item === 'number') {
+      results.push({
+        key,
+        label: t(`optionsMenu.fields.${key}`), // Assumes labels are in translation files
+        value: item,
+        mode: key.toLowerCase().includes('rate') ? 'percent' : 'currency', // Heuristic for mode
+      });
+    }
+    // Special handling for houseFee with two values
+    else if (key === 'houseFee' && 'value1' in item) {
+      results.push({
+        key: 'houseFeeValue1',
+        label: t(item.i18nKeyTotal),
+        value: item.value1,
+        mode: item.mode,
+      });
+      results.push({
+        key: 'houseFeeValue2',
+        label: t(item.i18nKeyApportionable),
+        value: item.value2,
+        mode: item.mode,
+      });
+    }
+  }
+  return results;
+};
+
+// --- Display Component for a section of default values ---
 const DataSection = ({
   title,
   data,
   currency,
   isEditable,
+  onValueChange,
+  pathPrefix,
 }: {
   title: string;
-  data: Record<string, any>;
+  data: ReturnType<typeof processSectionForDisplay>;
   currency: string;
   isEditable: boolean;
+  onValueChange: (path: string, value: any) => void;
+  pathPrefix: string;
 }) => {
-  const { t } = useTranslation();
-
-  if (!data || Object.keys(data).length === 0) {
+  if (!data || data.length === 0) {
     return null;
   }
 
-  // Helper function to format the display value based on its type (percent or currency)
-  const getDisplayValue = (item: any, currency: string): string => {
-    if (item.mode === 'percent' && typeof item.value === 'number') {
-      return `${(item.value * 100).toFixed(2)} %`;
+  const getDisplayValue = (item: any) => {
+    if (item.mode === 'percent') {
+      return `${item.value} %`;
     }
-    if (item.mode === 'currency') {
-      return `${Number(item.value).toLocaleString('de-DE')} ${currency}`;
+    return `${Number(item.value).toLocaleString('de-DE')} ${
+      item.mode === 'currency' ? currency : ''
+    }`.trim();
+  };
+
+  const handleInputChange = (key: string, newValue: string, mode: string) => {
+    let finalValue: string | number = newValue;
+    if (mode !== 'text' && mode !== 'percent') {
+      finalValue = parseFloat(newValue) || 0;
     }
-    return 'N/A';
+    const path = `${pathPrefix}.${key}.value`;
+    onValueChange(path, finalValue);
   };
 
   return (
@@ -76,13 +129,13 @@ const DataSection = ({
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>{t('optionsMenu.description')}</TableCell>
-              <TableCell align="right">{t('optionsMenu.defaultValue')}</TableCell>
+              <TableCell>{title}</TableCell>
+              <TableCell align="right">Default Value</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {Object.entries(data).map(([key, item]) => (
-              <TableRow key={key}>
+            {data.map((item) => (
+              <TableRow key={item.key}>
                 <TableCell component="th" scope="row">
                   {item.label}
                 </TableCell>
@@ -91,11 +144,15 @@ const DataSection = ({
                     <TextField
                       variant="outlined"
                       size="small"
-                      defaultValue={getDisplayValue(item, currency)}
+                      value={item.value}
+                      onChange={(e) => handleInputChange(item.key, e.target.value, item.mode)}
                       sx={{ width: '120px' }}
+                      InputProps={{
+                        endAdornment: item.mode === 'percent' ? '%' : currency,
+                      }}
                     />
                   ) : (
-                    getDisplayValue(item, currency)
+                    getDisplayValue(item)
                   )}
                 </TableCell>
               </TableRow>
@@ -110,7 +167,6 @@ const DataSection = ({
 export default function OptionsMenu() {
   const { t, i18n } = useTranslation();
 
-  // --- State and setters are now sourced exclusively from the global store ---
   const {
     language,
     countryProfile,
@@ -120,26 +176,21 @@ export default function OptionsMenu() {
     setMainCurrency,
   } = useSettingsStore();
 
-  // Local state for the currently displayed default values
   const [currentDefaults, setCurrentDefaults] = useState<DefaultsConfig>(
     allDefaults[countryProfile] || deDefaultValues,
   );
-  // Local state for exchange rates, as it's not part of the global settings
   const [exchangeRates, setExchangeRates] = useState({ CZK: 24.75, CHF: 0.98 });
 
   const isCustomProfile = countryProfile === 'custom';
 
-  // Effect to update the displayed defaults when the countryProfile changes
   useEffect(() => {
     if (countryProfile !== 'custom') {
       setCurrentDefaults(allDefaults[countryProfile]);
     } else {
-      // For a custom profile, create a deep copy of the German defaults to allow modifications
       setCurrentDefaults(JSON.parse(JSON.stringify(deDefaultValues)));
     }
   }, [countryProfile]);
 
-  // Memoized options for select dropdowns to prevent re-computation on every render
   const countryOptions = useMemo(
     () => [
       { value: 'de', label: t('countries.de') },
@@ -168,21 +219,29 @@ export default function OptionsMenu() {
     [],
   );
 
-  // Function to handle language change in the store and i18next
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
     i18n.changeLanguage(lang);
   };
 
-  // Function to reset all settings to their initial state
   const handleReset = () => {
     setCountryProfile('de');
     setMainCurrency('EUR');
-    // Also reset local state
     setExchangeRates({ CZK: 24.75, CHF: 0.98 });
   };
 
-  // Get the display label for the currently selected country profile
+  const handleDefaultsChange = useCallback(
+    (path: string, value: any) => {
+      if (!isCustomProfile) return;
+      setCurrentDefaults((prev) => {
+        const newDefaults = JSON.parse(JSON.stringify(prev));
+        set(newDefaults, path, value); // using lodash.set for deep updates
+        return newDefaults;
+      });
+    },
+    [isCustomProfile],
+  );
+
   const selectedCountryLabel = useMemo(
     () => countryOptions.find((c) => c.value === countryProfile)?.label,
     [countryProfile, countryOptions],
@@ -190,7 +249,17 @@ export default function OptionsMenu() {
 
   // Safely destructure data from the current defaults
   const { meta, investments } = currentDefaults;
-  const purchaseCosts = investments?.realEstate?.purchaseCosts;
+  const re = investments?.realEstate;
+  const ftd = investments?.fixedTermDeposit;
+
+  // Process all sections for display
+  const realEstateBasic = processSectionForDisplay(re?.basic, t);
+  const purchaseCostsBasic = processSectionForDisplay(re?.purchaseCosts.basic, t);
+  const purchaseCostsAdditional = processSectionForDisplay(re?.purchaseCosts.additional, t);
+  const runningCostsTaxes = processSectionForDisplay(re?.runningCosts.rentTaxes, t);
+  const runningCostsAdditional = processSectionForDisplay(re?.runningCosts.additional, t);
+  const depositBasic = processSectionForDisplay(ftd?.basic, t);
+  const depositTaxes = processSectionForDisplay(ftd?.taxes, t);
 
   return (
     <Container maxWidth="md">
@@ -198,20 +267,17 @@ export default function OptionsMenu() {
         <Typography variant="h4" component="h1" gutterBottom>
           {t('optionsMenu.title')}
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          {t('optionsMenu.description')}
-        </Typography>
 
         <Grid container spacing={4}>
+          {/* Core Settings and Exchange Rates */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 {t('optionsMenu.coreSettings')}
               </Typography>
               <FormControl fullWidth sx={{ mb: 2.5 }}>
-                <InputLabel id="language-select-label">{t('optionsMenu.language')}</InputLabel>
+                <InputLabel>{t('optionsMenu.language')}</InputLabel>
                 <Select
-                  labelId="language-select-label"
                   value={language}
                   label={t('optionsMenu.language')}
                   onChange={(e) => handleLanguageChange(e.target.value)}
@@ -224,9 +290,8 @@ export default function OptionsMenu() {
                 </Select>
               </FormControl>
               <FormControl fullWidth sx={{ mb: 2.5 }}>
-                <InputLabel id="currency-select-label">{t('optionsMenu.mainCurrency')}</InputLabel>
+                <InputLabel>{t('optionsMenu.mainCurrency')}</InputLabel>
                 <Select
-                  labelId="currency-select-label"
                   value={mainCurrency}
                   label={t('optionsMenu.mainCurrency')}
                   onChange={(e) => setMainCurrency(e.target.value)}
@@ -239,9 +304,8 @@ export default function OptionsMenu() {
                 </Select>
               </FormControl>
               <FormControl fullWidth>
-                <InputLabel id="defaults-select-label">{t('optionsMenu.defaultValues')}</InputLabel>
+                <InputLabel>{t('optionsMenu.defaultValues')}</InputLabel>
                 <Select
-                  labelId="defaults-select-label"
                   value={countryProfile}
                   label={t('optionsMenu.defaultValues')}
                   onChange={(e) => setCountryProfile(e.target.value)}
@@ -255,7 +319,6 @@ export default function OptionsMenu() {
               </FormControl>
             </Paper>
           </Grid>
-
           <Grid size={{ xs: 12, md: 6 }}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
@@ -297,38 +360,85 @@ export default function OptionsMenu() {
         <Divider sx={{ my: 4 }} />
 
         {/* Default Values Display Section */}
-        {meta && purchaseCosts && (
+        {meta && (
           <Box>
             <Typography variant="h5" component="h2" gutterBottom>
               {t('optionsMenu.defaultsFor')} <strong>{selectedCountryLabel}</strong>
             </Typography>
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <Paper variant="outlined" sx={{ px: 1.5, py: 0.5 }}>
-                <Typography variant="body2">
-                  {t('optionsMenu.country')}: <strong>{meta.country}</strong>
-                </Typography>
-              </Paper>
-              <Paper variant="outlined" sx={{ px: 1.5, py: 0.5 }}>
-                <Typography variant="body2">
-                  {t('optionsMenu.currency')}: <strong>{meta.currency}</strong>
-                </Typography>
-              </Paper>
-            </Box>
             {isCustomProfile && (
               <Typography variant="body2" color="primary" sx={{ fontStyle: 'italic', mb: 2 }}>
                 {t('optionsMenu.customProfileInfo')}
               </Typography>
             )}
+
+            {/* --- Real Estate Section --- */}
+            <Typography variant="h5" component="h3" sx={{ mt: 4, mb: 2 }}>
+              {t('optionsMenu.realEstate')}
+            </Typography>
             <DataSection
-              title={t('optionsMenu.purchaseCosts')}
-              data={{ ...purchaseCosts.basic, ...purchaseCosts.additional }}
+              title={t('optionsMenu.realEstateBasic')}
+              data={realEstateBasic}
               currency={meta.currency}
               isEditable={isCustomProfile}
+              onValueChange={handleDefaultsChange}
+              pathPrefix="investments.realEstate.basic"
+            />
+            <DataSection
+              title={t('optionsMenu.purchaseCosts')}
+              data={purchaseCostsBasic}
+              currency={meta.currency}
+              isEditable={isCustomProfile}
+              onValueChange={handleDefaultsChange}
+              pathPrefix="investments.realEstate.purchaseCosts.basic"
+            />
+            <DataSection
+              title={t('optionsMenu.additionalPurchaseCosts')}
+              data={purchaseCostsAdditional}
+              currency={meta.currency}
+              isEditable={isCustomProfile}
+              onValueChange={handleDefaultsChange}
+              pathPrefix="investments.realEstate.purchaseCosts.additional"
+            />
+            <DataSection
+              title={t('optionsMenu.taxDeductions')}
+              data={runningCostsTaxes}
+              currency={meta.currency}
+              isEditable={isCustomProfile}
+              onValueChange={handleDefaultsChange}
+              pathPrefix="investments.realEstate.runningCosts.rentTaxes"
+            />
+            <DataSection
+              title={t('optionsMenu.otherRunningCosts')}
+              data={runningCostsAdditional}
+              currency={meta.currency}
+              isEditable={isCustomProfile}
+              onValueChange={handleDefaultsChange}
+              pathPrefix="investments.realEstate.runningCosts.additional"
+            />
+
+            {/* --- Fixed-Term Deposit Section --- */}
+            <Typography variant="h5" component="h3" sx={{ mt: 4, mb: 2 }}>
+              {t('optionsMenu.fixedTermDeposit')}
+            </Typography>
+            <DataSection
+              title={t('optionsMenu.depositBasic')}
+              data={depositBasic}
+              currency={meta.currency}
+              isEditable={isCustomProfile}
+              onValueChange={handleDefaultsChange}
+              pathPrefix="investments.fixedTermDeposit.basic"
+            />
+            <DataSection
+              title={t('optionsMenu.depositTaxes')}
+              data={depositTaxes}
+              currency={meta.currency}
+              isEditable={isCustomProfile}
+              onValueChange={handleDefaultsChange}
+              pathPrefix="investments.fixedTermDeposit.taxes"
             />
           </Box>
         )}
 
-        {/* Reset Button */}
         <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             variant="outlined"
