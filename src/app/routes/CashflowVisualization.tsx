@@ -1,17 +1,14 @@
-// --- START OF FILE CashflowVisualization.tsx ---
-
 import * as React from 'react';
 import {
   Box,
   Typography,
   Paper,
-  Grid,
   FormGroup,
   FormControlLabel,
   Checkbox,
   Slider,
   Divider,
-  useTheme,
+  // useTheme,
   Tabs,
   Tab,
   TextField,
@@ -25,7 +22,6 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { useCashflowStore } from '../../core/state/useCashflowStore';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { useCreditStore } from '../../core/state/useCreditStore';
-import { type RealEstateInvestment } from '../../core/domain/types';
 import { fmtMoney } from '../../core/domain/calc';
 
 const DEFAULT_ASSUMPTIONS = {
@@ -62,7 +58,7 @@ function TabPanel(props: TabPanelProps) {
 
 // --- Main Visualization Component ---
 export default function CashflowVisualization() {
-  const theme = useTheme();
+  // const theme = useTheme();
 
   // --- Data Fetching from Stores ---
   const cashflows = useCashflowStore((s) => s.cashflows);
@@ -116,7 +112,7 @@ export default function CashflowVisualization() {
     const selectedCashflows = cashflows.filter((cf) => selectedIds.includes(cf.id));
     return selectedCashflows.map((cf) => {
       const investment = allInvestments.find((i) => i.id === cf.investmentId);
-      const credit = credits.find((c) => c.id === cf.creditId);
+      // const credit = credits.find((c) => c.id === cf.creditId);
 
       const dataPoints: { x: number; y: number }[] = [{ x: 0, y: 0 }];
       let cumulativeCashflow = 0;
@@ -402,5 +398,3 @@ export default function CashflowVisualization() {
     </Box>
   );
 }
-
-// --- END OF FILE CashflowVisualization.tsx ---

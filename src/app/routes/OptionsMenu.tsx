@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSettingsStore } from '../../core/state/useSettingsStore'; // <-- 1. IMPORT STORE
+import { useSettingsStore } from '../../core/state/useSettingsStore';
 
 import deDefaultValues from '../../config/defaults/de/default-values.json';
 import czDefaultValues from '../../config/defaults/cz/default-values.json';
@@ -11,7 +11,7 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
+  Grid as GridLegacy, // <-- FIX: Import the legacy Grid to match the 'item' prop usage
   FormControl,
   InputLabel,
   Select,
@@ -28,30 +28,38 @@ import {
 } from '@mui/material';
 import RestoreIcon from '@mui/icons-material/Restore';
 
+// For clarity and to avoid changing the rest of the file, we'll use GridLegacy as Grid.
+const Grid = GridLegacy;
+
+// Define a type for the structure of the default values JSON files
 type DefaultsConfig = typeof deDefaultValues;
 
+// Create a record mapping country codes to their default configuration
 const allDefaults: Record<string, DefaultsConfig> = {
   de: deDefaultValues,
   cz: czDefaultValues,
-  ch: chDefaultValues
+  ch: chDefaultValues,
 };
 
-// DataSection component remains the same, it reads `item.label` which is correct for this file.
+// DataSection component displays tables of default values
 const DataSection = ({
-                       title,
-                       data,
-                       currency,
-                       isEditable,
-                     }: {
+  title,
+  data,
+  currency,
+  isEditable,
+}: {
   title: string;
   data: Record<string, any>;
   currency: string;
   isEditable: boolean;
 }) => {
   const { t } = useTranslation();
+
   if (!data || Object.keys(data).length === 0) {
     return null;
   }
+
+  // Helper function to format the display value based on its type (percent or currency)
   const getDisplayValue = (item: any, currency: string): string => {
     if (item.mode === 'percent' && typeof item.value === 'number') {
       return `${(item.value * 100).toFixed(2)} %`;
@@ -61,6 +69,7 @@ const DataSection = ({
     }
     return 'N/A';
   };
+
   return (
     <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
       <Typography variant="h6" gutterBottom>
@@ -104,7 +113,7 @@ const DataSection = ({
 export default function OptionsMenu() {
   const { t, i18n } = useTranslation();
 
-  // --- 2. GET STATE AND SETTERS FROM THE GLOBAL STORE ---
+  // --- State and setters are now sourced exclusively from the global store ---
   const {
     language,
     countryProfile,
@@ -114,20 +123,26 @@ export default function OptionsMenu() {
     setMainCurrency,
   } = useSettingsStore();
 
+  // Local state for the currently displayed default values
   const [currentDefaults, setCurrentDefaults] = useState<DefaultsConfig>(
     allDefaults[countryProfile] || deDefaultValues,
   );
+  // Local state for exchange rates, as it's not part of the global settings
   const [exchangeRates, setExchangeRates] = useState({ CZK: 24.75, CHF: 0.98 });
+
   const isCustomProfile = countryProfile === 'custom';
 
+  // Effect to update the displayed defaults when the countryProfile changes
   useEffect(() => {
     if (countryProfile !== 'custom') {
       setCurrentDefaults(allDefaults[countryProfile]);
     } else {
+      // For a custom profile, create a deep copy of the German defaults to allow modifications
       setCurrentDefaults(JSON.parse(JSON.stringify(deDefaultValues)));
     }
   }, [countryProfile]);
 
+  // Memoized options for select dropdowns to prevent re-computation on every render
   const countryOptions = useMemo(
     () => [
       { value: 'de', label: t('countries.de') },
@@ -147,45 +162,36 @@ export default function OptionsMenu() {
     [t],
   );
 
-  const currencyOptions = [
-    { value: 'EUR', label: 'Euro (EUR)' },
-    { value: 'CZK', label: 'Czech Koruna (CZK)' },
-    { value: 'CHF', label: 'Swiss Franc (CHF)' },
-  ];
+  const currencyOptions = useMemo(
+    () => [
+      { value: 'EUR', label: 'Euro (EUR)' },
+      { value: 'CZK', label: 'Czech Koruna (CZK)' },
+      { value: 'CHF', label: 'Swiss Franc (CHF)' },
+    ],
+    [],
+  );
 
-  // State
-  // const [mainCurrency, setMainCurrency] = useState('EUR');
-  const [selectedCountry] = useState('de');
-  // const [currentDefaults, setCurrentDefaults] = useState<DefaultsConfig>(deDefaultValues);
-  // const [exchangeRates, setExchangeRates] = useState({ CZK: 24.75, CHF: 0.98 });
-
-  // const isCustomProfile = selectedCountry === 'custom';
-
-  useEffect(() => {
-    if (selectedCountry !== 'custom') {
-      setCurrentDefaults(allDefaults[selectedCountry]);
-    } else {
-      setCurrentDefaults(JSON.parse(JSON.stringify(deDefaultValues)));
-    }
-  }, [selectedCountry]);
-
-  // <-- CHANGED: Function to handle language change
+  // Function to handle language change in the store and i18next
   const handleLanguageChange = (lang: string) => {
-    setLanguage(lang); // Update store
-    i18n.changeLanguage(lang); // Update i18next instance
+    setLanguage(lang);
+    i18n.changeLanguage(lang);
   };
 
+  // Function to reset all settings to their initial state
   const handleReset = () => {
     setCountryProfile('de');
     setMainCurrency('EUR');
+    // Also reset local state
     setExchangeRates({ CZK: 24.75, CHF: 0.98 });
   };
 
+  // Get the display label for the currently selected country profile
   const selectedCountryLabel = useMemo(
     () => countryOptions.find((c) => c.value === countryProfile)?.label,
     [countryProfile, countryOptions],
   );
 
+  // Safely destructure data from the current defaults
   const { meta, investments } = currentDefaults;
   const purchaseCosts = investments?.realEstate?.purchaseCosts;
 
@@ -198,7 +204,9 @@ export default function OptionsMenu() {
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
           {t('optionsMenu.description')}
         </Typography>
+
         <Grid container spacing={4}>
+          {/* Core Settings Section */}
           <Grid item xs={12} md={6}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
@@ -251,6 +259,8 @@ export default function OptionsMenu() {
               </FormControl>
             </Paper>
           </Grid>
+
+          {/* Exchange Rates Section */}
           <Grid item xs={12} md={6}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
@@ -288,7 +298,10 @@ export default function OptionsMenu() {
             </Paper>
           </Grid>
         </Grid>
+
         <Divider sx={{ my: 4 }} />
+
+        {/* Default Values Display Section */}
         {meta && purchaseCosts && (
           <Box>
             <Typography variant="h5" component="h2" gutterBottom>
@@ -319,6 +332,8 @@ export default function OptionsMenu() {
             />
           </Box>
         )}
+
+        {/* Reset Button */}
         <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             variant="outlined"

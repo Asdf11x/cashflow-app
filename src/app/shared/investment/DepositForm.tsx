@@ -40,7 +40,6 @@ const DepositForm = React.forwardRef(
     },
     ref,
   ) => {
-
     const { countryProfile } = useSettingsStore();
     const defaults = React.useMemo(() => {
       const allDefaults = { de: deDefaults, ch: chDefaults, cz: czDefaults };
