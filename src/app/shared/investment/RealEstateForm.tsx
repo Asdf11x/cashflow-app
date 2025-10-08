@@ -16,10 +16,9 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from 'react-i18next';
-import { D, normalize, sanitizeDecimal, cfgToPctStr, pctToFrac } from './formHelpers';
+import { D, normalize, sanitizeDecimal, pctToFrac } from './formHelpers';
 import { ResultRow, CurrencySelect, PriceInput } from '../SharedComponents.tsx';
 import { fmtMoney } from '../../../core/domain/calc';
-import { getDefaultCostsConfig } from '../../../config';
 import Decimal from 'decimal.js';
 import type { CostItemState, CostState } from './formHelpers';
 import { useInvestStore } from '../../../core/state/useInvestStore.ts';
@@ -31,6 +30,22 @@ import type {
   AdditionalRunningCostsRent,
   RealEstateInvestmentDetails,
 } from '../../../core/domain/types.ts';
+import { useSettingsStore } from '../../../core/state/useSettingsStore.ts';
+
+// Import default value configurations
+import deDefaults from '../../../config/defaults/de/default-values.json';
+import chDefaults from '../../../config/defaults/ch/default-values.json';
+import czDefaults from '../../../config/defaults/cz/default-values.json';
+
+// Define a type for the structure of the default values JSON files
+type DefaultsConfig = typeof deDefaults;
+
+// Create a record mapping country codes to their default configuration
+const allDefaults: Record<string, DefaultsConfig> = {
+  de: deDefaults,
+  cz: czDefaults,
+  ch: chDefaults,
+};
 
 interface SplitCostItemState {
   enabled: boolean;
@@ -350,136 +365,73 @@ const RealEstateForm = React.forwardRef(
   ) => {
     const { t } = useTranslation();
     const { addRealEstate, updateRealEstate, realEstates } = useInvestStore.getState();
+    const { countryProfile } = useSettingsStore();
 
-    const cfg = getDefaultCostsConfig();
-    const [rName, setRName] = React.useState('');
+    const defaults = React.useMemo(() => {
+      return allDefaults[countryProfile] || deDefaults;
+    }, [countryProfile]);
+
+    const reDefaults = defaults.investments.realEstate;
+    const { currency: metaCurrency } = defaults.meta;
+
+    const [rName, setRName] = React.useState(t(reDefaults.basic.name.i18nKey));
     const [isNameTouched, setIsNameTouched] = React.useState(false);
-    const [rPurchasePrice, setRPurchasePrice] = React.useState('100000');
-    const [rCurrency, setRCurrency] = React.useState('€');
-    const [rMonthlyColdRent, setRMonthlyColdRent] = React.useState('1000');
-    const [rDetailsLink, setRDetailsLink] = React.useState('');
+    const [rPurchasePrice, setRPurchasePrice] = React.useState(reDefaults.basic.purchasePrice);
+    const [rCurrency, setRCurrency] = React.useState(metaCurrency);
+    const [rMonthlyColdRent, setRMonthlyColdRent] = React.useState(
+      reDefaults.basic.monthlyColdRent,
+    );
+    const [rDetailsLink, setRDetailsLink] = React.useState(reDefaults.basic.detailsLink);
 
-    const [purchaseCosts, setPurchaseCosts] = React.useState<CostState>({
-      brokerCommission: {
-        enabled: true,
-        value: cfgToPctStr(cfg.purchaseCosts.basicCosts.brokerCommission.rateOfPurchasePrice),
-        mode: 'percent',
-        allowModeChange: true,
-        label: t('realEstateForm.costLabels.brokerCommission'),
-      },
-      propertyTransferTax: {
-        enabled: true,
-        value: cfgToPctStr(cfg.purchaseCosts.basicCosts.propertyTransferTax.rateOfPurchasePrice),
-        mode: 'percent',
-        allowModeChange: false,
-        label: t('realEstateForm.costLabels.propertyTransferTax'),
-      },
-      notaryFees: {
-        enabled: true,
-        value: cfgToPctStr(cfg.purchaseCosts.basicCosts.notaryFees.rateOfPurchasePrice),
-        mode: 'percent',
-        allowModeChange: false,
-        label: t('realEstateForm.costLabels.notaryFees'),
-      },
-      landRegistryFees: {
-        enabled: true,
-        value: cfgToPctStr(cfg.purchaseCosts.basicCosts.landRegistryFees.rateOfPurchasePrice),
-        mode: 'percent',
-        allowModeChange: false,
-        label: t('realEstateForm.costLabels.landRegistryFees'),
-      },
-    });
+    const mapDefaultsToCostState = (
+      defaultCosts: Record<string, any>,
+      t: (key: string) => string,
+    ): CostState => {
+      return Object.fromEntries(
+        Object.entries(defaultCosts).map(([key, def]) => [
+          key,
+          {
+            enabled: def.enabled,
+            value: String(def.value),
+            mode: def.mode,
+            allowModeChange: def.allowModeChange,
+            label: t(def.i18nKey),
+          },
+        ]),
+      );
+    };
 
-    const [additionalCosts, setAdditionalCosts] = React.useState<CostState>({
-      renovationCosts: {
-        enabled: false,
-        value: '0',
-        mode: 'currency',
-        allowModeChange: true,
-        label: t('realEstateForm.costLabels.renovationCosts'),
-      },
-      subvention: {
-        enabled: false,
-        value: '0',
-        mode: 'currency',
-        allowModeChange: true,
-        label: t('realEstateForm.costLabels.subvention'),
-      },
-      otherAdditionalCosts: {
-        enabled: false,
-        value: '0',
-        mode: 'percent',
-        allowModeChange: true,
-        label: t('realEstateForm.costLabels.otherAdditionalCosts'),
-      },
-      appraisalFee: {
-        enabled: false,
-        value: cfgToPctStr(cfg.purchaseCosts.additionalCosts.appraisalFee.rateOfPurchasePrice),
-        mode: 'percent',
-        allowModeChange: true,
-        label: t('realEstateForm.costLabels.appraisalFee'),
-      },
-      insuranceSetup: {
-        enabled: false,
-        value: cfgToPctStr(cfg.purchaseCosts.additionalCosts.insuranceSetup.rateOfPurchasePrice),
-        mode: 'percent',
-        allowModeChange: true,
-        label: t('realEstateForm.costLabels.insuranceSetup'),
-      },
-    });
+    const [purchaseCosts, setPurchaseCosts] = React.useState<CostState>(
+      mapDefaultsToCostState(reDefaults.purchaseCosts.basic, t),
+    );
 
-    const [taxDeductions, setTaxDeductions] = React.useState<CostState>({
-      incomeTax: {
-        enabled: true,
-        value: cfgToPctStr(cfg.rent.taxes.incomeTax.rate),
-        mode: 'percent',
-        allowModeChange: false,
-        label: t('realEstateForm.costLabels.incomeTax'),
-      },
-      solidaritySurcharge: {
-        enabled: true,
-        value: cfgToPctStr(cfg.rent.taxes.solidaritySurcharge.rate),
-        mode: 'percent',
-        allowModeChange: false,
-        label: t('realEstateForm.costLabels.solidaritySurcharge'),
-      },
-      churchTax: {
-        enabled: false,
-        value: cfgToPctStr(cfg.rent.taxes.churchTax.rate),
-        mode: 'percent',
-        allowModeChange: false,
-        label: t('realEstateForm.costLabels.churchTax'),
-      },
-      otherDeductions: {
-        enabled: false,
-        value: '0',
-        mode: 'currency',
-        allowModeChange: true,
-        label: t('realEstateForm.costLabels.otherDeductions'),
-      },
-    });
+    const [additionalCosts, setAdditionalCosts] = React.useState<CostState>(
+      mapDefaultsToCostState(reDefaults.purchaseCosts.additional, t),
+    );
+
+    const [taxDeductions, setTaxDeductions] = React.useState<CostState>(
+      mapDefaultsToCostState(reDefaults.runningCosts.rentTaxes, t),
+    );
 
     const [runningCostsSplit, setRunningCostsSplit] = React.useState({
       houseFee: {
-        enabled: false,
-        value1: '0',
-        value2: '0',
-        mode: 'currency',
-        allowModeChange: true,
-        label1: t('realEstateForm.costLabels.houseFee'),
-        label2: t('realEstateForm.costLabels.houseFeeApportionable'),
+        enabled: reDefaults.runningCosts.additional.houseFee.enabled,
+        value1: reDefaults.runningCosts.additional.houseFee.value1,
+        value2: reDefaults.runningCosts.additional.houseFee.value2,
+        mode: reDefaults.runningCosts.additional.houseFee.mode,
+        allowModeChange: reDefaults.runningCosts.additional.houseFee.allowModeChange,
+        label1: t(reDefaults.runningCosts.additional.houseFee.i18nKeyTotal),
+        label2: t(reDefaults.runningCosts.additional.houseFee.i18nKeyApportionable),
       } as SplitCostItemState,
     });
 
-    const [otherRunningCosts, setOtherRunningCosts] = React.useState<CostState>({
-      other: {
-        enabled: false,
-        value: '0',
-        mode: 'currency',
-        allowModeChange: true,
-        label: t('realEstateForm.costLabels.other'),
-      },
-    });
+    const [otherRunningCosts, setOtherRunningCosts] = React.useState<CostState>(
+      mapDefaultsToCostState(
+        { other: reDefaults.runningCosts.additional.other }, // needs to be wrapped
+        t,
+      ),
+    );
+
     const [isPriceTouched, setIsPriceTouched] = React.useState(false);
 
     React.useEffect(() => {
