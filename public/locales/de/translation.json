@@ -1,4 +1,71 @@
 {
+  "layout": {
+    "nav": {
+      "investments": "Investments",
+      "credits": "Kredite",
+      "cashflow": "Abschätzung",
+      "visualization": "Visualisierung",
+      "options": "Optionen"
+    },
+    "header": {
+      "menu": "Menü",
+      "title": "Nearly. Estimation."
+    },
+    "kofiButtonLabel": "Support Me on Ko-fi"
+  },
+  "realEstateForm": {
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name darf nicht leer sein",
+    "nameHelperInUse": "Name bereits vergeben",
+    "defaultName": "Immobilie",
+    "purchasePriceLabel": "Kaufpreis",
+    "purchasePriceHelper": "Kaufpreis muss > 0 sein",
+    "monthlyColdRentLabel": "Monatliche Kaltmiete",
+    "annually": "jährlich:",
+    "inParentheses": "(= {{value}})",
+    "net": "netto:",
+
+    "accordions": {
+      "details": "Objektdetails (optional)",
+      "purchaseCosts": "Kaufnebenkosten",
+      "additionalPurchaseCosts": "Weitere Kaufnebenkosten",
+      "taxDeductions": "Steuerliche Abzüge",
+      "otherRunningCosts": "Weitere Laufende Kosten"
+    },
+
+    "details": {
+      "link": "Link zur Anzeige"
+    },
+
+    "summary": {
+      "title": "Zusammenfassung",
+      "totalSideCosts": "Gesamtkosten (Neben- & Zusatzkosten)",
+      "grandTotal": "Gesamtpreis (inkl. Kaufpreis)",
+      "annualRunningCosts": "Jährliche laufende Kosten",
+      "netRentMonthly": "Monatliche Nettomiete (nach Abzügen & Kosten)",
+      "netRentYearly": "Jährliche Nettomiete (nach Abzügen & Kosten)",
+      "initialYield": "Anfangsrendite p.a."
+    },
+
+    "costLabels": {
+      "brokerCommission": "Maklerprovision",
+      "propertyTransferTax": "Grunderwerbsteuer",
+      "notaryFees": "Notarkosten",
+      "landRegistryFees": "Grundbucheintrag",
+      "renovationCosts": "Renovierungskosten",
+      "subvention": "Subvention (z.B. Förderung)",
+      "otherAdditionalCosts": "Zusätzliche Kosten",
+      "appraisalFee": "Gutachterkosten",
+      "insuranceSetup": "Versicherungs-Setup",
+      "incomeTax": "Einkommensteuer",
+      "solidaritySurcharge": "Solidaritätszuschlag",
+      "churchTax": "Kirchensteuer",
+      "otherDeductions": "Zusätzliche Abzüge",
+      "houseFee": "Hausgeld",
+      "houseFeeApportionable": "davon umlagefähig",
+      "other": "Sonstiges"
+    }
+  },
   "common": {
     "save": "Speichern",
     "create": "Erstellen",

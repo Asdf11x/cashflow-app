@@ -21,19 +21,14 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 
 import KofiButton from '../components/KofiButton';
 
 const drawerWidth = 260;
 
-const NAV = [
-  { to: '/', text: 'Investments', icon: <AccountTreeIcon /> },
-  { to: '/credits', text: 'Kredite', icon: <CreditScoreIcon /> },
-  { to: '/cashflow', text: 'Abschätzung', icon: <InsightsIcon /> },
-  { to: '/visualization', text: 'Visualisierung', icon: <ShowChartIcon /> }, // New Link
-  { to: '/options', text: 'Optionen', icon: <SettingsIcon /> },
-];
 export default function Layout() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const [open, setOpen] = React.useState(false);
@@ -41,22 +36,33 @@ export default function Layout() {
   const loc = useLocation();
   const isVisualization = loc.pathname.startsWith('/visualization');
 
-  const currentPage = NAV.find((item) =>
+  const NAV_ITEMS = React.useMemo(
+    () => [
+      { to: '/', text: t('layout.nav.investments'), icon: <AccountTreeIcon /> },
+      { to: '/credits', text: t('layout.nav.credits'), icon: <CreditScoreIcon /> },
+      { to: '/cashflow', text: t('layout.nav.cashflow'), icon: <InsightsIcon /> },
+      { to: '/visualization', text: t('layout.nav.visualization'), icon: <ShowChartIcon /> },
+      { to: '/options', text: t('layout.nav.options'), icon: <SettingsIcon /> },
+    ],
+    [t],
+  );
+
+  const currentPage = NAV_ITEMS.find((item) =>
     item.to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(item.to),
   );
-  const pageTitle = currentPage ? currentPage.text : 'Menu';
+  const pageTitle = currentPage ? currentPage.text : t('layout.header.menu');
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box>
         <Toolbar>
           <Typography variant="h6" fontWeight={800}>
-            Nearly. Estimation.
+            {t('layout.header.title')}
           </Typography>
         </Toolbar>
         <Divider />
         <List>
-          {NAV.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const active =
               item.to === '/' ? loc.pathname === '/' : loc.pathname.startsWith(item.to);
             return (
@@ -77,7 +83,7 @@ export default function Layout() {
       </Box>
 
       <Box sx={{ p: 2, mt: 'auto' }}>
-        <KofiButton id="cashy11" label="Support Me on Ko-fi" />
+        <KofiButton id="cashy11" label={t('layout.kofiButtonLabel')} />
       </Box>
     </Box>
   );

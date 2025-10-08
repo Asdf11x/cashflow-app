@@ -252,12 +252,41 @@ export default function OptionsMenu() {
               </Box>
             </Paper>
           </Grid>
+          {/* Column 2: Exchange Rates */}
           <Grid item xs={12} md={6}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
-                {t('optionsMenu.exchangeRates')}
+                Exchange Rates (Base: 1 EUR)
               </Typography>
-              {/* Exchange Rates Table remains the same */}
+              <TableContainer>
+                <Table size="small">
+                  <TableBody>
+                    {Object.entries(exchangeRates).map(([currency, rate]) => (
+                      <TableRow key={currency}>
+                        <TableCell sx={{ fontWeight: 'medium', border: 0, pl: 0 }}>
+                          {currency}
+                        </TableCell>
+                        <TableCell align="right" sx={{ border: 0, pr: 0 }}>
+                          <TextField
+                            type="number"
+                            variant="outlined"
+                            size="small"
+                            value={rate}
+                            onChange={(e) =>
+                              setExchangeRates({
+                                ...exchangeRates,
+                                [currency]: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                            inputProps={{ step: '0.01' }}
+                            sx={{ width: '100px' }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Paper>
           </Grid>
         </Grid>

@@ -1,4 +1,3 @@
-// src/components/shared/investment/RealEstateForm.tsx
 import * as React from 'react';
 import {
   TextField,
@@ -16,6 +15,7 @@ import {
   type TextFieldProps,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { useTranslation } from 'react-i18next'; // <-- 1. IMPORT
 import { D, normalize, sanitizeDecimal, cfgToPctStr, pctToFrac } from './formHelpers';
 import { ResultRow, CurrencySelect, PriceInput } from '../SharedComponents.tsx';
 import { fmtMoney } from '../../../core/domain/calc';
@@ -50,6 +50,7 @@ interface CostInputRowProps {
 }
 
 export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRowProps) {
+  const { t } = useTranslation();
   const { enabled, value, mode, allowModeChange, label } = item;
   const absoluteAmount = React.useMemo(
     () => (mode === 'percent' ? baseAmount.mul(pctToFrac(value)) : D(normalize(value))),
@@ -80,7 +81,7 @@ export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostI
       <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1.5, flexGrow: 1 }}>
         <Checkbox checked={enabled} onChange={(e) => onItemChange({ enabled: e.target.checked })} />
         <TextField
-          label={label}
+          label={label} // Label is now passed in already translated
           value={value}
           onChange={(e) => onItemChange({ value: sanitizeDecimal(e.target.value) })}
           disabled={!enabled}
@@ -99,7 +100,9 @@ export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostI
                   </Typography>
                   {isPercent && (
                     <Typography variant="caption" color="text.secondary">
-                      (= {fmtMoney(absoluteAmount.toString())})
+                      {t('realEstateForm.inParentheses', {
+                        value: fmtMoney(absoluteAmount.toString()),
+                      })}
                     </Typography>
                   )}
                 </Stack>
@@ -127,7 +130,6 @@ export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostI
   );
 }
 
-// A special input row for split costs like Hausgeld / umlagefähiger Anteil
 interface SplitCostInputRowProps {
   item: SplitCostItemState;
   onItemChange: (newItem: Partial<SplitCostItemState>) => void;
@@ -136,6 +138,7 @@ interface SplitCostInputRowProps {
 }
 
 function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCostInputRowProps) {
+  const { t } = useTranslation();
   const { enabled, value1, value2, mode, allowModeChange, label1, label2 } = item;
   const isPercent = mode === 'percent';
 
@@ -167,7 +170,6 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
       <Checkbox checked={enabled} onChange={(e) => onItemChange({ enabled: e.target.checked })} />
-
       <Stack
         sx={{
           flexGrow: 1,
@@ -178,7 +180,7 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
       >
         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: { xs: 'column', sm: 'row' } }}>
           <TextField
-            label={label1}
+            label={label1} // Already translated
             value={value1}
             onChange={(e) => onItemChange({ value1: sanitizeDecimal(e.target.value) })}
             disabled={!enabled}
@@ -205,7 +207,7 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
             }}
           />
           <TextField
-            label={label2}
+            label={label2} // Already translated
             value={value2}
             onChange={(e) => onItemChange({ value2: sanitizeDecimal(e.target.value) })}
             disabled={!enabled}
@@ -256,7 +258,7 @@ function SplitCostInputRow({ item, onItemChange, baseAmount, currency }: SplitCo
             <ToggleButton value="percent">%</ToggleButton>
           </ToggleButtonGroup>
           <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-            netto: {fmtMoney(absoluteNet.toString())} {currency}
+            {t('realEstateForm.net')} {fmtMoney(absoluteNet.toString())} {currency}
           </Typography>
         </Stack>
       </Stack>
@@ -318,6 +320,7 @@ interface DetailsAccordionProps {
 }
 
 function DetailsAccordion({ linkValue, onLinkChange }: DetailsAccordionProps) {
+  const { t } = useTranslation();
   return (
     <Accordion>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -326,7 +329,7 @@ function DetailsAccordion({ linkValue, onLinkChange }: DetailsAccordionProps) {
       <AccordionDetails>
         <DetailInput
           name="link"
-          label="Link zur Anzeige"
+          label={t('realEstateForm.details.link')}
           value={linkValue}
           onChange={onLinkChange}
           fullWidth
@@ -345,6 +348,7 @@ const RealEstateForm = React.forwardRef(
     }: { onClose: () => void; existingNames: string[]; editId?: string },
     ref,
   ) => {
+    const { t } = useTranslation(); // <-- 2. INITIALIZE HOOK
     const { addRealEstate, updateRealEstate, realEstates } = useInvestStore.getState();
 
     const cfg = getDefaultCostsConfig();
@@ -355,101 +359,104 @@ const RealEstateForm = React.forwardRef(
     const [rMonthlyColdRent, setRMonthlyColdRent] = React.useState('1000');
     const [rDetailsLink, setRDetailsLink] = React.useState('');
 
+    // <-- 3. STATE IS INITIALIZED WITH I18N KEYS INSTEAD OF STRINGS
     const [purchaseCosts, setPurchaseCosts] = React.useState<CostState>({
       brokerCommission: {
         enabled: true,
         value: cfgToPctStr(cfg.purchaseCosts.basicCosts.brokerCommission.rateOfPurchasePrice),
         mode: 'percent',
         allowModeChange: true,
-        label: 'Maklerprovision',
+        label: t('realEstateForm.details.link'),
       },
       propertyTransferTax: {
         enabled: true,
         value: cfgToPctStr(cfg.purchaseCosts.basicCosts.propertyTransferTax.rateOfPurchasePrice),
         mode: 'percent',
         allowModeChange: false,
-        label: 'Grunderwerbsteuer',
+        label: t('realEstateForm.costLabels.propertyTransferTax'),
       },
       notaryFees: {
         enabled: true,
         value: cfgToPctStr(cfg.purchaseCosts.basicCosts.notaryFees.rateOfPurchasePrice),
         mode: 'percent',
         allowModeChange: false,
-        label: 'Notarkosten',
+        label: t('realEstateForm.costLabels.notaryFees'),
       },
       landRegistryFees: {
         enabled: true,
         value: cfgToPctStr(cfg.purchaseCosts.basicCosts.landRegistryFees.rateOfPurchasePrice),
         mode: 'percent',
         allowModeChange: false,
-        label: 'Grundbucheintrag',
+        label: t('realEstateForm.costLabels.landRegistryFees'),
       },
     });
+
     const [additionalCosts, setAdditionalCosts] = React.useState<CostState>({
       renovationCosts: {
         enabled: false,
         value: '0',
         mode: 'currency',
         allowModeChange: true,
-        label: 'Renovierungskosten',
+        label: t('realEstateForm.costLabels.renovationCosts'),
       },
       subvention: {
         enabled: false,
         value: '0',
         mode: 'currency',
         allowModeChange: true,
-        label: 'Subvention (z.B. Förderung)',
+        label: t('realEstateForm.costLabels.subvention'),
       },
       otherAdditionalCosts: {
         enabled: false,
         value: '0',
         mode: 'percent',
         allowModeChange: true,
-        label: 'Zusätzliche Kosten',
+        label: t('realEstateForm.costLabels.otherAdditionalCosts'),
       },
       appraisalFee: {
         enabled: false,
         value: cfgToPctStr(cfg.purchaseCosts.additionalCosts.appraisalFee.rateOfPurchasePrice),
         mode: 'percent',
         allowModeChange: true,
-        label: 'Gutachterkosten',
+        label: t('realEstateForm.costLabels.appraisalFee'),
       },
       insuranceSetup: {
         enabled: false,
         value: cfgToPctStr(cfg.purchaseCosts.additionalCosts.insuranceSetup.rateOfPurchasePrice),
         mode: 'percent',
         allowModeChange: true,
-        label: 'Versicherungs-Setup',
+        label: t('realEstateForm.costLabels.insuranceSetup'),
       },
     });
+
     const [taxDeductions, setTaxDeductions] = React.useState<CostState>({
       incomeTax: {
         enabled: true,
         value: cfgToPctStr(cfg.rent.taxes.incomeTax.rate),
         mode: 'percent',
         allowModeChange: false,
-        label: 'Einkommensteuer',
+        label: t('realEstateForm.costLabels.incomeTax'),
       },
       solidaritySurcharge: {
         enabled: true,
         value: cfgToPctStr(cfg.rent.taxes.solidaritySurcharge.rate),
         mode: 'percent',
         allowModeChange: false,
-        label: 'Solidaritätszuschlag',
+        label: t('realEstateForm.costLabels.solidaritySurcharge'),
       },
       churchTax: {
         enabled: false,
         value: cfgToPctStr(cfg.rent.taxes.churchTax.rate),
         mode: 'percent',
         allowModeChange: false,
-        label: 'Kirchensteuer',
+        label: t('realEstateForm.costLabels.churchTax'),
       },
       otherDeductions: {
         enabled: false,
         value: '0',
         mode: 'currency',
         allowModeChange: true,
-        label: 'Zusätzliche Abzüge',
+        label: t('realEstateForm.costLabels.otherDeductions'),
       },
     });
 
@@ -460,8 +467,8 @@ const RealEstateForm = React.forwardRef(
         value2: '0',
         mode: 'currency',
         allowModeChange: true,
-        label1: 'Hausgeld',
-        label2: 'davon umlagefähig',
+        label1: t('realEstateForm.costLabels.houseFee'),
+        label2: t('realEstateForm.costLabels.houseFeeApportionable'),
       } as SplitCostItemState,
     });
 
@@ -471,14 +478,14 @@ const RealEstateForm = React.forwardRef(
         value: '0',
         mode: 'currency',
         allowModeChange: true,
-        label: 'Sonstiges',
+        label: t('realEstateForm.costLabels.other'),
       },
     });
     const [isPriceTouched, setIsPriceTouched] = React.useState(false);
 
     React.useEffect(() => {
       if (!editId) {
-        setRName('Immobilie');
+        setRName(t('realEstateForm.defaultName')); // <-- Translate default name
         return;
       }
 
@@ -689,9 +696,9 @@ const RealEstateForm = React.forwardRef(
     const trimmedName = rName.trim();
     const nameError = !trimmedName || existingNames.includes(trimmedName);
     const nameHelperText = !trimmedName
-      ? 'Name darf nicht leer sein'
+      ? t('realEstateForm.nameHelperEmpty')
       : existingNames.includes(trimmedName)
-        ? 'Name bereits vergeben'
+        ? t('realEstateForm.nameHelperInUse')
         : ' ';
 
     const getCostValue = (item: CostItemState, base: Decimal): Decimal => {
@@ -831,7 +838,7 @@ const RealEstateForm = React.forwardRef(
     return (
       <Stack spacing={3} sx={{ mt: 1 }}>
         <TextField
-          label="Name"
+          label={t('realEstateForm.nameLabel')} // <-- Translate
           value={rName}
           onChange={(e) => setRName(e.target.value)}
           onBlur={() => setIsNameTouched(true)}
@@ -842,12 +849,14 @@ const RealEstateForm = React.forwardRef(
         />{' '}
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           <PriceInput
-            label="Kaufpreis"
+            label={t('realEstateForm.purchasePriceLabel')} // <-- Translate
             value={rPurchasePrice}
             onChange={(e) => setRPurchasePrice(sanitizeDecimal(e.target.value))}
             onBlur={() => setIsPriceTouched(true)}
             error={isPriceTouched && purchasePriceError}
-            helperText={isPriceTouched && purchasePriceError ? 'Kaufpreis muss > 0 sein' : ' '}
+            helperText={
+              isPriceTouched && purchasePriceError ? t('realEstateForm.purchasePriceHelper') : ' '
+            } // <-- Translate
           />
           <CurrencySelect value={rCurrency} onChange={(e) => setRCurrency(e.target.value)} />
         </Box>
@@ -856,7 +865,7 @@ const RealEstateForm = React.forwardRef(
           onLinkChange={(e) => setRDetailsLink(e.target.value)}
         />
         <CostSectionAccordion
-          title="Kaufnebenkosten"
+          title={t('realEstateForm.accordions.purchaseCosts')} // <-- Translate
           costs={purchaseCosts}
           onCostChange={handleCostChange(setPurchaseCosts)}
           baseAmount={rPurchasePriceD}
@@ -864,7 +873,7 @@ const RealEstateForm = React.forwardRef(
           total={purchaseCostsTotal}
         />
         <CostSectionAccordion
-          title="Weitere Kaufnebenkosten"
+          title={t('realEstateForm.accordions.additionalPurchaseCosts')} // <-- Translate
           costs={additionalCosts}
           onCostChange={handleCostChange(setAdditionalCosts)}
           baseAmount={rPurchasePriceD}
@@ -873,7 +882,7 @@ const RealEstateForm = React.forwardRef(
         />
         <Divider />
         <TextField
-          label="Monatliche Kaltmiete"
+          label={t('realEstateForm.monthlyColdRentLabel')} // <-- Translate
           type="text"
           inputProps={{
             inputMode: 'decimal',
@@ -886,7 +895,7 @@ const RealEstateForm = React.forwardRef(
               <InputAdornment position="end">
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   <Typography variant="caption" color="text.secondary">
-                    (jährlich: {fmtMoney(rAnnualColdRentD.toString())})
+                    ({t('realEstateForm.annually')} {fmtMoney(rAnnualColdRentD.toString())})
                   </Typography>
                   <Typography>{rCurrency}</Typography>
                 </Stack>
@@ -896,7 +905,7 @@ const RealEstateForm = React.forwardRef(
           fullWidth
         />
         <CostSectionAccordion
-          title="Steuerliche Abzüge"
+          title={t('realEstateForm.accordions.taxDeductions')} // <-- Translate
           costs={taxDeductions}
           onCostChange={handleCostChange(setTaxDeductions)}
           baseAmount={rAnnualColdRentD}
@@ -906,7 +915,9 @@ const RealEstateForm = React.forwardRef(
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
-              <Typography fontWeight={700}>Weitere Laufende Kosten</Typography>
+              <Typography fontWeight={700}>
+                {t('realEstateForm.accordions.otherRunningCosts')}
+              </Typography>
               <Typography color="text.secondary">
                 {fmtMoney(runningCostsTotalMonthly.toString())} {rCurrency}
               </Typography>
@@ -914,8 +925,13 @@ const RealEstateForm = React.forwardRef(
           </AccordionSummary>
           <AccordionDetails>
             <Stack spacing={2}>
+              {/* <-- 4. USE t() WHEN RENDERING THE LABEL */}
               <SplitCostInputRow
-                item={runningCostsSplit.houseFee}
+                item={{
+                  ...runningCostsSplit.houseFee,
+                  label1: t(runningCostsSplit.houseFee.label1),
+                  label2: t(runningCostsSplit.houseFee.label2),
+                }}
                 onItemChange={(newValues) => handleSplitCostChange('houseFee', newValues)}
                 baseAmount={rMonthlyColdRentD}
                 currency={rCurrency}
@@ -923,7 +939,7 @@ const RealEstateForm = React.forwardRef(
               {Object.entries(otherRunningCosts).map(([key, item]) => (
                 <CostInputRow
                   key={key}
-                  item={item}
+                  item={{ ...item, label: t(item.label) }}
                   onItemChange={(newValues) =>
                     handleCostChange(setOtherRunningCosts)(key, newValues)
                   }
@@ -938,30 +954,34 @@ const RealEstateForm = React.forwardRef(
           spacing={1}
           sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
         >
-          <Typography variant="h6">Zusammenfassung</Typography>
+          <Typography variant="h6">{t('realEstateForm.summary.title')}</Typography>
           <ResultRow
-            label="Gesamtkosten (Neben- & Zusatzkosten)"
+            label={t('realEstateForm.summary.totalSideCosts')}
             value={fmtMoney(totalPurchaseSideCosts.toString())}
           />
           <ResultRow
-            label="Gesamtpreis (inkl. Kaufpreis)"
+            label={t('realEstateForm.summary.grandTotal')}
             value={fmtMoney(grandTotalPrice.toString())}
             isBold
           />
           <Divider sx={{ my: 1 }} />
           <ResultRow
-            label="Jährliche laufende Kosten"
+            label={t('realEstateForm.summary.annualRunningCosts')}
             value={fmtMoney(runningCostsTotalAnnual.toString())}
           />
           <ResultRow
-            label="Monatliche Nettomiete (nach Abzügen & Kosten)"
+            label={t('realEstateForm.summary.netRentMonthly')}
             value={fmtMoney(netRentMonthly.toString())}
           />
           <ResultRow
-            label="Jährliche Nettomiete (nach Abzügen & Kosten)"
+            label={t('realEstateForm.summary.netRentYearly')}
             value={fmtMoney(netRentAnnual.toString())}
           />
-          <ResultRow label="Anfangsrendite p.a." value={`${yieldPct} %`} isBold />
+          <ResultRow
+            label={t('realEstateForm.summary.initialYield')}
+            value={`${yieldPct} %`}
+            isBold
+          />
         </Stack>
       </Stack>
     );
