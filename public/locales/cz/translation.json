@@ -1,139 +1,245 @@
 {
   "layout": {
     "nav": {
-      "investments": "Investments",
-      "credits": "Kredite",
-      "cashflow": "Abschätzung",
-      "visualization": "Visualisierung",
-      "options": "Optionen"
+      "investments": "Investice",
+      "credits": "Úvěry",
+      "cashflow": "Odhad",
+      "visualization": "Vizualizace",
+      "options": "Možnosti"
     },
     "header": {
-      "menu": "Menü",
-      "title": "Nearly. Estimation."
+      "menu": "Menu",
+      "title": "Nearly. Odhad."
     },
-    "kofiButtonLabel": "Support Me on Ko-fi"
+    "kofiButtonLabel": "Podpořte mě na Ko-fi"
   },
   "creditForm": {
+    "defaultName": "Immobilienkredit",
     "labels": {
+      "name": "Name des Kredits",
+      "principal": "Kreditsumme (Darlehen)",
       "rateAnnualPct": "Sollzinssatz p.a.",
       "fixedRateYears": "Zinsbindung (Jahre)",
-      "amortizationInitial": "Anfängliche Tilgung p.a."
-    }
-  },
-  "creditDialog": {
-    "editTitle": "Kredit bearbeiten",
-    "createTitle": "Kredit anlegen"
-  },
-  "investmentsList": {
-    "actions": "Aktionen",
-    "name": "Name",
-    "investmentAmount": "Anlagebetrag",
-    "monthlyProfit": "Monatl. Gewinn",
-    "yield": "Rendite p.a.",
-    "investmentDeleted": "Investment gelöscht",
-    "undone": "Rückgängig gemacht",
-    "undo": "Rückgängig",
-    "noInvestments": "Noch keine Investments. Klicke unten rechts auf „+\".",
-    "edit": "Bearbeiten",
-    "delete": "Löschen",
-    "kinds": {
-      "object": "Objekt",
-      "realEstate": "Immobilie",
-      "fixedTermDeposit": "Festgeld"
-    }
-  },
-  "realEstateForm": {
-    "nameLabel": "Name",
-    "nameHelperEmpty": "Name darf nicht leer sein",
-    "nameHelperInUse": "Name bereits vergeben",
-    "defaultName": "Immobilie",
-    "purchasePriceLabel": "Kaufpreis",
-    "purchasePriceHelper": "Kaufpreis muss > 0 sein",
-    "monthlyColdRentLabel": "Monatliche Kaltmiete",
-    "annually": "jährlich:",
-    "inParentheses": "(= {{value}})",
-    "net": "netto:",
-    "accordions": {
-      "details": "Objektdetails (optional)",
-      "purchaseCosts": "Kaufnebenkosten",
-      "additionalPurchaseCosts": "Weitere Kaufnebenkosten",
-      "taxDeductions": "Steuerliche Abzüge",
-      "otherRunningCosts": "Weitere Laufende Kosten"
+      "amortizationInitial": "Anfängliche Tilgung p.a.",
+      "amortizationMonthly": "Monatliche Tilgung",
+      "termMonths": "Gesamtlaufzeit (Monate)",
+      "specialRepaymentYearly": "Sondertilgung (jährlich)"
     },
-    "details": {
-      "link": "Link zur Anzeige"
+    "helpers": {
+      "nameEmpty": "Name darf nicht leer sein",
+      "nameInUse": "Name bereits vergeben",
+      "principalError": "Kreditsumme muss > 0 sein"
     },
     "summary": {
       "title": "Zusammenfassung",
-      "totalSideCosts": "Gesamtkosten (Neben- & Zusatzkosten)",
-      "grandTotal": "Gesamtpreis (inkl. Kaufpreis)",
-      "annualRunningCosts": "Jährliche laufende Kosten",
-      "netRentMonthly": "Monatliche Nettomiete (nach Abzügen & Kosten)",
-      "netRentYearly": "Jährliche Nettomiete (nach Abzügen & Kosten)",
-      "initialYield": "Anfangsrendite p.a."
+      "interestMonthly": "Monatliche Zinsen (1. Monat)",
+      "totalMonthly": "Monatliche Rate (Zins + Tilgung)"
+    }
+  },
+  "creditDialog": {
+    "editTitle": "Upravit úvěr",
+    "createTitle": "Vytvořit úvěr"
+  },
+  "investmentsList": {
+    "actions": "Akce",
+    "name": "Název",
+    "investmentAmount": "Investovaná částka",
+    "monthlyProfit": "Měsíční zisk",
+    "yield": "Výnos p.a.",
+    "investmentDeleted": "Investice smazána",
+    "undone": "Vráceno zpět",
+    "undo": "Zpět",
+    "noInvestments": "Zatím žádné investice. Klikněte na '+' vpravo dole.",
+    "edit": "Upravit",
+    "delete": "Smazat",
+    "kinds": {
+      "object": "Objekt",
+      "realEstate": "Nemovitost",
+      "fixedTermDeposit": "Termínovaný vklad"
+    }
+  },
+  "creditsList": {
+    "actions": "Akce",
+    "name": "Název",
+    "principal": "Výše úvěru",
+    "monthlyRate": "Měsíční splátka",
+    "interestRate": "Úroková sazba p.a.",
+    "creditDeleted": "Úvěr smazán",
+    "undone": "Vráceno zpět",
+    "undo": "Zpět",
+    "noCredits": "Zatím žádné úvěry. Kliknutím na '+' vpravo dole vytvoříte nový.",
+    "edit": "Upravit",
+    "delete": "Smazat"
+  },
+  "cashflowList": {
+    "actions": "Akce",
+    "estimationName": "Název odhadu",
+    "investment": "Investice",
+    "credit": "Úvěr",
+    "netProfitMonthly": "Čistý zisk / měsíc",
+    "yield": "Výnos p.a.",
+    "purchasePrice": "Kupní cena",
+    "investmentGain": "Měsíční zisk",
+    "monthlyLoss": "Měsíční ztráta",
+    "estimationDeleted": "Odhad smazán",
+    "undone": "Vráceno zpět",
+    "undo": "Zpět",
+    "noEstimations": "Zatím žádné odhady. Kliknutím na '+' vpravo dole vytvoříte nový.",
+    "edit": "Upravit",
+    "delete": "Smazat"
+  },
+  "objectForm": {
+    "defaultName": "Objekt",
+    "nameLabel": "Název",
+    "nameHelperEmpty": "Název nesmí být prázdný",
+    "nameHelperInUse": "Název je již používán",
+    "linkLabel": "Odkaz (volitelné)",
+    "linkPlaceholder": "https://priklad.cz/muj-objekt",
+    "purchasePriceLabel": "Kupní cena",
+    "purchasePriceHelper": "Kupní cena musí být > 0",
+    "monthlyRevenueLabel": "Měsíční příjmy",
+    "monthlyCostLabel": "Měsíční náklady",
+    "summaryTitle": "Shrnutí",
+    "monthlyNetGainLabel": "Měsíční čistý zisk",
+    "annualNetGainLabel": "Roční čistý zisk",
+    "initialYieldLabel": "Počáteční výnos p.a."
+  },
+  "investmentDialog": {
+    "editTitle": "Upravit investici",
+    "createTitle": "Přidat investici",
+    "tabRealEstate": "Nemovitost",
+    "tabDeposit": "Termínovaný vklad",
+    "tabObject": "Objekt"
+  },
+  "depositForm": {
+    "defaultName": "Termínovaný vklad",
+    "nameLabel": "Název",
+    "nameHelperEmpty": "Název nesmí být prázdný",
+    "nameHelperInUse": "Název je již používán",
+    "linkLabel": "Odkaz (volitelné)",
+    "linkPlaceholder": "https://priklad.cz/muj-terminovany-vklad",
+    "startAmountLabel": "Počáteční vklad",
+    "startAmountHelper": "Částka musí být > 0",
+    "termLabel": "Doba trvání (měsíce)",
+    "rateLabel": "Úroková sazba p.a.",
+    "compoundingTitle": "Složené úročení",
+    "compounding": {
+      "none": "Žádné",
+      "monthly": "Měsíční",
+      "yearly": "Roční"
+    },
+    "optionalAccordion": {
+      "title": "Daně a poplatky (volitelné)",
+      "enableTaxes": "Zohlednit daně",
+      "withholdingTaxLabel": "Srážková daň vč. solidární přirážky",
+      "taxFreeAllowanceLabel": "Nezdanitelná částka (ročně)"
+    },
+    "fees": {
+      "accountYearly": "Poplatky za vedení účtu (ročně)",
+      "otherOneTime": "Ostatní jednorázové náklady"
+    },
+    "summary": {
+      "title": "Shrnutí",
+      "grossGainLabel": "Hrubý zisk z úroků (celkem)",
+      "deductionsLabel": "Po odečtení daní a nákladů",
+      "totalNetGainLabel": "Celkový čistý zisk",
+      "annualNetGainLabel": "Roční čistý zisk",
+      "monthlyNetGainLabel": "Měsíční čistý zisk",
+      "netYieldLabel": "Čistý výnos p.a."
+    }
+  },
+  "realEstateForm": {
+    "nameLabel": "Název",
+    "nameHelperEmpty": "Název nesmí být prázdný",
+    "nameHelperInUse": "Název je již používán",
+    "defaultName": "Nemovitost",
+    "purchasePriceLabel": "Kupní cena",
+    "purchasePriceHelper": "Kupní cena musí být > 0",
+    "monthlyColdRentLabel": "Měsíční čisté nájemné",
+    "annually": "ročně:",
+    "inParentheses": "(= {{value}})",
+    "net": "čisté:",
+    "accordions": {
+      "details": "Detaily objektu (volitelné)",
+      "purchaseCosts": "Pořizovací náklady",
+      "additionalPurchaseCosts": "Další pořizovací náklady",
+      "taxDeductions": "Daňové odpočty",
+      "otherRunningCosts": "Další provozní náklady"
+    },
+    "details": {
+      "link": "Odkaz na inzerát"
+    },
+    "summary": {
+      "title": "Shrnutí",
+      "totalSideCosts": "Celkové vedlejší náklady (vedlejší a dodatečné)",
+      "grandTotal": "Celková cena (včetně kupní ceny)",
+      "annualRunningCosts": "Roční provozní náklady",
+      "netRentMonthly": "Měsíční čisté nájemné (po odečtení srážek a nákladů)",
+      "netRentYearly": "Roční čisté nájemné (po odečtení srážek a nákladů)",
+      "initialYield": "Počáteční výnos p.a."
     },
     "costLabels": {
-      "brokerCommission": "Maklerprovision",
-      "propertyTransferTax": "Grunderwerbsteuer",
-      "notaryFees": "Notarkosten",
-      "landRegistryFees": "Grundbucheintrag",
-      "renovationCosts": "Renovierungskosten",
-      "subvention": "Subvention (z.B. Förderung)",
-      "otherAdditionalCosts": "Zusätzliche Kosten",
-      "appraisalFee": "Gutachterkosten",
-      "insuranceSetup": "Versicherungs-Setup",
-      "incomeTax": "Einkommensteuer",
-      "solidaritySurcharge": "Solidaritätszuschlag",
-      "churchTax": "Kirchensteuer",
-      "otherDeductions": "Zusätzliche Abzüge",
-      "houseFee": "Hausgeld",
-      "houseFeeApportionable": "davon umlagefähig",
-      "other": "Sonstiges"
+      "brokerCommission": "Provize realitní kanceláře",
+      "propertyTransferTax": "Daň z nabytí nemovitých věcí",
+      "notaryFees": "Notářské poplatky",
+      "landRegistryFees": "Zápis do katastru nemovitostí",
+      "renovationCosts": "Náklady na rekonstrukci",
+      "subvention": "Dotace (např. podpora)",
+      "otherAdditionalCosts": "Další dodatečné náklady",
+      "appraisalFee": "Náklady na znalecký posudek",
+      "insuranceSetup": "Zřízení pojištění",
+      "incomeTax": "Daň z příjmu",
+      "solidaritySurcharge": "Solidární přirážka",
+      "churchTax": "Církevní daň",
+      "otherDeductions": "Další srážky",
+      "houseFee": "Poplatky za správu domu",
+      "houseFeeApportionable": "z toho přeúčtovatelné",
+      "other": "Ostatní"
     }
   },
   "common": {
-    "save": "Speichern",
-    "create": "Erstellen",
-    "cancel": "Abbrechen",
-    "optional": "(optional)"
+    "save": "Uložit",
+    "create": "Vytvořit",
+    "cancel": "Zrušit",
+    "optional": "(volitelné)"
   },
   "cashflowDialog": {
-    "editTitle": "Abschätzung bearbeiten",
-    "createTitle": "Abschätzung anlegen",
-    "nameLabel": "Name",
-    "nameHelperEmpty": "Name darf nicht leer sein",
-    "nameHelperInUse": "Name bereits vergeben",
-    "selectInvestmentLabel": "Investment auswählen",
-    "selectCreditLabel": "Kredit auswählen",
-    "netProfitPerMonth": "Netto-Gewinn / Monat:"
+    "editTitle": "Upravit odhad",
+    "createTitle": "Vytvořit odhad",
+    "nameLabel": "Název",
+    "nameHelperEmpty": "Název nesmí být prázdný",
+    "nameHelperInUse": "Název je již používán",
+    "selectInvestmentLabel": "Vybrat investici",
+    "selectCreditLabel": "Vybrat úvěr",
+    "netProfitPerMonth": "Čistý zisk / měsíc:"
   },
   "optionsMenu": {
-    "title": "Optionen",
-    "descriptionChoose": "Wählen Sie Ihre bevorzugten Einstellungen und Standardberechnungswerte aus.",
-    "coreSettings": "Kerneinstellungen",
-    "language": "Sprache",
-    "mainCurrency": "Hauptwährung",
-    "defaultValues": "Standardwerte",
-    "exchangeRates": "Wechselkurse (Basis: 1 EUR)",
-    "defaultsFor": "Standardwerte für:",
-    "country": "Land",
-    "currency": "Währung",
-    "customProfileInfo": "Sie befinden sich im „Benutzerdefiniert“-Profil. Alle Werte unten sind bearbeitbar.",
-    "purchaseCosts": "Kaufnebenkosten",
-    "annualRunningCosts": "Laufende jährliche Kosten",
-    "resetAll": "Alles zurücksetzen",
-    "description": "Bezeichnung",
-    "defaultValue": "Standardwert"
+    "title": "Možnosti",
+    "descriptionChoose": "Vyberte si preferovaná nastavení a výchozí hodnoty pro výpočty.",
+    "coreSettings": "Základní nastavení",
+    "language": "Jazyk",
+    "mainCurrency": "Hlavní měna",
+    "defaultValues": "Výchozí hodnoty",
+    "exchangeRates": "Směnné kurzy (základ: 1 EUR)",
+    "defaultsFor": "Výchozí hodnoty pro:",
+    "country": "Země",
+    "currency": "Měna",
+    "customProfileInfo": "Nacházíte se v profilu „Vlastní“. Všechny níže uvedené hodnoty lze upravit.",
+    "purchaseCosts": "Pořizovací náklady",
+    "annualRunningCosts": "Roční provozní náklady",
+    "resetAll": "Resetovat vše",
+    "description": "Popis",
+    "defaultValue": "Výchozí hodnota"
   },
   "countries": {
-    "de": "Deutschland",
-    "cz": "Tschechien",
-    "ch": "Schweiz",
-    "custom": "Benutzerdefiniert"
+    "de": "Německo",
+    "cz": "Česko",
+    "ch": "Švýcarsko",
+    "custom": "Vlastní"
   },
   "languages": {
-    "de": "Deutsch",
-    "en": "Englisch",
-    "cz": "Tschechisch"
+    "de": "Němčina",
+    "en": "Angličtina",
+    "cz": "Čeština"
   }
 }

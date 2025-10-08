@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next'; // Import the hook
 import { Stack, TextField, Box, Divider, InputAdornment, Typography } from '@mui/material';
 import { D, normalize, sanitizeDecimal } from '../investment/formHelpers';
 import { ResultRow, CurrencySelect, PriceInput } from './../SharedComponents';
@@ -29,24 +30,23 @@ const CreditForm = React.forwardRef(
     }: { onClose: () => void; editId?: string; existingNames: string[] },
     ref,
   ) => {
+    const { t } = useTranslation(); // Initialize the hook
     const { addCredit, updateCredit, credits } = useCreditStore.getState();
     const existingCredit = editId ? credits.find((c) => c.id === editId) : undefined;
 
     // --- State Sourcing from Global Settings ---
     const { countryProfile } = useSettingsStore.getState();
     const defaults = allDefaults[countryProfile] || deDefaultValues;
-    const creditDefaults = defaults.investments.credit.basic;
+    const creditDefaults = defaults.credit.basic;
 
     // --- Form State ---
-    // Use default values from config as fallback if not editing
-    const [cName, setCName] = React.useState(existingCredit?.name || 'Immobilienkredit');
+    const [cName, setCName] = React.useState(existingCredit?.name || t('creditForm.defaultName'));
     const [cPrincipal, setCPrincipal] = React.useState(
       existingCredit ? D(existingCredit.principal).toFixed(0) : '200000',
     );
     const [cRateAnnualPct, setCRateAnnualPct] = React.useState(
       existingCredit?.rateAnnualPct || String(creditDefaults.rateAnnualPct.value),
     );
-    // Calculate initial amortization based on principal and default percentage
     const [cAmortMonthly, setCAmortMonthly] = React.useState(() => {
       if (existingCredit) {
         return D(existingCredit.amortMonthly).toFixed(0);
@@ -56,7 +56,7 @@ const CreditForm = React.forwardRef(
       return yearlyAmortization.div(12).toFixed(0);
     });
     const [cTermMonths, setCTermMonths] = React.useState(
-      existingCredit?.termMonths ? String(existingCredit.termMonths) : '120', // Default to 120 months (10 years)
+      existingCredit?.termMonths ? String(existingCredit.termMonths) : '120',
     );
     const [cFixedRateYears, setCFixedRateYears] = React.useState(
       existingCredit?.fixedRateYears
@@ -102,9 +102,9 @@ const CreditForm = React.forwardRef(
     const nameError = !trimmedName || existingNames.includes(trimmedName);
     const principalError = principalD.lte(0);
     const nameHelperText = !trimmedName
-      ? 'Name darf nicht leer sein'
+      ? t('creditForm.helpers.nameEmpty')
       : existingNames.includes(trimmedName)
-        ? 'Name bereits vergeben'
+        ? t('creditForm.helpers.nameInUse')
         : '';
 
     React.useImperativeHandle(ref, () => ({
@@ -143,7 +143,7 @@ const CreditForm = React.forwardRef(
     return (
       <Stack spacing={3} sx={{ mt: 1 }}>
         <TextField
-          label="Name des Kredits"
+          label={t('creditForm.labels.name')}
           value={cName}
           onChange={(e) => setCName(e.target.value)}
           onBlur={() => setIsNameTouched(true)}
@@ -154,19 +154,21 @@ const CreditForm = React.forwardRef(
         />
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           <PriceInput
-            label="Kreditsumme (Darlehen)"
+            label={t('creditForm.labels.principal')}
             value={cPrincipal}
             onChange={(e) => setCPrincipal(sanitizeDecimal(e.target.value))}
             onBlur={() => setIsPrincipalTouched(true)}
             error={isPrincipalTouched && principalError}
-            helperText={isPrincipalTouched && principalError ? 'Kreditsumme muss > 0 sein' : ' '}
+            helperText={
+              isPrincipalTouched && principalError ? t('creditForm.helpers.principalError') : ' '
+            }
           />
           <CurrencySelect value={cCurrency} onChange={(e) => setCCurrency(e.target.value)} />
         </Box>
         <Divider />
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
           <TextField
-            label="Sollzinssatz p.a."
+            label={t('creditForm.labels.rateAnnualPct')}
             value={cRateAnnualPct}
             onChange={(e) => setCRateAnnualPct(sanitizeDecimal(e.target.value))}
             type="text"
@@ -174,7 +176,7 @@ const CreditForm = React.forwardRef(
             InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
           />
           <TextField
-            label="Monatliche Tilgung"
+            label={t('creditForm.labels.amortizationMonthly')}
             value={cAmortMonthly}
             onChange={(e) => setCAmortMonthly(sanitizeDecimal(e.target.value))}
             type="text"
@@ -184,20 +186,20 @@ const CreditForm = React.forwardRef(
             }}
           />
           <TextField
-            label="Gesamtlaufzeit (Monate)"
+            label={t('creditForm.labels.termMonths')}
             value={cTermMonths}
             onChange={(e) => setCTermMonths(e.target.value)}
             type="number"
           />
           <TextField
-            label="Zinsbindung (Jahre)"
+            label={t('creditForm.labels.fixedRateYears')}
             value={cFixedRateYears}
             onChange={(e) => setCFixedRateYears(e.target.value)}
             type="number"
           />
         </Box>
         <PriceInput
-          label="Sondertilgung (jährlich)"
+          label={t('creditForm.labels.specialRepaymentYearly')}
           value={cSpecialRepayment}
           onChange={(e) => setCSpecialRepayment(sanitizeDecimal(e.target.value))}
           helperText=" "
@@ -208,13 +210,13 @@ const CreditForm = React.forwardRef(
           spacing={1}
           sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
         >
-          <Typography variant="h6">Zusammenfassung</Typography>
+          <Typography variant="h6">{t('creditForm.summary.title')}</Typography>
           <ResultRow
-            label="Monatliche Zinsen (1. Monat)"
+            label={t('creditForm.summary.interestMonthly')}
             value={`${fmtMoney(interestMonthlyD.toString())} ${cCurrency}`}
           />
           <ResultRow
-            label="Monatliche Rate (Zins + Tilgung)"
+            label={t('creditForm.summary.totalMonthly')}
             value={`${fmtMoney(totalPaymentMonthlyD.toString())} ${cCurrency}`}
             isBold
           />

@@ -2,93 +2,199 @@
   "layout": {
     "nav": {
       "investments": "Investments",
-      "credits": "Kredite",
-      "cashflow": "Abschätzung",
-      "visualization": "Visualisierung",
-      "options": "Optionen"
+      "credits": "Credits",
+      "cashflow": "Estimation",
+      "visualization": "Visualization",
+      "options": "Options"
     },
     "header": {
-      "menu": "Menü",
+      "menu": "Menu",
       "title": "Nearly. Estimation."
     },
     "kofiButtonLabel": "Support Me on Ko-fi"
   },
   "creditForm": {
+    "defaultName": "Real Estate Loan",
     "labels": {
-      "rateAnnualPct": "Sollzinssatz p.a.",
-      "fixedRateYears": "Zinsbindung (Jahre)",
-      "amortizationInitial": "Anfängliche Tilgung p.a."
+      "name": "Credit Name",
+      "principal": "Credit Amount (Loan)",
+      "rateAnnualPct": "Debit interest rate p.a.",
+      "fixedRateYears": "Fixed-interest period (years)",
+      "amortizationInitial": "Initial amortization p.a.",
+      "amortizationMonthly": "Monthly Amortization",
+      "termMonths": "Total Term (Months)",
+      "specialRepaymentYearly": "Special Repayment (annually)"
+    },
+    "helpers": {
+      "nameEmpty": "Name cannot be empty",
+      "nameInUse": "Name already in use",
+      "principalError": "Credit amount must be > 0"
+    },
+    "summary": {
+      "title": "Summary",
+      "interestMonthly": "Monthly Interest (1st month)",
+      "totalMonthly": "Monthly Rate (Interest + Amortization)"
     }
   },
   "creditDialog": {
-    "editTitle": "Kredit bearbeiten",
-    "createTitle": "Kredit anlegen"
+    "editTitle": "Edit Credit",
+    "createTitle": "Create Credit"
   },
   "investmentsList": {
-    "actions": "Aktionen",
+    "actions": "Actions",
     "name": "Name",
-    "investmentAmount": "Anlagebetrag",
-    "monthlyProfit": "Monatl. Gewinn",
-    "yield": "Rendite p.a.",
-    "investmentDeleted": "Investment gelöscht",
-    "undone": "Rückgängig gemacht",
-    "undo": "Rückgängig",
-    "noInvestments": "Noch keine Investments. Klicke unten rechts auf „+\".",
-    "edit": "Bearbeiten",
-    "delete": "Löschen",
+    "investmentAmount": "Investment Amount",
+    "monthlyProfit": "Monthly Profit",
+    "yield": "Yield p.a.",
+    "investmentDeleted": "Investment deleted",
+    "undone": "Undone",
+    "undo": "Undo",
+    "noInvestments": "No investments yet. Click on '+' in the bottom right corner.",
+    "edit": "Edit",
+    "delete": "Delete",
     "kinds": {
-      "object": "Objekt",
-      "realEstate": "Immobilie",
-      "fixedTermDeposit": "Festgeld"
+      "object": "Object",
+      "realEstate": "Real Estate",
+      "fixedTermDeposit": "Fixed-Term Deposit"
+    }
+  },
+  "creditsList": {
+    "actions": "Actions",
+    "name": "Name",
+    "principal": "Credit Amount",
+    "monthlyRate": "Monthly Rate",
+    "interestRate": "Interest Rate p.a.",
+    "creditDeleted": "Credit deleted",
+    "undone": "Undone",
+    "undo": "Undo",
+    "noCredits": "No credits yet. Click on '+' in the bottom right to create one.",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "cashflowList": {
+    "actions": "Actions",
+    "estimationName": "Estimation Name",
+    "investment": "Investment",
+    "credit": "Credit",
+    "netProfitMonthly": "Net Profit / Month",
+    "yield": "Yield p.a.",
+    "purchasePrice": "Purchase Price",
+    "investmentGain": "Monthly Gain",
+    "monthlyLoss": "Monthly Loss",
+    "estimationDeleted": "Estimation deleted",
+    "undone": "Undone",
+    "undo": "Undo",
+    "noEstimations": "No estimations yet. Click on '+' in the bottom right to create one.",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "objectForm": {
+    "defaultName": "Object",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name cannot be empty",
+    "nameHelperInUse": "Name already in use",
+    "linkLabel": "Link (optional)",
+    "linkPlaceholder": "https://example.com/my-object",
+    "purchasePriceLabel": "Purchase Price",
+    "purchasePriceHelper": "Purchase price must be > 0",
+    "monthlyRevenueLabel": "Monthly Revenue",
+    "monthlyCostLabel": "Monthly Costs",
+    "summaryTitle": "Summary",
+    "monthlyNetGainLabel": "Monthly Net Gain",
+    "annualNetGainLabel": "Annual Net Gain",
+    "initialYieldLabel": "Initial Yield p.a."
+  },
+  "investmentDialog": {
+    "editTitle": "Edit Investment",
+    "createTitle": "Add Investment",
+    "tabRealEstate": "Real Estate",
+    "tabDeposit": "Fixed-Term Deposit",
+    "tabObject": "Object"
+  },
+  "depositForm": {
+    "defaultName": "Fixed-Term Deposit",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name cannot be empty",
+    "nameHelperInUse": "Name already in use",
+    "linkLabel": "Link (optional)",
+    "linkPlaceholder": "https://example.com/my-deposit",
+    "startAmountLabel": "Investment Amount",
+    "startAmountHelper": "Amount must be > 0",
+    "termLabel": "Term (months)",
+    "rateLabel": "Interest Rate p.a.",
+    "compoundingTitle": "Compound Interest",
+    "compounding": {
+      "none": "None",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "optionalAccordion": {
+      "title": "Taxes & Fees (optional)",
+      "enableTaxes": "Consider taxes",
+      "withholdingTaxLabel": "Withholding tax incl. solidarity surcharge",
+      "taxFreeAllowanceLabel": "Saver's allowance (annual)"
+    },
+    "fees": {
+      "accountYearly": "Account maintenance fees (annual)",
+      "otherOneTime": "Other one-time costs"
+    },
+    "summary": {
+      "title": "Summary",
+      "grossGainLabel": "Gross interest gain (total)",
+      "deductionsLabel": "Less taxes & costs",
+      "totalNetGainLabel": "Total net gain",
+      "annualNetGainLabel": "Annual net gain",
+      "monthlyNetGainLabel": "Monthly net gain",
+      "netYieldLabel": "Net yield p.a."
     }
   },
   "realEstateForm": {
     "nameLabel": "Name",
-    "nameHelperEmpty": "Name darf nicht leer sein",
-    "nameHelperInUse": "Name bereits vergeben",
-    "defaultName": "Immobilie",
-    "purchasePriceLabel": "Kaufpreis",
-    "purchasePriceHelper": "Kaufpreis muss > 0 sein",
-    "monthlyColdRentLabel": "Monatliche Kaltmiete",
-    "annually": "jährlich:",
+    "nameHelperEmpty": "Name cannot be empty",
+    "nameHelperInUse": "Name already in use",
+    "defaultName": "Real Estate",
+    "purchasePriceLabel": "Purchase Price",
+    "purchasePriceHelper": "Purchase price must be > 0",
+    "monthlyColdRentLabel": "Monthly Base Rent",
+    "annually": "annually:",
     "inParentheses": "(= {{value}})",
-    "net": "netto:",
+    "net": "net:",
     "accordions": {
-      "details": "Objektdetails (optional)",
-      "purchaseCosts": "Kaufnebenkosten",
-      "additionalPurchaseCosts": "Weitere Kaufnebenkosten",
-      "taxDeductions": "Steuerliche Abzüge",
-      "otherRunningCosts": "Weitere Laufende Kosten"
+      "details": "Object Details (optional)",
+      "purchaseCosts": "Purchase Side Costs",
+      "additionalPurchaseCosts": "Additional Purchase Costs",
+      "taxDeductions": "Tax Deductions",
+      "otherRunningCosts": "Other Running Costs"
     },
     "details": {
-      "link": "Link zur Anzeige"
+      "link": "Link to listing"
     },
     "summary": {
-      "title": "Zusammenfassung",
-      "totalSideCosts": "Gesamtkosten (Neben- & Zusatzkosten)",
-      "grandTotal": "Gesamtpreis (inkl. Kaufpreis)",
-      "annualRunningCosts": "Jährliche laufende Kosten",
-      "netRentMonthly": "Monatliche Nettomiete (nach Abzügen & Kosten)",
-      "netRentYearly": "Jährliche Nettomiete (nach Abzügen & Kosten)",
-      "initialYield": "Anfangsrendite p.a."
+      "title": "Summary",
+      "totalSideCosts": "Total side costs (incidental & additional)",
+      "grandTotal": "Grand total (incl. purchase price)",
+      "annualRunningCosts": "Annual running costs",
+      "netRentMonthly": "Monthly net rent (after deductions & costs)",
+      "netRentYearly": "Annual net rent (after deductions & costs)",
+      "initialYield": "Initial yield p.a."
     },
     "costLabels": {
-      "brokerCommission": "Maklerprovision",
-      "propertyTransferTax": "Grunderwerbsteuer",
-      "notaryFees": "Notarkosten",
-      "landRegistryFees": "Grundbucheintrag",
-      "renovationCosts": "Renovierungskosten",
-      "subvention": "Subvention (z.B. Förderung)",
-      "otherAdditionalCosts": "Zusätzliche Kosten",
-      "appraisalFee": "Gutachterkosten",
-      "insuranceSetup": "Versicherungs-Setup",
-      "incomeTax": "Einkommensteuer",
-      "solidaritySurcharge": "Solidaritätszuschlag",
-      "churchTax": "Kirchensteuer",
-      "otherDeductions": "Zusätzliche Abzüge",
-      "houseFee": "Hausgeld",
-      "houseFeeApportionable": "davon umlagefähig",
-      "other": "Sonstiges"
+      "brokerCommission": "Broker's commission",
+      "propertyTransferTax": "Real estate transfer tax",
+      "notaryFees": "Notary fees",
+      "landRegistryFees": "Land registry entry",
+      "renovationCosts": "Renovation costs",
+      "subvention": "Subsidy (e.g., grant)",
+      "otherAdditionalCosts": "Additional costs",
+      "appraisalFee": "Appraisal fee",
+      "insuranceSetup": "Insurance setup",
+      "incomeTax": "Income tax",
+      "solidaritySurcharge": "Solidarity surcharge",
+      "churchTax": "Church tax",
+      "otherDeductions": "Additional deductions",
+      "houseFee": "Homeowners' association fee",
+      "houseFeeApportionable": "of which is apportionable",
+      "other": "Other"
     }
   },
   "common": {
@@ -98,8 +204,8 @@
     "optional": "(optional)"
   },
   "cashflowDialog": {
-    "editTitle": "Edit Cashflow",
-    "createTitle": "Create Cashflow",
+    "editTitle": "Edit Estimation",
+    "createTitle": "Create Estimation",
     "nameLabel": "Name",
     "nameHelperEmpty": "Name cannot be empty",
     "nameHelperInUse": "Name already in use",
@@ -109,7 +215,7 @@
   },
   "optionsMenu": {
     "title": "Options",
-    "descriptionChoose": "Select your preferred settings and default calculation values.",
+    "descriptionChoose": "Choose your preferred settings and default calculation values.",
     "coreSettings": "Core Settings",
     "language": "Language",
     "mainCurrency": "Main Currency",
@@ -118,16 +224,16 @@
     "defaultsFor": "Defaults for:",
     "country": "Country",
     "currency": "Currency",
-    "customProfileInfo": "You are in the \"Custom\" profile. All values below are editable.",
-    "purchaseCosts": "Purchase Costs",
+    "customProfileInfo": "You are in the 'Custom' profile. All values below are editable.",
+    "purchaseCosts": "Purchase Side Costs",
     "annualRunningCosts": "Annual Running Costs",
-    "resetAll": "Reset All to Defaults",
+    "resetAll": "Reset All",
     "description": "Description",
     "defaultValue": "Default Value"
   },
   "countries": {
     "de": "Germany",
-    "cz": "Czechia",
+    "cz": "Czech Republic",
     "ch": "Switzerland",
     "custom": "Custom"
   },

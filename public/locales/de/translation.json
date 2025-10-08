@@ -14,10 +14,26 @@
     "kofiButtonLabel": "Support Me on Ko-fi"
   },
   "creditForm": {
+    "defaultName": "Immobilienkredit",
     "labels": {
+      "name": "Name des Kredits",
+      "principal": "Kreditsumme (Darlehen)",
       "rateAnnualPct": "Sollzinssatz p.a.",
       "fixedRateYears": "Zinsbindung (Jahre)",
-      "amortizationInitial": "Anfängliche Tilgung p.a."
+      "amortizationInitial": "Anfängliche Tilgung p.a.",
+      "amortizationMonthly": "Monatliche Tilgung",
+      "termMonths": "Gesamtlaufzeit (Monate)",
+      "specialRepaymentYearly": "Sondertilgung (jährlich)"
+    },
+    "helpers": {
+      "nameEmpty": "Name darf nicht leer sein",
+      "nameInUse": "Name bereits vergeben",
+      "principalError": "Kreditsumme muss > 0 sein"
+    },
+    "summary": {
+      "title": "Zusammenfassung",
+      "interestMonthly": "Monatliche Zinsen (1. Monat)",
+      "totalMonthly": "Monatliche Rate (Zins + Tilgung)"
     }
   },
   "creditDialog": {
