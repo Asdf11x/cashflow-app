@@ -72,6 +72,66 @@
     "edit": "Bearbeiten",
     "delete": "Löschen"
   },
+  "objectForm": {
+    "defaultName": "Objekt",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name darf nicht leer sein",
+    "nameHelperInUse": "Name bereits vergeben",
+    "linkLabel": "Link (optional)",
+    "linkPlaceholder": "https://beispiel.de/mein-objekt",
+    "purchasePriceLabel": "Kaufpreis",
+    "purchasePriceHelper": "Kaufpreis muss > 0 sein",
+    "monthlyRevenueLabel": "Monatliche Einnahmen",
+    "monthlyCostLabel": "Monatliche Kosten",
+    "summaryTitle": "Zusammenfassung",
+    "monthlyNetGainLabel": "Monatlicher Gewinn (netto)",
+    "annualNetGainLabel": "Jährlicher Gewinn (netto)",
+    "initialYieldLabel": "Anfangsrendite p.a."
+  },
+  "investmentDialog": {
+    "editTitle": "Investment bearbeiten",
+    "createTitle": "Investment hinzufügen",
+    "tabRealEstate": "Immobilie",
+    "tabDeposit": "Festgeld",
+    "tabObject": "Objekt"
+  },
+  "depositForm": {
+    "defaultName": "Festgeld",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name darf nicht leer sein",
+    "nameHelperInUse": "Name bereits vergeben",
+    "linkLabel": "Link (optional)",
+    "linkPlaceholder": "https://beispiel.de/mein-festgeld",
+    "startAmountLabel": "Anlagebetrag",
+    "startAmountHelper": "Betrag muss > 0 sein",
+    "termLabel": "Laufzeit (Monate)",
+    "rateLabel": "Zinssatz p.a.",
+    "compoundingTitle": "Zinseszins",
+    "compounding": {
+      "none": "Keiner",
+      "monthly": "Monatlich",
+      "yearly": "Jährlich"
+    },
+    "optionalAccordion": {
+      "title": "Steuern & Gebühren (optional)",
+      "enableTaxes": "Steuern berücksichtigen",
+      "withholdingTaxLabel": "Abgeltungssteuer inkl. Soli",
+      "taxFreeAllowanceLabel": "Sparer-Pauschbetrag (jährlich)"
+    },
+    "fees": {
+      "accountYearly": "Kontoführungsgebühren (jährlich)",
+      "otherOneTime": "Sonstige einmalige Kosten"
+    },
+    "summary": {
+      "title": "Zusammenfassung",
+      "grossGainLabel": "Zinsertrag (brutto, gesamt)",
+      "deductionsLabel": "Abzgl. Steuern & Kosten",
+      "totalNetGainLabel": "Gesamtgewinn (netto)",
+      "annualNetGainLabel": "Jährlicher Gewinn (netto)",
+      "monthlyNetGainLabel": "Monatlicher Gewinn (netto)",
+      "netYieldLabel": "Nettorendite p.a."
+    }
+  },
   "realEstateForm": {
     "nameLabel": "Name",
     "nameHelperEmpty": "Name darf nicht leer sein",

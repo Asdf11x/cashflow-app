@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Stack, TextField, Box, Divider, InputAdornment, Typography } from '@mui/material';
 import { D, normalize, sanitizeDecimal } from './formHelpers';
 import { ResultRow, CurrencySelect, PriceInput } from '../SharedComponents.tsx';
@@ -19,16 +20,16 @@ const ObjectForm = React.forwardRef(
     },
     ref,
   ) => {
+    const { t } = useTranslation();
     const { addObject, updateObject, objects } = useInvestStore.getState();
     const existingObject = editId ? objects.find((o) => o.id === editId) : undefined;
 
     // Initialize values based on existing object or defaults
-    // If editing, reconstruct Revenue from Net + Cost.
     const initCost = existingObject?.costMonthly ? D(existingObject.costMonthly) : D(0);
     const initNet = existingObject?.netGainMonthly ? D(existingObject.netGainMonthly) : D(120);
     const initRevenue = existingObject ? initNet.add(initCost) : D(120);
 
-    const [oName, setOName] = React.useState(existingObject?.name || 'Objekt');
+    const [oName, setOName] = React.useState(existingObject?.name || t('objectForm.defaultName'));
     const [oLink, setOLink] = React.useState(existingObject?.link || '');
     const [oPurchasePrice, setOPurchasePrice] = React.useState(
       existingObject?.startAmount ? D(existingObject.startAmount).toFixed(0) : '10000',
@@ -61,10 +62,10 @@ const ObjectForm = React.forwardRef(
     const purchasePriceError = purchasePriceD.lte(0);
     const nameError = !trimmedName || existingNames.includes(trimmedName);
     const nameHelperText = !trimmedName
-      ? 'Name darf nicht leer sein'
+      ? t('objectForm.nameHelperEmpty')
       : existingNames.includes(trimmedName)
-        ? 'Name bereits vergeben'
-        : ''; // Removed space to fix layout gap
+        ? t('objectForm.nameHelperInUse')
+        : '';
 
     // Expose submit function
     React.useImperativeHandle(ref, () => ({
@@ -84,7 +85,6 @@ const ObjectForm = React.forwardRef(
           startAmount: purchasePriceD.toFixed(2),
           currency: oCurrency,
           totalPrice: purchasePriceD.toFixed(2),
-          // Save updated calculated values
           costMonthly: monthlyCostD.toFixed(2),
           netGainMonthly: monthlyNetGainD.toFixed(2),
           netGainYearly: annualNetGainD.toFixed(2),
@@ -105,7 +105,7 @@ const ObjectForm = React.forwardRef(
     return (
       <Stack spacing={3} sx={{ mt: 1 }}>
         <TextField
-          label="Name"
+          label={t('objectForm.nameLabel')}
           value={oName}
           onChange={(e) => setOName(e.target.value)}
           onBlur={() => setIsNameTouched(true)}
@@ -115,28 +115,29 @@ const ObjectForm = React.forwardRef(
           required
         />
         <TextField
-          label="Link (optional)"
+          label={t('objectForm.linkLabel')}
           value={oLink}
           onChange={(e) => setOLink(e.target.value)}
-          placeholder="https://beispiel.de/mein-objekt"
+          placeholder={t('objectForm.linkPlaceholder')}
           fullWidth
         />
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           <PriceInput
-            label="Kaufpreis"
+            label={t('objectForm.purchasePriceLabel')}
             value={oPurchasePrice}
             onChange={(e) => setOPurchasePrice(sanitizeDecimal(e.target.value))}
             onBlur={() => setIsPriceTouched(true)}
             error={isPriceTouched && purchasePriceError}
-            helperText={isPriceTouched && purchasePriceError ? 'Kaufpreis muss > 0 sein' : ''}
+            helperText={
+              isPriceTouched && purchasePriceError ? t('objectForm.purchasePriceHelper') : ''
+            }
           />
           <CurrencySelect value={oCurrency} onChange={(e) => setOCurrency(e.target.value)} />
         </Box>
 
-        {/* Revenue and Cost fields side-by-side */}
         <Box sx={{ display: 'flex', gap: 2 }}>
           <TextField
-            label="Monatliche Einnahmen"
+            label={t('objectForm.monthlyRevenueLabel')}
             type="text"
             inputProps={{
               inputMode: 'decimal',
@@ -154,7 +155,7 @@ const ObjectForm = React.forwardRef(
             }}
           />
           <TextField
-            label="Monatliche Kosten"
+            label={t('objectForm.monthlyCostLabel')}
             type="text"
             inputProps={{
               inputMode: 'decimal',
@@ -178,16 +179,16 @@ const ObjectForm = React.forwardRef(
           spacing={1}
           sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
         >
-          <Typography variant="h6">Zusammenfassung</Typography>
+          <Typography variant="h6">{t('objectForm.summaryTitle')}</Typography>
           <ResultRow
-            label="Monatlicher Gewinn (netto)"
+            label={t('objectForm.monthlyNetGainLabel')}
             value={`${fmtMoney(monthlyNetGainD.toString())} ${oCurrency}`}
           />
           <ResultRow
-            label="Jährlicher Gewinn (netto)"
+            label={t('objectForm.annualNetGainLabel')}
             value={`${fmtMoney(annualNetGainD.toString())} ${oCurrency}`}
           />
-          <ResultRow label="Anfangsrendite p.a." value={`${yieldPct} %`} isBold />
+          <ResultRow label={t('objectForm.initialYieldLabel')} value={`${yieldPct} %`} isBold />
         </Stack>
       </Stack>
     );
