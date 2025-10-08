@@ -8,14 +8,14 @@
   "purchaseCosts": {
     "basicCosts": {
       "brokerCommission": {
-        "label_de": "Maklerprovision",
+        "label": "Maklerprovision",
         "label_en": "Broker Commission",
         "label_cz": "Provize realitní kanceláře",
         "rateOfPurchasePrice": 0.04,
         "optional": true
       },
       "propertyTransferTax": {
-        "label_de": "Grunderwerbsteuer",
+        "label": "Grunderwerbsteuer",
         "label_en": "Property Transfer Tax",
         "label_cz": "Daň z nabytí nemovitých věcí",
         "rateOfPurchasePrice": 0.0,
@@ -23,14 +23,14 @@
         "notes": "Abolished in 2020."
       },
       "notaryFees": {
-        "label_de": "Notarkosten",
+        "label": "Notarkosten",
         "label_en": "Notary Fees",
         "label_cz": "Notářské poplatky",
         "rateOfPurchasePrice": 0.01,
         "optional": false
       },
       "landRegistryFees": {
-        "label_de": "Grundbucheintrag",
+        "label": "Grundbucheintrag",
         "label_en": "Land Registry Fees",
         "label_cz": "Poplatek za vklad do katastru",
         "manualAnnualAmount": 2000,
@@ -42,7 +42,7 @@
   "rent": {
     "taxes": {
       "incomeTax": {
-        "label_de": "Einkommensteuer",
+        "label": "Einkommensteuer",
         "label_en": "Income Tax",
         "label_cz": "Daň z příjmu",
         "base": "gross_rent",
@@ -54,7 +54,7 @@
   "runningCosts": {
     "apportionableOperatingCosts": {
       "key": "nebenkosten_umlagefaehig",
-      "label_de": "Umlagefähige Nebenkosten",
+      "label": "Umlagefähige Nebenkosten",
       "label_en": "Apportionable Operating Costs",
       "label_cz": "Zúčtovatelné provozní náklady",
       "percentageOfAnnualColdRent": 0.2,
@@ -62,7 +62,7 @@
     },
     "nonApportionableOperatingCosts": {
       "key": "nebenkosten_nicht_umlagefaehig",
-      "label_de": "Nicht umlagefähige Nebenkosten",
+      "label": "Nicht umlagefähige Nebenkosten",
       "label_en": "Non-apportionable Operating Costs",
       "label_cz": "Nezúčtovatelné provozní náklady",
       "percentageOfAnnualColdRent": 0.04,

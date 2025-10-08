@@ -1,0 +1,47 @@
+{
+  "common": {
+    "save": "Speichern",
+    "create": "Erstellen",
+    "cancel": "Abbrechen",
+    "optional": "(optional)"
+  },
+  "cashflowDialog": {
+    "editTitle": "Abschätzung bearbeiten",
+    "createTitle": "Abschätzung anlegen",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name darf nicht leer sein",
+    "nameHelperInUse": "Name bereits vergeben",
+    "selectInvestmentLabel": "Investment auswählen",
+    "selectCreditLabel": "Kredit auswählen",
+    "netProfitPerMonth": "Netto-Gewinn / Monat:"
+  },
+  "optionsMenu": {
+    "title": "Optionen",
+    "descriptionChoose": "Wählen Sie Ihre bevorzugten Einstellungen und Standardberechnungswerte aus.",
+    "coreSettings": "Kerneinstellungen",
+    "language": "Sprache",
+    "mainCurrency": "Hauptwährung",
+    "defaultValues": "Standardwerte",
+    "exchangeRates": "Wechselkurse (Basis: 1 EUR)",
+    "defaultsFor": "Standardwerte für:",
+    "country": "Land",
+    "currency": "Währung",
+    "customProfileInfo": "Sie befinden sich im „Benutzerdefiniert“-Profil. Alle Werte unten sind bearbeitbar.",
+    "purchaseCosts": "Kaufnebenkosten",
+    "annualRunningCosts": "Laufende jährliche Kosten",
+    "resetAll": "Alles zurücksetzen",
+    "description": "Bezeichnung",
+    "defaultValue": "Standardwert"
+  },
+  "countries": {
+    "de": "Deutschland",
+    "cz": "Tschechien",
+    "ch": "Schweiz",
+    "custom": "Benutzerdefiniert"
+  },
+  "languages": {
+    "de": "Deutsch",
+    "en": "Englisch",
+    "cz": "Tschechisch"
+  }
+}

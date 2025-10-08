@@ -1,0 +1,47 @@
+{
+  "common": {
+    "save": "Save",
+    "create": "Create",
+    "cancel": "Cancel",
+    "optional": "(optional)"
+  },
+  "cashflowDialog": {
+    "editTitle": "Edit Cashflow",
+    "createTitle": "Create Cashflow",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name cannot be empty",
+    "nameHelperInUse": "Name already in use",
+    "selectInvestmentLabel": "Select Investment",
+    "selectCreditLabel": "Select Credit",
+    "netProfitPerMonth": "Net Profit / Month:"
+  },
+  "optionsMenu": {
+    "title": "Options",
+    "descriptionChoose": "Select your preferred settings and default calculation values.",
+    "coreSettings": "Core Settings",
+    "language": "Language",
+    "mainCurrency": "Main Currency",
+    "defaultValues": "Default Values",
+    "exchangeRates": "Exchange Rates (Base: 1 EUR)",
+    "defaultsFor": "Defaults for:",
+    "country": "Country",
+    "currency": "Currency",
+    "customProfileInfo": "You are in the \"Custom\" profile. All values below are editable.",
+    "purchaseCosts": "Purchase Costs",
+    "annualRunningCosts": "Annual Running Costs",
+    "resetAll": "Reset All to Defaults",
+    "description": "Description",
+    "defaultValue": "Default Value"
+  },
+  "countries": {
+    "de": "Germany",
+    "cz": "Czechia",
+    "ch": "Switzerland",
+    "custom": "Custom"
+  },
+  "languages": {
+    "de": "German",
+    "en": "English",
+    "cz": "Czech"
+  }
+}

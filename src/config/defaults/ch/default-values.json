@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "country": "DE",
+    "currency": "EUR",
+    "version": 2,
+    "notes": "Defaults for Germany. All values are multipliers or amounts to add."
+  },
+  "investments": {
+    "realEstate": {
+      "basic": {
+        "name": "Neue Immobilie",
+        "purchasePrice": "10000"
+      },
+      "purchaseCosts": {
+        "basicCosts": {
+          "brokerCommission": {
+            "label": "Maklerprovision",
+            "enabled": true,
+            "value": 0.035,
+            "mode": "percent",
+            "allowModeChange": true
+          },
+          "propertyTransferTax": {
+            "label": "Grunderwerbsteuer",
+            "enabled": true,
+            "value": 0.05,
+            "mode": "percent",
+            "allowModeChange": false
+          },
+          "notaryFees": {
+            "label": "Notarkosten",
+            "enabled": true,
+            "value": 0.0125,
+            "mode": "percent",
+            "allowModeChange": false
+          },
+          "landRegistryFees": {
+            "label": "Grundbucheintrag",
+            "enabled": true,
+            "value": 0.005,
+            "mode": "percent",
+            "allowModeChange": false
+          }
+        },
+        "additionalCosts": {
+          "renovationCosts": {
+            "label": "Renovierungskosten",
+            "enabled": false,
+            "value": 0,
+            "mode": "currency",
+            "allowModeChange": true
+          },
+          "...": "... and so on"
+        }
+      }
+    }
+  }
+}
