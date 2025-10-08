@@ -1,3 +1,5 @@
+// src/components/CashflowList.tsx
+
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableCell, Typography, Stack } from '@mui/material';
@@ -6,10 +8,9 @@ import { useInvestStore } from '../../core/state/useInvestStore';
 import { useCreditStore } from '../../core/state/useCreditStore';
 import { fmtMoney } from '../../core/domain/calc';
 import CashflowDialog from '../shared/CashflowDialog';
-import ResourceList, { type HeadCell } from '../shared/ResourceList'; // <-- IMPORT
+import ResourceList, { type HeadCell } from '../shared/ResourceList';
 import { ResultRow } from '../shared/SharedComponents.tsx';
 
-// Enriched type for our list
 interface EnrichedRow extends Cashflow {
   investmentName: string;
   creditName: string;
@@ -97,16 +98,21 @@ export default function CashflowList() {
       getUndoContext={() => !!undoCtx}
       renderDataCells={(row) => (
         <>
-          <TableCell sx={{ fontWeight: 500 }}>{row.name}</TableCell>
-          <TableCell>{row.investmentName}</TableCell>
-          <TableCell>{row.creditName}</TableCell>
+          <TableCell key={`${row.id}-name`} sx={{ fontWeight: 500 }}>
+            {row.name}
+          </TableCell>
+          <TableCell key={`${row.id}-investmentName`}>{row.investmentName}</TableCell>
+          <TableCell key={`${row.id}-creditName`}>{row.creditName}</TableCell>
           <TableCell
+            key={`${row.id}-cashflowMonthly`}
             align="right"
             sx={{ color: parseFloat(row.cashflowMonthly) < 0 ? 'error.main' : 'success.main' }}
           >
             {fmtMoney(String(row.cashflowMonthly))} €
           </TableCell>
-          <TableCell align="right">{fmtMoney(String(row.yieldPct))} %</TableCell>
+          <TableCell key={`${row.id}-yieldPct`} align="right">
+            {fmtMoney(String(row.yieldPct))} %
+          </TableCell>
         </>
       )}
       renderCard={(row) => (

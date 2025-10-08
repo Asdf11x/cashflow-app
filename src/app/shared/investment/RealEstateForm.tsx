@@ -1,21 +1,41 @@
+// src/components/shared/investment/RealEstateForm.tsx
+
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Stack, Divider, TextField, InputAdornment, Typography } from '@mui/material';
+import {
+  Stack,
+  Divider,
+  TextField,
+  InputAdornment,
+  Typography,
+  type SelectChangeEvent,
+} from '@mui/material';
+import Decimal from 'decimal.js';
 import { D, normalize, sanitizeDecimal } from './formHelpers';
 import { useInvestStore } from '../../../core/state/useInvestStore';
 import { useSettingsStore } from '../../../core/state/useSettingsStore';
 import type { CostState } from './formHelpers';
-import type { RealEstateInvestment } from '../../../core/domain/types';
+import type {
+  AdditionalPurchasePriceCosts,
+  AdditionalRunningCostsRent,
+  PurchasePriceCosts,
+  RealEstateInvestment,
+  RunningCostsRent,
+} from '../../../core/domain/types';
 
-// Import default value configurations and helpers
+// Import default value configurations
 import deDefaults from '../../../config/defaults/de/default-values.json';
 import chDefaults from '../../../config/defaults/ch/default-values.json';
 import czDefaults from '../../../config/defaults/cz/default-values.json';
 
-// Import the new sub-components
+// Import the sub-components and their handles
 import FormHeader from './real-estate-form/FormHeader';
-import PurchaseCostsSection from './real-estate-form/PurchaseCostsSection';
-import RunningCostsSection from './real-estate-form/RunningCostsSection';
+import PurchaseCostsSection, {
+  type PurchaseCostsSectionHandle,
+} from './real-estate-form/PurchaseCostsSection';
+import RunningCostsSection, {
+  type RunningCostsSectionHandle,
+} from './real-estate-form/RunningCostsSection';
 import SummarySection from './real-estate-form/SummarySection';
 import type { SplitCostItemState } from './real-estate-form/CostInputs';
 
@@ -37,8 +57,12 @@ const RealEstateForm = React.forwardRef(
     ref,
   ) => {
     const { t } = useTranslation();
-    const { addRealEstate, updateRealEstate, realEstates } = useInvestStore.getState();
+    const { addRealEstate, updateRealEstate } = useInvestStore.getState();
     const { countryProfile } = useSettingsStore();
+
+    // --- Refs for Child Components ---
+    const purchaseCostsRef = React.useRef<PurchaseCostsSectionHandle>(null);
+    const runningCostsRef = React.useRef<RunningCostsSectionHandle>(null);
 
     // --- Default Values ---
     const defaults = React.useMemo(
@@ -46,7 +70,7 @@ const RealEstateForm = React.forwardRef(
       [countryProfile],
     );
     const reDefaults = defaults.investments.realEstate;
-    const { currency: metaCurrency } = defaults.meta;
+    const metaCurrency = defaults.meta.currency === 'EUR' ? '€' : defaults.meta.currency;
 
     const mapDefaultsToCostState = (
       defaultCosts: Record<string, any>,
@@ -83,6 +107,15 @@ const RealEstateForm = React.forwardRef(
         label2: t(reDefaults.runningCosts.additional.houseFee.i18nKeyApportionable),
       } as SplitCostItemState,
     };
+    const initialPurchaseStates = {
+      purchaseCosts: initialPurchaseCosts,
+      additionalCosts: initialAdditionalCosts,
+    };
+    const initialRunningStates = {
+      taxDeductions: initialTaxDeductions,
+      runningCostsSplit: initialRunningCostsSplit,
+      otherRunningCosts: initialOtherRunningCosts,
+    };
 
     // --- Core State ---
     const [rName, setRName] = React.useState(t(reDefaults.basic.name.i18nKey));
@@ -93,17 +126,6 @@ const RealEstateForm = React.forwardRef(
     );
     const [rDetailsLink, setRDetailsLink] = React.useState(reDefaults.basic.detailsLink);
 
-    // --- State for sub-component data ---
-    const [purchaseCostStates, setPurchaseCostStates] = React.useState({
-      purchaseCosts: initialPurchaseCosts,
-      additionalCosts: initialAdditionalCosts,
-    });
-    const [runningCostStates, setRunningCostStates] = React.useState({
-      taxDeductions: initialTaxDeductions,
-      runningCostsSplit: initialRunningCostsSplit,
-      otherRunningCosts: initialOtherRunningCosts,
-    });
-
     // --- State for calculated totals from children ---
     const [totalPurchaseSideCosts, setTotalPurchaseSideCosts] = React.useState(D(0));
     const [totalRunningCostsAnnual, setTotalRunningCostsAnnual] = React.useState(D(0));
@@ -111,15 +133,6 @@ const RealEstateForm = React.forwardRef(
     // --- Validation State ---
     const [isNameTouched, setIsNameTouched] = React.useState(false);
     const [isPriceTouched, setIsPriceTouched] = React.useState(false);
-
-    // --- Edit Mode Effect ---
-    React.useEffect(() => {
-      if (!editId) return;
-      const existing = realEstates.find((r) => r.id === editId);
-      if (!existing) return;
-      // ... logic to map `existing` data to initial states for children ...
-      // This part is complex and remains, but it's now about preparing props, not setting 20 states.
-    }, [editId, realEstates]);
 
     // --- Core Calculations ---
     const rPurchasePriceD = D(normalize(rPurchasePrice));
@@ -144,7 +157,15 @@ const RealEstateForm = React.forwardRef(
     const priceHelperText =
       isPriceTouched && purchasePriceError ? t('realEstateForm.purchasePriceHelper') : ' ';
 
-    // --- Submit Handler ---
+    const calculateCostStateTotal = (costState: CostState): Decimal => {
+      return Object.values(costState).reduce((acc, item) => {
+        if (item.enabled && item.value) {
+          return acc.add(D(normalize(item.value)));
+        }
+        return acc;
+      }, D(0));
+    };
+
     React.useImperativeHandle(ref, () => ({
       isValid: () => !purchasePriceError && !nameError,
       submit: () => {
@@ -152,19 +173,124 @@ const RealEstateForm = React.forwardRef(
         setIsNameTouched(true);
         if (purchasePriceError || nameError) return;
 
-        // ... logic to build `investmentData` from state ...
-        // This logic remains largely the same, but reads from the simplified state.
+        const purchaseData = purchaseCostsRef.current?.getData();
+        const runningData = runningCostsRef.current?.getData();
 
-        const investmentData = {
-          /* ... build the final object ... */
-        } as RealEstateInvestment;
+        if (!purchaseData || !runningData) {
+          console.error('Child component data is not available.');
+          return;
+        }
 
-        if (editId) updateRealEstate(investmentData);
-        else addRealEstate(investmentData);
+        // --- START: Data Transformation ---
+
+        // 1. Transform basic purchase costs
+        const purchaseCostsObject: PurchasePriceCosts = {
+          brokerCommission: purchaseData.purchaseCosts.brokerCommission.value,
+          propertyTransferTax: purchaseData.purchaseCosts.propertyTransferTax.value,
+          notaryFees: purchaseData.purchaseCosts.notaryFees.value,
+          landRegistryFees: purchaseData.purchaseCosts.landRegistryFees.value,
+          total: calculateCostStateTotal(purchaseData.purchaseCosts).toString(),
+        };
+
+        // 2. Transform additional purchase costs
+        const additionalPurchaseCostsObject: AdditionalPurchasePriceCosts = {
+          renovationCosts: purchaseData.additionalCosts.renovationCosts?.value || '0',
+          subvention: purchaseData.additionalCosts.subvention?.value || '0',
+          otherAdditionalCosts: purchaseData.additionalCosts.otherAdditionalCosts?.value || '0',
+          appraisalFee: purchaseData.additionalCosts.appraisalFee?.value || '0',
+          insuranceSetup: purchaseData.additionalCosts.insuranceSetup?.value || '0',
+          total: calculateCostStateTotal(purchaseData.additionalCosts).toString(),
+        };
+
+        // 3. Transform running costs (tax deductions)
+        const runningCostsRentObject: RunningCostsRent = {
+          incomeTax: runningData.taxDeductions.incomeTax.value,
+          solidaritySurcharge: runningData.taxDeductions.solidaritySurcharge.value,
+          churchTax: runningData.taxDeductions.churchTax?.value || '0',
+          otherDeductions: runningData.taxDeductions.otherDeductions?.value || '0',
+          total: calculateCostStateTotal(runningData.taxDeductions).toString(),
+        };
+
+        // 4. Transform additional running costs
+        const additionalRunningCostsRentObject: AdditionalRunningCostsRent = {
+          houseFee: runningData.runningCostsSplit.houseFee.value2, // Net (apportionable) value
+          houseFeeTotal: runningData.runningCostsSplit.houseFee.value1,
+          houseFeeApportionable: runningData.runningCostsSplit.houseFee.value2,
+          other: runningData.otherRunningCosts.other.value,
+          total: D(normalize(runningData.runningCostsSplit.houseFee.value2))
+            .add(D(normalize(runningData.otherRunningCosts.other.value)))
+            .toString(),
+        };
+
+        // --- END: Data Transformation ---
+
+        // Construct the final object matching the RealEstateInvestment type
+        const investmentData: RealEstateInvestment = {
+          id: editId || crypto.randomUUID(),
+          kind: 'REAL_ESTATE',
+          name: trimmedName,
+          currency: rCurrency,
+          link: rDetailsLink,
+          startAmount: rPurchasePrice, // Base purchase price
+
+          // Main calculated outputs
+          totalPrice: grandTotalPrice.toString(),
+          netGainMonthly: netRentMonthly.toString(),
+          netGainYearly: netRentAnnual.toString(),
+          returnPercent: yieldPct,
+
+          // Real estate specific data
+          monthlyColdRent: rMonthlyColdRent,
+          totalAdditionalPurchaseCosts: additionalPurchaseCostsObject.total,
+          totalRunningCostsAnnually: totalRunningCostsAnnual.toString(),
+
+          // Nested structured data
+          purchaseCosts: purchaseCostsObject,
+          additionalPurchaseCosts: additionalPurchaseCostsObject,
+          runningCostsRent: runningCostsRentObject,
+          additionalRunningCostsRent: additionalRunningCostsRentObject,
+
+          // Details object (not in form, provide default empty values)
+          details: {
+            address: '',
+            propertyType: '',
+            numberOfFloors: 0,
+            livingAreaSqm: 0,
+            usableAreaSqm: 0,
+            landAreaSqm: 0,
+            rooms: 0,
+          },
+        };
+
+        if (editId) {
+          updateRealEstate(investmentData);
+        } else {
+          addRealEstate(investmentData);
+        }
 
         onClose();
       },
     }));
+
+    // --- THE FIX IS HERE ---
+    // These handlers now prevent re-renders if the incoming value is the same.
+    const handlePurchaseTotalChange = React.useCallback((newTotal: Decimal) => {
+      setTotalPurchaseSideCosts((currentTotal) => {
+        if (currentTotal.equals(newTotal)) {
+          return currentTotal; // Return the same object to prevent re-render
+        }
+        return newTotal;
+      });
+    }, []);
+
+    const handleRunningTotalChange = React.useCallback((newTotal: Decimal) => {
+      setTotalRunningCostsAnnual((currentTotal) => {
+        if (currentTotal.equals(newTotal)) {
+          return currentTotal; // Return the same object to prevent re-render
+        }
+        return newTotal;
+      });
+    }, []);
 
     return (
       <Stack spacing={3} sx={{ mt: 1 }}>
@@ -182,17 +308,17 @@ const RealEstateForm = React.forwardRef(
           priceError={purchasePriceError}
           priceHelperText={priceHelperText}
           currency={rCurrency}
-          onCurrencyChange={(e) => setRCurrency(e.target.value as string)}
+          onCurrencyChange={(e: SelectChangeEvent) => setRCurrency(e.target.value as string)}
           link={rDetailsLink}
           onLinkChange={(e) => setRDetailsLink(e.target.value)}
         />
 
         <PurchaseCostsSection
+          ref={purchaseCostsRef}
           baseAmount={rPurchasePriceD}
           currency={rCurrency}
-          initialStates={purchaseCostStates}
-          onTotalChange={setTotalPurchaseSideCosts}
-          onStateChange={setPurchaseCostStates}
+          initialStates={initialPurchaseStates}
+          onTotalChange={handlePurchaseTotalChange}
         />
 
         <Divider />
@@ -212,11 +338,11 @@ const RealEstateForm = React.forwardRef(
         />
 
         <RunningCostsSection
+          ref={runningCostsRef}
           baseAmount={rMonthlyColdRentD}
           currency={rCurrency}
-          initialStates={runningCostStates}
-          onTotalChange={setTotalRunningCostsAnnual}
-          onStateChange={setRunningCostStates}
+          initialStates={initialRunningStates}
+          onTotalChange={handleRunningTotalChange}
         />
 
         <SummarySection

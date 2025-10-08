@@ -82,16 +82,19 @@ interface PurchaseCostsSectionProps {
   currency: string;
   initialStates: { purchaseCosts: CostState; additionalCosts: CostState };
   onTotalChange: (total: Decimal) => void;
-  onStateChange: (states: { purchaseCosts: CostState; additionalCosts: CostState }) => void;
 }
 
-export default function PurchaseCostsSection({
-  baseAmount,
-  currency,
-  initialStates,
-  onTotalChange,
-  onStateChange,
-}: PurchaseCostsSectionProps) {
+export type PurchaseCostsSectionHandle = {
+  getData: () => {
+    purchaseCosts: CostState;
+    additionalCosts: CostState;
+  };
+};
+
+const PurchaseCostsSection = React.forwardRef<
+  PurchaseCostsSectionHandle,
+  PurchaseCostsSectionProps
+>(({ baseAmount, currency, initialStates, onTotalChange }, ref) => {
   const { t } = useTranslation();
   const [purchaseCosts, setPurchaseCosts] = React.useState<CostState>(initialStates.purchaseCosts);
   const [additionalCosts, setAdditionalCosts] = React.useState<CostState>(
@@ -115,15 +118,15 @@ export default function PurchaseCostsSection({
 
   React.useEffect(() => {
     onTotalChange(purchaseCostsTotal.add(additionalCostsTotal));
-    onStateChange({ purchaseCosts, additionalCosts });
-  }, [
-    purchaseCostsTotal,
-    additionalCostsTotal,
-    onTotalChange,
-    purchaseCosts,
-    additionalCosts,
-    onStateChange,
-  ]);
+  }, [purchaseCostsTotal, additionalCostsTotal, onTotalChange]);
+
+  // Expose a function for the parent to get the final state
+  React.useImperativeHandle(ref, () => ({
+    getData: () => ({
+      purchaseCosts,
+      additionalCosts,
+    }),
+  }));
 
   return (
     <>
@@ -145,4 +148,6 @@ export default function PurchaseCostsSection({
       />
     </>
   );
-}
+});
+
+export default PurchaseCostsSection;

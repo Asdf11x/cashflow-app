@@ -4,15 +4,14 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableCell, Typography, Box, Chip, Link } from '@mui/material';
 import { useInvestStore } from '../../core/state/useInvestStore';
-import InvestmentDialog from '../shared/investment/InvestmentDialog.tsx';
+import CreateInvestmentDialog from '../shared/investment/InvestmentDialog.tsx';
 import type {
   ObjectInvestment,
   RealEstateInvestment,
   Depositvestment,
 } from '../../core/domain/types.ts';
-import ResourceList, { type HeadCell } from '../shared/ResourceList'; // <-- IMPORT
+import ResourceList, { type HeadCell } from '../shared/ResourceList';
 
-// A new combined type for our list items
 type InvestmentRow = {
   id: string;
   name: string;
@@ -155,23 +154,25 @@ export default function InvestmentsList() {
       items={rows}
       headCells={headCells}
       i18nKeys={i18nKeys}
-      DialogComponent={InvestmentDialog as any} // Cast as `any` because its props are slightly different
+      DialogComponent={CreateInvestmentDialog as any}
       onDelete={handleDelete}
       onUndo={handleUndo}
       getUndoContext={() => !!undoCtx}
       getOriginalName={getOriginalName}
       renderDataCells={(r) => (
         <>
-          <TableCell>
+          <TableCell key={`${r.id}-name`}>
             <NameCell name={r.name} link={r.link} />
           </TableCell>
-          <TableCell align="right">
+          <TableCell key={`${r.id}-purchasePrice`} align="right">
             {r.purchasePrice} {r.currency}
           </TableCell>
-          <TableCell align="right">
+          <TableCell key={`${r.id}-netGainMonthly`} align="right">
             {r.netGainMonthly} {r.currency}
           </TableCell>
-          <TableCell align="right">{r.yieldPctYearly} %</TableCell>
+          <TableCell key={`${r.id}-yieldPctYearly`} align="right">
+            {r.yieldPctYearly} %
+          </TableCell>
         </>
       )}
       renderCard={(r) => (

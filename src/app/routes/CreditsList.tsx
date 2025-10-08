@@ -1,11 +1,13 @@
+// src/components/CreditsList.tsx
+
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableCell, Typography, Box } from '@mui/material';
 import { useCreditStore } from '../../core/state/useCreditStore';
 import { fmtMoney } from '../../core/domain/calc';
 import type { Credit } from '../../core/domain/types.ts';
-import CreditDialog from '../shared/credit/CreditDialog.tsx';
-import ResourceList, { type HeadCell } from '../shared/ResourceList'; // <-- IMPORT
+import CreditCreateDialog from '../shared/credit/CreditDialog.tsx';
+import ResourceList, { type HeadCell } from '../shared/ResourceList';
 
 export default function CreditsList() {
   const { t } = useTranslation();
@@ -55,20 +57,22 @@ export default function CreditsList() {
       items={credits}
       headCells={headCells}
       i18nKeys={i18nKeys}
-      DialogComponent={CreditDialog}
+      DialogComponent={CreditCreateDialog}
       onDelete={handleDelete}
       onUndo={handleUndo}
       getUndoContext={() => !!undoCtx}
       renderDataCells={(c) => (
         <>
-          <TableCell>{c.name}</TableCell>
-          <TableCell align="right">
+          <TableCell key={`${c.id}-name`}>{c.name}</TableCell>
+          <TableCell key={`${c.id}-principal`} align="right">
             {fmtMoney(c.principal)} {c.currency}
           </TableCell>
-          <TableCell align="right">
+          <TableCell key={`${c.id}-totalMonthly`} align="right">
             {fmtMoney(c.totalMonthly || '0')} {c.currency}
           </TableCell>
-          <TableCell align="right">{c.rateAnnualPct} %</TableCell>
+          <TableCell key={`${c.id}-rateAnnualPct`} align="right">
+            {c.rateAnnualPct} %
+          </TableCell>
         </>
       )}
       renderCard={(c) => (

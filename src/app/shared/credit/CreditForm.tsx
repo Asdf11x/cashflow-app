@@ -39,6 +39,8 @@ const CreditForm = React.forwardRef(
     const defaults = allDefaults[countryProfile] || deDefaultValues;
     const creditDefaults = defaults.credit.basic;
 
+    const metaCurrencySymbol = defaults.meta.currency === 'EUR' ? '€' : defaults.meta.currency;
+
     // --- Form State ---
     const [cName, setCName] = React.useState(existingCredit?.name || t('creditForm.defaultName'));
     const [cPrincipal, setCPrincipal] = React.useState(
@@ -69,7 +71,7 @@ const CreditForm = React.forwardRef(
         : '0',
     );
     const [cCurrency, setCCurrency] = React.useState(
-      existingCredit?.currency || defaults.meta.currency,
+      existingCredit?.currency || metaCurrencySymbol,
     );
 
     // Touched State for Validation
