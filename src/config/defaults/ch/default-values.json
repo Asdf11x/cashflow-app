@@ -1,7 +1,7 @@
 {
   "meta": {
-    "country": "CH",
-    "currency": "CHF",
+    "country": "DE",
+    "currency": "EUR",
     "version": 2
   },
   "investments": {
@@ -60,10 +60,30 @@
         }
       }
     },
-    "fixedTermDeposit": {
-      "taxes": {
-        "withholdingTaxRate": 26,
-        "taxFreeAllowance": 0
+    "credit": {
+      "basic": {
+        "rateAnnualPct": {
+          "label": "Sollzinssatz p.a.",
+          "i18nKey": "creditForm.labels.rateAnnualPct",
+          "value": 3.5
+        },
+        "fixedRateYears": {
+          "label": "Zinsbindung (Jahre)",
+          "i18nKey": "creditForm.labels.fixedRateYears",
+          "value": 10
+        },
+        "amortizationInitial": {
+          "label": "Anfängliche Tilgung p.a.",
+          "i18nKey": "creditForm.labels.amortizationInitial",
+          "value": 0.02,
+          "mode": "percent"
+        }
+      },
+      "fixedTermDeposit": {
+        "taxes": {
+          "withholdingTaxRate": 26,
+          "taxFreeAllowance": 0
+        }
       }
     }
   }

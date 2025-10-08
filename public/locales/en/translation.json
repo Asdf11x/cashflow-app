@@ -13,6 +13,17 @@
     },
     "kofiButtonLabel": "Support Me on Ko-fi"
   },
+  "creditForm": {
+    "labels": {
+      "rateAnnualPct": "Sollzinssatz p.a.",
+      "fixedRateYears": "Zinsbindung (Jahre)",
+      "amortizationInitial": "Anfängliche Tilgung p.a."
+    }
+  },
+  "creditDialog": {
+    "editTitle": "Kredit bearbeiten",
+    "createTitle": "Kredit anlegen"
+  },
   "realEstateForm": {
     "nameLabel": "Name",
     "nameHelperEmpty": "Name darf nicht leer sein",
@@ -24,7 +35,6 @@
     "annually": "jährlich:",
     "inParentheses": "(= {{value}})",
     "net": "netto:",
-
     "accordions": {
       "details": "Objektdetails (optional)",
       "purchaseCosts": "Kaufnebenkosten",
@@ -32,11 +42,9 @@
       "taxDeductions": "Steuerliche Abzüge",
       "otherRunningCosts": "Weitere Laufende Kosten"
     },
-
     "details": {
       "link": "Link zur Anzeige"
     },
-
     "summary": {
       "title": "Zusammenfassung",
       "totalSideCosts": "Gesamtkosten (Neben- & Zusatzkosten)",
@@ -46,7 +54,6 @@
       "netRentYearly": "Jährliche Nettomiete (nach Abzügen & Kosten)",
       "initialYield": "Anfangsrendite p.a."
     },
-
     "costLabels": {
       "brokerCommission": "Maklerprovision",
       "propertyTransferTax": "Grunderwerbsteuer",

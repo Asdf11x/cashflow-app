@@ -4,7 +4,21 @@ import { D, normalize, sanitizeDecimal } from '../investment/formHelpers';
 import { ResultRow, CurrencySelect, PriceInput } from './../SharedComponents';
 import { creditInterestMonthly, creditTotalMonthly, fmtMoney } from '../../../core/domain/calc';
 import { useCreditStore } from '../../../core/state/useCreditStore';
+import { useSettingsStore } from '../../../core/state/useSettingsStore';
 import type { Credit } from '../../../core/domain/types';
+
+// Import default value configurations
+import deDefaultValues from '../../../config/defaults/de/default-values.json';
+import czDefaultValues from '../../../config/defaults/cz/default-values.json';
+import chDefaultValues from '../../../config/defaults/ch/default-values.json';
+
+type DefaultsConfig = typeof deDefaultValues;
+
+const allDefaults: Record<string, DefaultsConfig> = {
+  de: deDefaultValues,
+  cz: czDefaultValues,
+  ch: chDefaultValues,
+};
 
 const CreditForm = React.forwardRef(
   (
@@ -18,29 +32,43 @@ const CreditForm = React.forwardRef(
     const { addCredit, updateCredit, credits } = useCreditStore.getState();
     const existingCredit = editId ? credits.find((c) => c.id === editId) : undefined;
 
-    // Form State
+    // --- State Sourcing from Global Settings ---
+    const { countryProfile } = useSettingsStore.getState();
+    const defaults = allDefaults[countryProfile] || deDefaultValues;
+    const creditDefaults = defaults.investments.credit.basic;
+
+    // --- Form State ---
+    // Use default values from config as fallback if not editing
     const [cName, setCName] = React.useState(existingCredit?.name || 'Immobilienkredit');
     const [cPrincipal, setCPrincipal] = React.useState(
       existingCredit ? D(existingCredit.principal).toFixed(0) : '200000',
     );
     const [cRateAnnualPct, setCRateAnnualPct] = React.useState(
-      existingCredit?.rateAnnualPct || '3.5',
+      existingCredit?.rateAnnualPct || String(creditDefaults.rateAnnualPct.value),
     );
-    const [cAmortMonthly, setCAmortMonthly] = React.useState(
-      existingCredit ? D(existingCredit.amortMonthly).toFixed(0) : '600',
-    );
+    // Calculate initial amortization based on principal and default percentage
+    const [cAmortMonthly, setCAmortMonthly] = React.useState(() => {
+      if (existingCredit) {
+        return D(existingCredit.amortMonthly).toFixed(0);
+      }
+      const principal = D('200000');
+      const yearlyAmortization = principal.mul(creditDefaults.amortizationInitial.value);
+      return yearlyAmortization.div(12).toFixed(0);
+    });
     const [cTermMonths, setCTermMonths] = React.useState(
-      existingCredit?.termMonths ? String(existingCredit.termMonths) : '120',
+      existingCredit?.termMonths ? String(existingCredit.termMonths) : '120', // Default to 120 months (10 years)
     );
     const [cFixedRateYears, setCFixedRateYears] = React.useState(
-      existingCredit?.fixedRateYears ? String(existingCredit.fixedRateYears) : '10',
+      existingCredit?.fixedRateYears
+        ? String(existingCredit.fixedRateYears)
+        : String(creditDefaults.fixedRateYears.value),
     );
     const [cSpecialRepayment, setCSpecialRepayment] = React.useState(
       existingCredit?.specialRepaymentYearly
         ? D(existingCredit.specialRepaymentYearly).toFixed(0)
         : '0',
     );
-    const [cCurrency, setCCurrency] = React.useState(existingCredit?.currency || '€');
+    const [cCurrency, setCCurrency] = React.useState(existingCredit?.currency || defaults.meta.currency);
 
     // Touched State for Validation
     const [isNameTouched, setIsNameTouched] = React.useState(false);
