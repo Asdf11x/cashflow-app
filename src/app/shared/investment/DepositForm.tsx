@@ -20,8 +20,12 @@ import { fmtMoney } from '../../../core/domain/calc';
 import { useInvestStore } from '../../../core/state/useInvestStore.ts';
 import { type Depositvestment } from '../../../core/domain/types.ts';
 import Decimal from 'decimal.js';
-import { getDefaultCostsConfig } from '../../../config';
+// import { getDefaultCostsConfig } from '../../../config';
 import { CostInputRow } from './RealEstateForm.tsx';
+import deDefaults from '../../../config/defaults/de/default-values.json';
+import chDefaults from '../../../config/defaults/ch/default-values.json';
+import czDefaults from '../../../config/defaults/cz/default-values.json';
+import { useSettingsStore } from '../../../core/state/useSettingsStore.ts';
 
 const DepositForm = React.forwardRef(
   (
@@ -36,9 +40,17 @@ const DepositForm = React.forwardRef(
     },
     ref,
   ) => {
+
+    const { countryProfile } = useSettingsStore();
+    const defaults = React.useMemo(() => {
+      const allDefaults = { de: deDefaults, ch: chDefaults, cz: czDefaults };
+      return allDefaults[countryProfile as keyof typeof allDefaults] || deDefaults;
+    }, [countryProfile]);
+
     const { addDeposit, updateDeposit, deposits } = useInvestStore.getState();
     const existingDeposit = editId ? deposits.find((d) => d.id === editId) : undefined;
-    const cfg = getDefaultCostsConfig();
+    // const cfg = getDefaultCostsConfig();
+    // const cfg = getDefaultCostsConfig();
 
     const [dName, setDName] = React.useState(existingDeposit?.name || 'Festgeld');
     const [dLink, setDLink] = React.useState(existingDeposit?.link || '');
@@ -65,12 +77,12 @@ const DepositForm = React.forwardRef(
     const [dWithholdingTaxRate, setDWithholdingTaxRate] = React.useState(
       existingDeposit?.withholdingTaxRate
         ? String(existingDeposit.withholdingTaxRate)
-        : String(cfg.fixedTermDeposit.taxes.withholdingTaxRate),
+        : String(defaults.investments.fixedTermDeposit.taxes.withholdingTaxRate),
     );
     const [dTaxFreeAllowance, setDTaxFreeAllowance] = React.useState(
       existingDeposit?.taxFreeAllowance
         ? D(existingDeposit.taxFreeAllowance).toFixed(0)
-        : String(cfg.fixedTermDeposit.taxes.taxFreeAllowance),
+        : String(defaults.investments.fixedTermDeposit.taxes.taxFreeAllowance),
     );
 
     const [accountFees, setAccountFees] = React.useState<CostState>({

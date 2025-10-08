@@ -2,26 +2,30 @@
   "meta": {
     "country": "DE",
     "currency": "EUR",
-    "version": 2,
-    "notes": "Defaults for Germany. All values are multipliers or amounts to add."
+    "version": 2
   },
   "investments": {
     "realEstate": {
       "basic": {
-        "name": "Neue Immobilie",
-        "purchasePrice": "10000"
+        "name": {
+          "i18nKey": "realEstateForm.defaultName"
+        },
+        "purchasePrice": "100000",
+        "monthlyColdRent": "1000"
       },
       "purchaseCosts": {
         "basicCosts": {
           "brokerCommission": {
             "label": "Maklerprovision",
+            "i18nKey": "realEstateForm.costLabels.brokerCommission",
             "enabled": true,
-            "value": 0.035,
+            "value": 0.0357,
             "mode": "percent",
             "allowModeChange": true
           },
           "propertyTransferTax": {
             "label": "Grunderwerbsteuer",
+            "i18nKey": "realEstateForm.costLabels.propertyTransferTax",
             "enabled": true,
             "value": 0.05,
             "mode": "percent",
@@ -29,13 +33,15 @@
           },
           "notaryFees": {
             "label": "Notarkosten",
+            "i18nKey": "realEstateForm.costLabels.notaryFees",
             "enabled": true,
-            "value": 0.0125,
+            "value": 0.015,
             "mode": "percent",
             "allowModeChange": false
           },
           "landRegistryFees": {
             "label": "Grundbucheintrag",
+            "i18nKey": "realEstateForm.costLabels.landRegistryFees",
             "enabled": true,
             "value": 0.005,
             "mode": "percent",
@@ -45,13 +51,19 @@
         "additionalCosts": {
           "renovationCosts": {
             "label": "Renovierungskosten",
+            "i18nKey": "realEstateForm.costLabels.renovationCosts",
             "enabled": false,
             "value": 0,
             "mode": "currency",
             "allowModeChange": true
-          },
-          "...": "... and so on"
+          }
         }
+      }
+    },
+    "fixedTermDeposit": {
+      "taxes": {
+        "withholdingTaxRate": 26,
+        "taxFreeAllowance": 0
       }
     }
   }

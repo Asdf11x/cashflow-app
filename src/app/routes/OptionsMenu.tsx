@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useTranslation } from 'react-i18next'; // <-- CHANGED: Import i18n hook
+import { useMemo, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useSettingsStore } from '../../core/state/useSettingsStore'; // <-- 1. IMPORT STORE
 
 import deDefaultValues from '../../config/defaults/de/default-values.json';
 import czDefaultValues from '../../config/defaults/cz/default-values.json';
@@ -27,51 +28,39 @@ import {
 } from '@mui/material';
 import RestoreIcon from '@mui/icons-material/Restore';
 
-// <-- CHANGED: Type definition now matches your new JSON structure
-type DefaultItem = {
-  label: string;
-  enabled: boolean;
-  value: number | string;
-  mode: 'percent' | 'currency';
-  allowModeChange: boolean;
-};
 type DefaultsConfig = typeof deDefaultValues;
 
 const allDefaults: Record<string, DefaultsConfig> = {
   de: deDefaultValues,
   cz: czDefaultValues,
-  ch: chDefaultValues,
+  ch: chDefaultValues
 };
 
-// --- Helper Functions ---
-// <-- CHANGED: Rewritten to work with the new JSON format { value, mode }
-const getDisplayValue = (item: DefaultItem, currency: string): string => {
-  if (item.mode === 'percent') {
-    return `${(Number(item.value) * 100).toFixed(2)} %`;
-  }
-  if (item.mode === 'currency') {
-    return `${Number(item.value).toLocaleString('de-DE')} ${currency}`;
-  }
-  return String(item.value) || 'N/A';
-};
-
+// DataSection component remains the same, it reads `item.label` which is correct for this file.
 const DataSection = ({
-  title,
-  data,
-  currency,
-  isEditable,
-}: {
+                       title,
+                       data,
+                       currency,
+                       isEditable,
+                     }: {
   title: string;
-  data: Record<string, DefaultItem>; // <-- CHANGED: Typed data
+  data: Record<string, any>;
   currency: string;
   isEditable: boolean;
 }) => {
-  const { t } = useTranslation(); // <-- CHANGED: Use translation for table headers
-
+  const { t } = useTranslation();
   if (!data || Object.keys(data).length === 0) {
     return null;
   }
-
+  const getDisplayValue = (item: any, currency: string): string => {
+    if (item.mode === 'percent' && typeof item.value === 'number') {
+      return `${(item.value * 100).toFixed(2)} %`;
+    }
+    if (item.mode === 'currency') {
+      return `${Number(item.value).toLocaleString('de-DE')} ${currency}`;
+    }
+    return 'N/A';
+  };
   return (
     <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
       <Typography variant="h6" gutterBottom>
@@ -89,7 +78,6 @@ const DataSection = ({
             {Object.entries(data).map(([key, item]) => (
               <TableRow key={key}>
                 <TableCell component="th" scope="row">
-                  {/* <-- CHANGED: Using item.label directly from the JSON, as you requested */}
                   {item.label}
                 </TableCell>
                 <TableCell align="right">
@@ -99,7 +87,6 @@ const DataSection = ({
                       size="small"
                       defaultValue={getDisplayValue(item, currency)}
                       sx={{ width: '120px' }}
-                      // Add onBlur or onChange handlers here to update state
                     />
                   ) : (
                     getDisplayValue(item, currency)
@@ -114,11 +101,33 @@ const DataSection = ({
   );
 };
 
-// --- Main OptionsMenu Component ---
 export default function OptionsMenu() {
-  const { t, i18n } = useTranslation(); // <-- CHANGED: Initialize i18n
+  const { t, i18n } = useTranslation();
 
-  // <-- Data for dropdowns is now driven by i18n for labels
+  // --- 2. GET STATE AND SETTERS FROM THE GLOBAL STORE ---
+  const {
+    language,
+    countryProfile,
+    mainCurrency,
+    setLanguage,
+    setCountryProfile,
+    setMainCurrency,
+  } = useSettingsStore();
+
+  const [currentDefaults, setCurrentDefaults] = useState<DefaultsConfig>(
+    allDefaults[countryProfile] || deDefaultValues,
+  );
+  const [exchangeRates, setExchangeRates] = useState({ CZK: 24.75, CHF: 0.98 });
+  const isCustomProfile = countryProfile === 'custom';
+
+  useEffect(() => {
+    if (countryProfile !== 'custom') {
+      setCurrentDefaults(allDefaults[countryProfile]);
+    } else {
+      setCurrentDefaults(JSON.parse(JSON.stringify(deDefaultValues)));
+    }
+  }, [countryProfile]);
+
   const countryOptions = useMemo(
     () => [
       { value: 'de', label: t('countries.de') },
@@ -145,12 +154,12 @@ export default function OptionsMenu() {
   ];
 
   // State
-  const [mainCurrency, setMainCurrency] = useState('EUR');
-  const [selectedCountry, setSelectedCountry] = useState('de');
-  const [currentDefaults, setCurrentDefaults] = useState<DefaultsConfig>(deDefaultValues);
-  const [exchangeRates, setExchangeRates] = useState({ CZK: 24.75, CHF: 0.98 });
+  // const [mainCurrency, setMainCurrency] = useState('EUR');
+  const [selectedCountry] = useState('de');
+  // const [currentDefaults, setCurrentDefaults] = useState<DefaultsConfig>(deDefaultValues);
+  // const [exchangeRates, setExchangeRates] = useState({ CZK: 24.75, CHF: 0.98 });
 
-  const isCustomProfile = selectedCountry === 'custom';
+  // const isCustomProfile = selectedCountry === 'custom';
 
   useEffect(() => {
     if (selectedCountry !== 'custom') {
@@ -162,23 +171,21 @@ export default function OptionsMenu() {
 
   // <-- CHANGED: Function to handle language change
   const handleLanguageChange = (lang: string) => {
-    i18n.changeLanguage(lang);
+    setLanguage(lang); // Update store
+    i18n.changeLanguage(lang); // Update i18next instance
   };
 
   const handleReset = () => {
-    // This only resets the editable values, not the language/country selections
-    setSelectedCountry('de'); // This will trigger the useEffect
+    setCountryProfile('de');
+    setMainCurrency('EUR');
     setExchangeRates({ CZK: 24.75, CHF: 0.98 });
-    // To reset to a custom state, you could do this instead:
-    // setSelectedCountry('custom');
   };
 
   const selectedCountryLabel = useMemo(
-    () => countryOptions.find((c) => c.value === selectedCountry)?.label,
-    [selectedCountry, countryOptions],
+    () => countryOptions.find((c) => c.value === countryProfile)?.label,
+    [countryProfile, countryOptions],
   );
 
-  // <-- CHANGED: Destructuring based on your new JSON format
   const { meta, investments } = currentDefaults;
   const purchaseCosts = investments?.realEstate?.purchaseCosts;
 
@@ -191,72 +198,63 @@ export default function OptionsMenu() {
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
           {t('optionsMenu.description')}
         </Typography>
-
         <Grid container spacing={4}>
           <Grid item xs={12} md={6}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 {t('optionsMenu.coreSettings')}
               </Typography>
-              <Box component="form" noValidate autoComplete="off">
-                <FormControl fullWidth sx={{ mb: 2.5 }}>
-                  <InputLabel id="language-select-label">{t('optionsMenu.language')}</InputLabel>
-                  <Select
-                    labelId="language-select-label"
-                    value={i18n.language}
-                    label={t('optionsMenu.language')}
-                    onChange={(e) => handleLanguageChange(e.target.value)}
-                  >
-                    {languageOptions.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                {/* Currency and Default Values dropdowns remain the same */}
-                <FormControl fullWidth sx={{ mb: 2.5 }}>
-                  <InputLabel id="currency-select-label">
-                    {t('optionsMenu.mainCurrency')}
-                  </InputLabel>
-                  <Select
-                    labelId="currency-select-label"
-                    value={mainCurrency}
-                    label={t('optionsMenu.mainCurrency')}
-                    onChange={(e) => setMainCurrency(e.target.value)}
-                  >
-                    {currencyOptions.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl fullWidth>
-                  <InputLabel id="defaults-select-label">
-                    {t('optionsMenu.defaultValues')}
-                  </InputLabel>
-                  <Select
-                    labelId="defaults-select-label"
-                    value={selectedCountry}
-                    label={t('optionsMenu.defaultValues')}
-                    onChange={(e) => setSelectedCountry(e.target.value)}
-                  >
-                    {countryOptions.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
+              <FormControl fullWidth sx={{ mb: 2.5 }}>
+                <InputLabel id="language-select-label">{t('optionsMenu.language')}</InputLabel>
+                <Select
+                  labelId="language-select-label"
+                  value={language}
+                  label={t('optionsMenu.language')}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                >
+                  {languageOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth sx={{ mb: 2.5 }}>
+                <InputLabel id="currency-select-label">{t('optionsMenu.mainCurrency')}</InputLabel>
+                <Select
+                  labelId="currency-select-label"
+                  value={mainCurrency}
+                  label={t('optionsMenu.mainCurrency')}
+                  onChange={(e) => setMainCurrency(e.target.value)}
+                >
+                  {currencyOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel id="defaults-select-label">{t('optionsMenu.defaultValues')}</InputLabel>
+                <Select
+                  labelId="defaults-select-label"
+                  value={countryProfile}
+                  label={t('optionsMenu.defaultValues')}
+                  onChange={(e) => setCountryProfile(e.target.value)}
+                >
+                  {countryOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Paper>
           </Grid>
-          {/* Column 2: Exchange Rates */}
           <Grid item xs={12} md={6}>
             <Paper elevation={2} sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
-                Exchange Rates (Base: 1 EUR)
+                {t('optionsMenu.exchangeRates')}
               </Typography>
               <TableContainer>
                 <Table size="small">
@@ -290,44 +288,37 @@ export default function OptionsMenu() {
             </Paper>
           </Grid>
         </Grid>
-
         <Divider sx={{ my: 4 }} />
-
-        {/* --- DEFAULTS DISPLAY --- */}
-        {meta &&
-          purchaseCosts && ( // <-- CHANGED: Added a check to prevent errors if data is missing
-            <Box>
-              <Typography variant="h5" component="h2" gutterBottom>
-                {t('optionsMenu.defaultsFor')} <strong>{selectedCountryLabel}</strong>
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                <Paper variant="outlined" sx={{ px: 1.5, py: 0.5 }}>
-                  <Typography variant="body2">
-                    {t('optionsMenu.country')}: <strong>{meta.country}</strong>
-                  </Typography>
-                </Paper>
-                <Paper variant="outlined" sx={{ px: 1.5, py: 0.5 }}>
-                  <Typography variant="body2">
-                    {t('optionsMenu.currency')}: <strong>{meta.currency}</strong>
-                  </Typography>
-                </Paper>
-              </Box>
-              {isCustomProfile && (
-                <Typography variant="body2" color="primary" sx={{ fontStyle: 'italic', mb: 2 }}>
-                  {t('optionsMenu.customProfileInfo')}
+        {meta && purchaseCosts && (
+          <Box>
+            <Typography variant="h5" component="h2" gutterBottom>
+              {t('optionsMenu.defaultsFor')} <strong>{selectedCountryLabel}</strong>
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <Paper variant="outlined" sx={{ px: 1.5, py: 0.5 }}>
+                <Typography variant="body2">
+                  {t('optionsMenu.country')}: <strong>{meta.country}</strong>
                 </Typography>
-              )}
-
-              <DataSection
-                title={t('optionsMenu.purchaseCosts')}
-                data={{ ...purchaseCosts.basicCosts, ...purchaseCosts.additionalCosts }}
-                currency={meta.currency}
-                isEditable={isCustomProfile}
-              />
-              {/* You can add other DataSection instances here for running costs etc. when you add them to the JSON */}
+              </Paper>
+              <Paper variant="outlined" sx={{ px: 1.5, py: 0.5 }}>
+                <Typography variant="body2">
+                  {t('optionsMenu.currency')}: <strong>{meta.currency}</strong>
+                </Typography>
+              </Paper>
             </Box>
-          )}
-
+            {isCustomProfile && (
+              <Typography variant="body2" color="primary" sx={{ fontStyle: 'italic', mb: 2 }}>
+                {t('optionsMenu.customProfileInfo')}
+              </Typography>
+            )}
+            <DataSection
+              title={t('optionsMenu.purchaseCosts')}
+              data={{ ...purchaseCosts.basicCosts, ...purchaseCosts.additionalCosts }}
+              currency={meta.currency}
+              isEditable={isCustomProfile}
+            />
+          </Box>
+        )}
         <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             variant="outlined"
