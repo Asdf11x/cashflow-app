@@ -42,6 +42,19 @@
       "fixedTermDeposit": "Festgeld"
     }
   },
+  "creditsList": {
+    "actions": "Aktionen",
+    "name": "Name",
+    "principal": "Kredithöhe",
+    "monthlyRate": "Monatliche Rate",
+    "interestRate": "Sollzins p.a.",
+    "creditDeleted": "Kredit gelöscht",
+    "undone": "Rückgängig gemacht",
+    "undo": "Rückgängig",
+    "noCredits": "Noch keine Kredite. Klicken Sie unten rechts auf \"+\", um einen zu erstellen.",
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
   "realEstateForm": {
     "nameLabel": "Name",
     "nameHelperEmpty": "Name darf nicht leer sein",

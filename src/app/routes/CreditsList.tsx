@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Paper,
   Table,
@@ -48,14 +49,8 @@ function getComparator<T>(order: Order, orderBy: keyof T): (a: T, b: T) => numbe
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-const headCells: readonly HeadCell[] = [
-  { id: 'name', label: 'Name' },
-  { id: 'principal', label: 'Kredithöhe', align: 'right' },
-  { id: 'totalMonthly', label: 'Monatliche Rate', align: 'right' },
-  { id: 'rateAnnualPct', label: 'Sollzins p.a.', align: 'right' },
-];
-
 export default function CreditsList() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -73,6 +68,16 @@ export default function CreditsList() {
   const [order, setOrder] = React.useState<Order>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof Credit>('name');
   const existingNames = React.useMemo(() => credits.map((c) => c.name), [credits]);
+
+  const headCells: readonly HeadCell[] = React.useMemo(
+    () => [
+      { id: 'name', label: t('creditsList.name') },
+      { id: 'principal', label: t('creditsList.principal'), align: 'right' },
+      { id: 'totalMonthly', label: t('creditsList.monthlyRate'), align: 'right' },
+      { id: 'rateAnnualPct', label: t('creditsList.interestRate'), align: 'right' },
+    ],
+    [t],
+  );
 
   const handleRequestSort = (property: keyof Credit) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -102,7 +107,7 @@ export default function CreditsList() {
 
     removeCredit(id);
     setUndoCtx({ item, index });
-    setSnack({ open: true, msg: 'Kredit gelöscht' });
+    setSnack({ open: true, msg: t('creditsList.creditDeleted') });
   };
 
   const handleUndo = () => {
@@ -115,7 +120,7 @@ export default function CreditsList() {
     });
     setUndoCtx(null);
     setSnack({ open: false, msg: '' });
-    setTimeout(() => setSnack({ open: true, msg: 'Rückgängig gemacht' }), 100);
+    setTimeout(() => setSnack({ open: true, msg: t('creditsList.undone') }), 100);
   };
 
   // Mobile card view
@@ -148,18 +153,18 @@ export default function CreditsList() {
               <Box sx={{ display: 'grid', gap: 1 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography color="text.secondary" variant="body2">
-                    Kredithöhe:
+                    {t('creditsList.principal')}:
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
-                    {fmtMoney(c.principal)} €
+                    {fmtMoney(c.principal)} {c.currency}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography color="text.secondary" variant="body2">
-                    Monatl. Rate:
+                    {t('creditsList.monthlyRate')}:
                   </Typography>
                   <Typography variant="body2" fontWeight={600}>
-                    {fmtMoney(c.totalMonthly || '0')} €
+                    {fmtMoney(c.totalMonthly || '0')} {c.currency}
                   </Typography>
                 </Box>
               </Box>
@@ -167,9 +172,7 @@ export default function CreditsList() {
           ))}
           {credits.length === 0 && (
             <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Typography color="text.secondary">
-                Noch keine Kredite. Rechts unten „+" klicken.
-              </Typography>
+              <Typography color="text.secondary">{t('creditsList.noCredits')}</Typography>
             </Paper>
           )}
         </Box>
@@ -201,7 +204,7 @@ export default function CreditsList() {
           action={
             undoCtx ? (
               <Button color="inherit" size="small" onClick={handleUndo}>
-                Rückgängig
+                {t('creditsList.undo')}
               </Button>
             ) : null
           }
@@ -217,7 +220,7 @@ export default function CreditsList() {
         <Table size="medium">
           <TableHead>
             <TableRow>
-              <TableCell width={100}>Aktionen</TableCell>
+              <TableCell width={100}>{t('creditsList.actions')}</TableCell>
               {headCells.map((headCell) => (
                 <TableCell
                   key={headCell.id}
@@ -246,12 +249,12 @@ export default function CreditsList() {
               <TableRow key={c.id} hover>
                 <TableCell>
                   <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Tooltip title="Bearbeiten">
+                    <Tooltip title={t('creditsList.edit')}>
                       <IconButton color="primary" size="small" onClick={() => handleOpenEdit(c)}>
                         <EditIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Löschen">
+                    <Tooltip title={t('creditsList.delete')}>
                       <IconButton color="error" size="small" onClick={() => handleDelete(c.id)}>
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
@@ -259,15 +262,19 @@ export default function CreditsList() {
                   </Box>
                 </TableCell>
                 <TableCell>{c.name}</TableCell>
-                <TableCell align="right">{fmtMoney(c.principal)} €</TableCell>
-                <TableCell align="right">{fmtMoney(c.totalMonthly || '0')} €</TableCell>
+                <TableCell align="right">
+                  {fmtMoney(c.principal)} {c.currency}
+                </TableCell>
+                <TableCell align="right">
+                  {fmtMoney(c.totalMonthly || '0')} {c.currency}
+                </TableCell>
                 <TableCell align="right">{c.rateAnnualPct} %</TableCell>
               </TableRow>
             ))}
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} sx={{ textAlign: 'center', color: '#94a3b8', py: 3 }}>
-                  Noch keine Kredite. Klicken Sie unten rechts auf „+", um einen zu erstellen.
+                  {t('creditsList.noCredits')}
                 </TableCell>
               </TableRow>
             )}
@@ -300,7 +307,7 @@ export default function CreditsList() {
         action={
           undoCtx ? (
             <Button color="inherit" size="small" onClick={handleUndo}>
-              Rückgängig
+              {t('creditsList.undo')}
             </Button>
           ) : null
         }
