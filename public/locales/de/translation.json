@@ -1,0 +1,245 @@
+{
+  "layout": {
+    "nav": {
+      "investments": "Investments",
+      "credits": "Kredite",
+      "cashflow": "Abschätzung",
+      "visualization": "Visualisierung",
+      "options": "Optionen"
+    },
+    "header": {
+      "menu": "Menü",
+      "title": "Nearly. Estimation."
+    },
+    "kofiButtonLabel": "Support Me on Ko-fi"
+  },
+  "creditForm": {
+    "defaultName": "Immobilienkredit",
+    "labels": {
+      "name": "Name des Kredits",
+      "principal": "Kreditsumme (Darlehen)",
+      "rateAnnualPct": "Sollzinssatz p.a.",
+      "fixedRateYears": "Zinsbindung (Jahre)",
+      "amortizationInitial": "Anfängliche Tilgung p.a.",
+      "amortizationMonthly": "Monatliche Tilgung",
+      "termMonths": "Gesamtlaufzeit (Monate)",
+      "specialRepaymentYearly": "Sondertilgung (jährlich)"
+    },
+    "helpers": {
+      "nameEmpty": "Name darf nicht leer sein",
+      "nameInUse": "Name bereits vergeben",
+      "principalError": "Kreditsumme muss > 0 sein"
+    },
+    "summary": {
+      "title": "Zusammenfassung",
+      "interestMonthly": "Monatliche Zinsen (1. Monat)",
+      "totalMonthly": "Monatliche Rate (Zins + Tilgung)"
+    }
+  },
+  "creditDialog": {
+    "editTitle": "Kredit bearbeiten",
+    "createTitle": "Kredit anlegen"
+  },
+  "investmentsList": {
+    "actions": "Aktionen",
+    "name": "Name",
+    "investmentAmount": "Anlagebetrag",
+    "monthlyProfit": "Monatl. Gewinn",
+    "yield": "Rendite p.a.",
+    "investmentDeleted": "Investment gelöscht",
+    "undone": "Rückgängig gemacht",
+    "undo": "Rückgängig",
+    "noInvestments": "Noch keine Investments. Klicke unten rechts auf „+\".",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "kinds": {
+      "object": "Objekt",
+      "realEstate": "Immobilie",
+      "fixedTermDeposit": "Festgeld"
+    }
+  },
+  "creditsList": {
+    "actions": "Aktionen",
+    "name": "Name",
+    "principal": "Kredithöhe",
+    "monthlyRate": "Monatliche Rate",
+    "interestRate": "Sollzins p.a.",
+    "creditDeleted": "Kredit gelöscht",
+    "undone": "Rückgängig gemacht",
+    "undo": "Rückgängig",
+    "noCredits": "Noch keine Kredite. Klicken Sie unten rechts auf \"+\", um einen zu erstellen.",
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
+  "cashflowList": {
+    "actions": "Aktionen",
+    "estimationName": "Name der Abschätzung",
+    "investment": "Investment",
+    "credit": "Kredit",
+    "netProfitMonthly": "Netto-Gewinn / Monat",
+    "yield": "Rendite p.a.",
+    "purchasePrice": "Kaufpreis",
+    "investmentGain": "Monatl. Gewinn",
+    "monthlyLoss": "Monatl. Verlust",
+    "estimationDeleted": "Abschätzung gelöscht",
+    "undone": "Rückgängig gemacht",
+    "undo": "Rückgängig",
+    "noEstimations": "Noch keine Abschätzungen. Klicken Sie unten rechts auf \"+\", um eine zu erstellen.",
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
+  "objectForm": {
+    "defaultName": "Objekt",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name darf nicht leer sein",
+    "nameHelperInUse": "Name bereits vergeben",
+    "linkLabel": "Link (optional)",
+    "linkPlaceholder": "https://beispiel.de/mein-objekt",
+    "purchasePriceLabel": "Kaufpreis",
+    "purchasePriceHelper": "Kaufpreis muss > 0 sein",
+    "monthlyRevenueLabel": "Monatliche Einnahmen",
+    "monthlyCostLabel": "Monatliche Kosten",
+    "summaryTitle": "Zusammenfassung",
+    "monthlyNetGainLabel": "Monatlicher Gewinn (netto)",
+    "annualNetGainLabel": "Jährlicher Gewinn (netto)",
+    "initialYieldLabel": "Anfangsrendite p.a."
+  },
+  "investmentDialog": {
+    "editTitle": "Investment bearbeiten",
+    "createTitle": "Investment hinzufügen",
+    "tabRealEstate": "Immobilie",
+    "tabDeposit": "Festgeld",
+    "tabObject": "Objekt"
+  },
+  "depositForm": {
+    "defaultName": "Festgeld",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name darf nicht leer sein",
+    "nameHelperInUse": "Name bereits vergeben",
+    "linkLabel": "Link (optional)",
+    "linkPlaceholder": "https://beispiel.de/mein-festgeld",
+    "startAmountLabel": "Anlagebetrag",
+    "startAmountHelper": "Betrag muss > 0 sein",
+    "termLabel": "Laufzeit (Monate)",
+    "rateLabel": "Zinssatz p.a.",
+    "compoundingTitle": "Zinseszins",
+    "compounding": {
+      "none": "Keiner",
+      "monthly": "Monatlich",
+      "yearly": "Jährlich"
+    },
+    "optionalAccordion": {
+      "title": "Steuern & Gebühren (optional)",
+      "enableTaxes": "Steuern berücksichtigen",
+      "withholdingTaxLabel": "Abgeltungssteuer inkl. Soli",
+      "taxFreeAllowanceLabel": "Sparer-Pauschbetrag (jährlich)"
+    },
+    "fees": {
+      "accountYearly": "Kontoführungsgebühren (jährlich)",
+      "otherOneTime": "Sonstige einmalige Kosten"
+    },
+    "summary": {
+      "title": "Zusammenfassung",
+      "grossGainLabel": "Zinsertrag (brutto, gesamt)",
+      "deductionsLabel": "Abzgl. Steuern & Kosten",
+      "totalNetGainLabel": "Gesamtgewinn (netto)",
+      "annualNetGainLabel": "Jährlicher Gewinn (netto)",
+      "monthlyNetGainLabel": "Monatlicher Gewinn (netto)",
+      "netYieldLabel": "Nettorendite p.a."
+    }
+  },
+  "realEstateForm": {
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name darf nicht leer sein",
+    "nameHelperInUse": "Name bereits vergeben",
+    "defaultName": "Immobilie",
+    "purchasePriceLabel": "Kaufpreis",
+    "purchasePriceHelper": "Kaufpreis muss > 0 sein",
+    "monthlyColdRentLabel": "Monatliche Kaltmiete",
+    "annually": "jährlich:",
+    "inParentheses": "(= {{value}})",
+    "net": "netto:",
+    "accordions": {
+      "details": "Objektdetails (optional)",
+      "purchaseCosts": "Kaufnebenkosten",
+      "additionalPurchaseCosts": "Weitere Kaufnebenkosten",
+      "taxDeductions": "Steuerliche Abzüge",
+      "otherRunningCosts": "Weitere Laufende Kosten"
+    },
+    "details": {
+      "link": "Link zur Anzeige"
+    },
+    "summary": {
+      "title": "Zusammenfassung",
+      "totalSideCosts": "Gesamtkosten (Neben- & Zusatzkosten)",
+      "grandTotal": "Gesamtpreis (inkl. Kaufpreis)",
+      "annualRunningCosts": "Jährliche laufende Kosten",
+      "netRentMonthly": "Monatliche Nettomiete (nach Abzügen & Kosten)",
+      "netRentYearly": "Jährliche Nettomiete (nach Abzügen & Kosten)",
+      "initialYield": "Anfangsrendite p.a."
+    },
+    "costLabels": {
+      "brokerCommission": "Maklerprovision",
+      "propertyTransferTax": "Grunderwerbsteuer",
+      "notaryFees": "Notarkosten",
+      "landRegistryFees": "Grundbucheintrag",
+      "renovationCosts": "Renovierungskosten",
+      "subvention": "Subvention (z.B. Förderung)",
+      "otherAdditionalCosts": "Zusätzliche Kosten",
+      "appraisalFee": "Gutachterkosten",
+      "insuranceSetup": "Versicherungs-Setup",
+      "incomeTax": "Einkommensteuer",
+      "solidaritySurcharge": "Solidaritätszuschlag",
+      "churchTax": "Kirchensteuer",
+      "otherDeductions": "Zusätzliche Abzüge",
+      "houseFee": "Hausgeld",
+      "houseFeeApportionable": "davon umlagefähig",
+      "other": "Sonstiges"
+    }
+  },
+  "common": {
+    "save": "Speichern",
+    "create": "Erstellen",
+    "cancel": "Abbrechen",
+    "optional": "(optional)"
+  },
+  "cashflowDialog": {
+    "editTitle": "Abschätzung bearbeiten",
+    "createTitle": "Abschätzung anlegen",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name darf nicht leer sein",
+    "nameHelperInUse": "Name bereits vergeben",
+    "selectInvestmentLabel": "Investment auswählen",
+    "selectCreditLabel": "Kredit auswählen",
+    "netProfitPerMonth": "Netto-Gewinn / Monat:"
+  },
+  "optionsMenu": {
+    "title": "Optionen",
+    "descriptionChoose": "Wählen Sie Ihre bevorzugten Einstellungen und Standardberechnungswerte aus.",
+    "coreSettings": "Kerneinstellungen",
+    "language": "Sprache",
+    "mainCurrency": "Hauptwährung",
+    "defaultValues": "Standardwerte",
+    "exchangeRates": "Wechselkurse (Basis: 1 EUR)",
+    "defaultsFor": "Standardwerte für:",
+    "country": "Land",
+    "currency": "Währung",
+    "customProfileInfo": "Sie befinden sich im „Benutzerdefiniert“-Profil. Alle Werte unten sind bearbeitbar.",
+    "purchaseCosts": "Kaufnebenkosten",
+    "annualRunningCosts": "Laufende jährliche Kosten",
+    "resetAll": "Alles zurücksetzen",
+    "description": "Bezeichnung",
+    "defaultValue": "Standardwert"
+  },
+  "countries": {
+    "de": "Deutschland",
+    "cz": "Tschechien",
+    "ch": "Schweiz",
+    "custom": "Benutzerdefiniert"
+  },
+  "languages": {
+    "de": "Deutsch",
+    "en": "Englisch",
+    "cz": "Tschechisch"
+  }
+}

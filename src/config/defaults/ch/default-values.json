@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "country": "DE",
+    "currency": "EUR",
+    "version": 2
+  },
+  "investments": {
+    "realEstate": {
+      "basic": {
+        "name": {
+          "i18nKey": "realEstateForm.defaultName"
+        },
+        "purchasePrice": "100000",
+        "monthlyColdRent": "1000"
+      },
+      "purchaseCosts": {
+        "basicCosts": {
+          "brokerCommission": {
+            "label": "Maklerprovision",
+            "i18nKey": "realEstateForm.costLabels.brokerCommission",
+            "enabled": true,
+            "value": 0.0357,
+            "mode": "percent",
+            "allowModeChange": true
+          },
+          "propertyTransferTax": {
+            "label": "Grunderwerbsteuer",
+            "i18nKey": "realEstateForm.costLabels.propertyTransferTax",
+            "enabled": true,
+            "value": 0.05,
+            "mode": "percent",
+            "allowModeChange": false
+          },
+          "notaryFees": {
+            "label": "Notarkosten",
+            "i18nKey": "realEstateForm.costLabels.notaryFees",
+            "enabled": true,
+            "value": 0.015,
+            "mode": "percent",
+            "allowModeChange": false
+          },
+          "landRegistryFees": {
+            "label": "Grundbucheintrag",
+            "i18nKey": "realEstateForm.costLabels.landRegistryFees",
+            "enabled": true,
+            "value": 0.005,
+            "mode": "percent",
+            "allowModeChange": false
+          }
+        },
+        "additionalCosts": {
+          "renovationCosts": {
+            "label": "Renovierungskosten",
+            "i18nKey": "realEstateForm.costLabels.renovationCosts",
+            "enabled": false,
+            "value": 0,
+            "mode": "currency",
+            "allowModeChange": true
+          }
+        }
+      }
+    },
+    "fixedTermDeposit": {
+      "taxes": {
+        "withholdingTaxRate": 26,
+        "taxFreeAllowance": 0
+      }
+    }
+  },
+  "credit": {
+    "basic": {
+      "rateAnnualPct": {
+        "label": "Sollzinssatz p.a.",
+        "i18nKey": "creditForm.labels.rateAnnualPct",
+        "value": 3.5
+      },
+      "fixedRateYears": {
+        "label": "Zinsbindung (Jahre)",
+        "i18nKey": "creditForm.labels.fixedRateYears",
+        "value": 10
+      },
+      "amortizationInitial": {
+        "label": "Anfängliche Tilgung p.a.",
+        "i18nKey": "creditForm.labels.amortizationInitial",
+        "value": 0.02,
+        "mode": "percent"
+      }
+    }
+  }
+}

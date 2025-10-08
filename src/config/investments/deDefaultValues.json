@@ -91,7 +91,7 @@
 
   "fixedTermDeposit": {
     "taxes": {
-      "withholdingTaxRate": 26.38,
+      "withholdingTaxRate": 26,
       "taxFreeAllowance": 0
     }
   }

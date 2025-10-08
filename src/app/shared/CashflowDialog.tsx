@@ -12,6 +12,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next'; // <-- 1. IMPORT THE HOOK
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { useCreditStore } from '../../core/state/useCreditStore';
 import { useCashflowStore, type Cashflow } from '../../core/state/useCashflowStore';
@@ -20,8 +21,6 @@ import type { ObjectInvestment, RealEstateInvestment } from '../../core/domain/t
 import type Decimal from 'decimal.js';
 
 type Option = { id: string; label: string };
-// FIX: The explicit "No Credit" option is no longer needed.
-// const NO_CREDIT_OPTION: Option = { id: 'none', label: 'Kein Kredit' };
 
 type Props = {
   onClose: () => void;
@@ -30,6 +29,7 @@ type Props = {
 };
 
 export default function CashflowDialog({ onClose, editItem, existingNames }: Props) {
+  const { t } = useTranslation(); // <-- 2. INITIALIZE THE HOOK
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -42,22 +42,18 @@ export default function CashflowDialog({ onClose, editItem, existingNames }: Pro
   const [name, setName] = React.useState(editItem?.name || 'Neue Abschätzung');
   const [isNameTouched, setIsNameTouched] = React.useState(false);
 
-  // Options for Autocomplete
   const invOptions: Option[] = React.useMemo(
     () => allInvestments.map((i) => ({ id: i.id, label: i.name })),
     [allInvestments],
   );
-  // FIX: The credit options no longer include the "No Credit" placeholder.
   const crdOptions: Option[] = React.useMemo(
     () => credits.map((c) => ({ id: c.id, label: c.name })),
     [credits],
   );
 
-  // State for selected items
   const [inv, setInv] = React.useState<Option | null>(() =>
     editItem ? invOptions.find((o) => o.id === editItem.investmentId) || null : null,
   );
-  // FIX: The state now initializes to `null` if there's no credit, instead of the placeholder option.
   const [crd, setCrd] = React.useState<Option | null>(() => {
     if (editItem?.creditId) {
       const credit = credits.find((c) => c.id === editItem.creditId);
@@ -66,28 +62,26 @@ export default function CashflowDialog({ onClose, editItem, existingNames }: Pro
     return null;
   });
 
-  // Calculation for preview
   const cashflowPreview: Decimal | null = React.useMemo(() => {
     if (!inv) return null;
     const i = allInvestments.find((x) => x.id === inv.id);
-    // FIX: Simplified logic. If `crd` is null, `c` will be null.
     const c = crd ? credits.find((x) => x.id === crd.id) : null;
     if (!i) return null;
     return computeCashflowMonthly(i as ObjectInvestment | RealEstateInvestment, c || null);
   }, [inv, crd, allInvestments, credits]);
 
-  // Validation
   const trimmedName = name.trim();
   const nameError = !trimmedName || existingNames.includes(trimmedName);
+
+  // 3. REPLACE STRINGS WITH t() FUNCTION CALLS
   const nameHelperText = !trimmedName
-    ? 'Name darf nicht leer sein'
+    ? t('cashflowDialog.nameHelperEmpty')
     : existingNames.includes(trimmedName)
-      ? 'Name bereits vergeben'
+      ? t('cashflowDialog.nameHelperInUse')
       : '';
 
   const handleSave = () => {
     if (!inv || !trimmedName || nameError) return;
-    // FIX: Simplified logic to get the creditId.
     const creditId = crd ? crd.id : null;
 
     if (editItem) {
@@ -100,11 +94,13 @@ export default function CashflowDialog({ onClose, editItem, existingNames }: Pro
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm" fullScreen={fullScreen}>
-      <DialogTitle>{editItem ? 'Abschätzung bearbeiten' : 'Abschätzung anlegen'}</DialogTitle>
+      <DialogTitle>
+        {editItem ? t('cashflowDialog.editTitle') : t('cashflowDialog.createTitle')}
+      </DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
           <TextField
-            label="Name"
+            label={t('cashflowDialog.nameLabel')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={() => setIsNameTouched(true)}
@@ -119,8 +115,9 @@ export default function CashflowDialog({ onClose, editItem, existingNames }: Pro
             isOptionEqualToValue={(option, value) => option.id === value.id}
             getOptionLabel={(o) => o.label}
             onChange={(_, v) => setInv(v)}
-            // FIX: Add the `required` prop to the TextField for a visual indicator.
-            renderInput={(p) => <TextField {...p} label="Investment auswählen" required />}
+            renderInput={(p) => (
+              <TextField {...p} label={t('cashflowDialog.selectInvestmentLabel')} required />
+            )}
           />
           <Autocomplete
             options={crdOptions}
@@ -128,13 +125,17 @@ export default function CashflowDialog({ onClose, editItem, existingNames }: Pro
             isOptionEqualToValue={(option, value) => option.id === value.id}
             getOptionLabel={(o) => o.label}
             onChange={(_, v) => setCrd(v)}
-            // This now correctly shows "Kredit auswählen (optional)" as the placeholder when empty.
-            renderInput={(p) => <TextField {...p} label="Kredit auswählen (optional)" />}
+            renderInput={(p) => (
+              <TextField
+                {...p}
+                label={`${t('cashflowDialog.selectCreditLabel')} ${t('common.optional')}`}
+              />
+            )}
           />
 
           {cashflowPreview !== null && (
             <Typography sx={{ pt: 1, fontWeight: 'bold' }}>
-              Netto-Gewinn / Monat:{' '}
+              {t('cashflowDialog.netProfitPerMonth')}{' '}
               <span style={{ color: cashflowPreview.isNegative() ? '#d32f2f' : '#2e7d32' }}>
                 {fmtMoney(cashflowPreview.toString())} €
               </span>
@@ -143,13 +144,13 @@ export default function CashflowDialog({ onClose, editItem, existingNames }: Pro
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Abbrechen</Button>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
         <Button
           variant="contained"
           disabled={!inv || !trimmedName || nameError}
           onClick={handleSave}
         >
-          {editItem ? 'Speichern' : 'Erstellen'}
+          {editItem ? t('common.save') : t('common.create')}
         </Button>
       </DialogActions>
     </Dialog>

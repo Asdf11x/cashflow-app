@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -8,8 +9,8 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import CreditForm from './CreditForm.tsx';
-import type { Credit } from '../../../core/domain/types.ts';
+import CreditForm from './CreditForm';
+import type { Credit } from '../../../core/domain/types';
 
 type Props = {
   onClose: () => void;
@@ -19,6 +20,7 @@ type Props = {
 type FormHandle = { submit: () => void; isValid: () => boolean };
 
 export default function CreditCreateDialog({ onClose, editItem, existingNames }: Props) {
+  const { t } = useTranslation();
   const formRef = React.useRef<FormHandle>(null);
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -39,7 +41,9 @@ export default function CreditCreateDialog({ onClose, editItem, existingNames }:
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm" fullScreen={fullScreen}>
-      <DialogTitle>{editItem ? 'Kredit bearbeiten' : 'Kredit anlegen'}</DialogTitle>
+      <DialogTitle>
+        {t(editItem ? 'creditDialog.editTitle' : 'creditDialog.createTitle')}
+      </DialogTitle>
       <DialogContent>
         <CreditForm
           ref={formRef}
@@ -49,9 +53,9 @@ export default function CreditCreateDialog({ onClose, editItem, existingNames }:
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Abbrechen</Button>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
         <Button variant="contained" onClick={handleSave} disabled={!isValid}>
-          {editItem ? 'Speichern' : 'Erstellen'}
+          {t(editItem ? 'common.save' : 'common.create')}
         </Button>
       </DialogActions>
     </Dialog>

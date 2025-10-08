@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -23,6 +24,7 @@ export default function CreateInvestmentDialog({
   existingNames: string[];
   editItem?: { id: string; kind: 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT' | 'OBJECT' } | null;
 }) {
+  const { t } = useTranslation();
   const [tab, setTab] = React.useState<'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT' | 'OBJECT'>(
     editItem?.kind || 'REAL_ESTATE',
   );
@@ -71,16 +73,26 @@ export default function CreateInvestmentDialog({
         },
       }}
     >
-      <DialogTitle>{editItem ? 'Investment bearbeiten' : 'Investment hinzufügen'}</DialogTitle>
+      <DialogTitle>
+        {t(editItem ? 'investmentDialog.editTitle' : 'investmentDialog.createTitle')}
+      </DialogTitle>
       <Tabs
         value={tab}
         onChange={handleTabChange}
         variant="fullWidth"
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
-        <Tab value="REAL_ESTATE" label="Immobilie" disabled={!!editItem} />
-        <Tab value="FIXED_TERM_DEPOSIT" label="Festgeld" disabled={!!editItem} />
-        <Tab value="OBJECT" label="Objekt" disabled={!!editItem} />
+        <Tab
+          value="REAL_ESTATE"
+          label={t('investmentDialog.tabRealEstate')}
+          disabled={!!editItem}
+        />
+        <Tab
+          value="FIXED_TERM_DEPOSIT"
+          label={t('investmentDialog.tabDeposit')}
+          disabled={!!editItem}
+        />
+        <Tab value="OBJECT" label={t('investmentDialog.tabObject')} disabled={!!editItem} />
       </Tabs>
 
       <DialogContent
@@ -120,9 +132,9 @@ export default function CreateInvestmentDialog({
       <DialogActions
         sx={{ position: isMobile ? 'sticky' : 'relative', bottom: 0, bgcolor: 'background.paper' }}
       >
-        <Button onClick={onClose}>Abbrechen</Button>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
         <Button variant="contained" onClick={handleCreate} disabled={!isValid}>
-          {editItem ? 'Speichern' : 'Erstellen'}
+          {t(editItem ? 'common.save' : 'common.create')}
         </Button>
       </DialogActions>
     </Dialog>

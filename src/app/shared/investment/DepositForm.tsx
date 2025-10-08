@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Stack,
   TextField,
@@ -20,8 +21,11 @@ import { fmtMoney } from '../../../core/domain/calc';
 import { useInvestStore } from '../../../core/state/useInvestStore.ts';
 import { type Depositvestment } from '../../../core/domain/types.ts';
 import Decimal from 'decimal.js';
-import { getDefaultCostsConfig } from '../../../config';
 import { CostInputRow } from './RealEstateForm.tsx';
+import deDefaults from '../../../config/defaults/de/default-values.json';
+import chDefaults from '../../../config/defaults/ch/default-values.json';
+import czDefaults from '../../../config/defaults/cz/default-values.json';
+import { useSettingsStore } from '../../../core/state/useSettingsStore.ts';
 
 const DepositForm = React.forwardRef(
   (
@@ -36,11 +40,17 @@ const DepositForm = React.forwardRef(
     },
     ref,
   ) => {
+    const { t } = useTranslation();
+    const { countryProfile } = useSettingsStore();
+    const defaults = React.useMemo(() => {
+      const allDefaults = { de: deDefaults, ch: chDefaults, cz: czDefaults };
+      return allDefaults[countryProfile as keyof typeof allDefaults] || deDefaults;
+    }, [countryProfile]);
+
     const { addDeposit, updateDeposit, deposits } = useInvestStore.getState();
     const existingDeposit = editId ? deposits.find((d) => d.id === editId) : undefined;
-    const cfg = getDefaultCostsConfig();
 
-    const [dName, setDName] = React.useState(existingDeposit?.name || 'Festgeld');
+    const [dName, setDName] = React.useState(existingDeposit?.name || t('depositForm.defaultName'));
     const [dLink, setDLink] = React.useState(existingDeposit?.link || '');
     const [dStartAmount, setDStartAmount] = React.useState(
       existingDeposit?.startAmount ? D(existingDeposit.startAmount).toFixed(0) : '10000',
@@ -65,12 +75,12 @@ const DepositForm = React.forwardRef(
     const [dWithholdingTaxRate, setDWithholdingTaxRate] = React.useState(
       existingDeposit?.withholdingTaxRate
         ? String(existingDeposit.withholdingTaxRate)
-        : String(cfg.fixedTermDeposit.taxes.withholdingTaxRate),
+        : String(defaults.investments.fixedTermDeposit.taxes.withholdingTaxRate),
     );
     const [dTaxFreeAllowance, setDTaxFreeAllowance] = React.useState(
       existingDeposit?.taxFreeAllowance
         ? D(existingDeposit.taxFreeAllowance).toFixed(0)
-        : String(cfg.fixedTermDeposit.taxes.taxFreeAllowance),
+        : String(defaults.investments.fixedTermDeposit.taxes.taxFreeAllowance),
     );
 
     const [accountFees, setAccountFees] = React.useState<CostState>({
@@ -79,7 +89,7 @@ const DepositForm = React.forwardRef(
         value: '0',
         mode: 'currency',
         allowModeChange: true,
-        label: 'Kontoführungsgebühren (jährlich)',
+        label: t('depositForm.fees.accountYearly'),
       },
     });
 
@@ -89,7 +99,7 @@ const DepositForm = React.forwardRef(
         value: '0',
         mode: 'currency',
         allowModeChange: true,
-        label: 'Sonstige einmalige Kosten',
+        label: t('depositForm.fees.otherOneTime'),
       },
     });
 
@@ -112,7 +122,6 @@ const DepositForm = React.forwardRef(
         const totalAmount = startAmountD.mul(D(1).add(rateNominalFracD.div(n)).pow(nt));
         return totalAmount.sub(startAmountD);
       }
-      // Yearly compounding with handling for partial years
       if (dCompounding === 'YEARLY') {
         const fullYears = Math.floor(termMonthsN / 12);
         const remainingMonths = termMonthsN % 12;
@@ -171,9 +180,9 @@ const DepositForm = React.forwardRef(
     const startAmountError = startAmountD.lte(0);
     const nameError = !trimmedName || existingNames.includes(trimmedName);
     const nameHelperText = !trimmedName
-      ? 'Name darf nicht leer sein'
+      ? t('depositForm.nameHelperEmpty')
       : existingNames.includes(trimmedName)
-        ? 'Name bereits vergeben'
+        ? t('depositForm.nameHelperInUse')
         : '';
 
     React.useImperativeHandle(ref, () => ({
@@ -216,7 +225,7 @@ const DepositForm = React.forwardRef(
     return (
       <Stack spacing={3} sx={{ mt: 1 }}>
         <TextField
-          label="Name"
+          label={t('depositForm.nameLabel')}
           value={dName}
           onChange={(e) => setDName(e.target.value)}
           onBlur={() => setIsNameTouched(true)}
@@ -226,33 +235,35 @@ const DepositForm = React.forwardRef(
           required
         />
         <TextField
-          label="Link (optional)"
+          label={t('depositForm.linkLabel')}
           value={dLink}
           onChange={(e) => setDLink(e.target.value)}
-          placeholder="https://beispiel.de/mein-festgeld"
+          placeholder={t('depositForm.linkPlaceholder')}
           fullWidth
         />
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           <PriceInput
-            label="Anlagebetrag"
+            label={t('depositForm.startAmountLabel')}
             value={dStartAmount}
             onChange={(e) => setDStartAmount(sanitizeDecimal(e.target.value))}
             onBlur={() => setIsPriceTouched(true)}
             error={isPriceTouched && startAmountError}
-            helperText={isPriceTouched && startAmountError ? 'Betrag muss > 0 sein' : ' '}
+            helperText={
+              isPriceTouched && startAmountError ? t('depositForm.startAmountHelper') : ' '
+            }
           />
           <CurrencySelect value={dCurrency} onChange={(e) => setDCurrency(e.target.value)} />
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <TextField
-            label="Laufzeit (Monate)"
+            label={t('depositForm.termLabel')}
             type="number"
             value={dTermMonths}
             onChange={(e) => setDTermMonths(e.target.value)}
             fullWidth
           />
           <TextField
-            label="Zinssatz p.a."
+            label={t('depositForm.rateLabel')}
             type="text"
             inputProps={{ inputMode: 'decimal' }}
             value={dRateNominal}
@@ -263,7 +274,7 @@ const DepositForm = React.forwardRef(
         </Box>
         <Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Zinseszins
+            {t('depositForm.compoundingTitle')}
           </Typography>
           <ToggleButtonGroup
             value={dCompounding}
@@ -271,30 +282,30 @@ const DepositForm = React.forwardRef(
             fullWidth
             onChange={(_, v) => v && setDCompounding(v)}
           >
-            <ToggleButton value="NONE">Keiner</ToggleButton>
-            <ToggleButton value="MONTHLY">Monatlich</ToggleButton>
-            <ToggleButton value="YEARLY">Jährlich</ToggleButton>
+            <ToggleButton value="NONE">{t('depositForm.compounding.none')}</ToggleButton>
+            <ToggleButton value="MONTHLY">{t('depositForm.compounding.monthly')}</ToggleButton>
+            <ToggleButton value="YEARLY">{t('depositForm.compounding.yearly')}</ToggleButton>
           </ToggleButtonGroup>
         </Box>
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography fontWeight={700}>Steuern & Gebühren (optional)</Typography>
+            <Typography fontWeight={700}>{t('depositForm.optionalAccordion.title')}</Typography>
           </AccordionSummary>
           <AccordionDetails>
             <Stack spacing={2}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Checkbox checked={taxEnabled} onChange={(e) => setTaxEnabled(e.target.checked)} />
-                <Typography>Steuern berücksichtigen</Typography>
+                <Typography>{t('depositForm.optionalAccordion.enableTaxes')}</Typography>
               </Box>
               <TextField
-                label="Abgeltungssteuer inkl. Soli"
+                label={t('depositForm.optionalAccordion.withholdingTaxLabel')}
                 value={dWithholdingTaxRate}
                 onChange={(e) => setDWithholdingTaxRate(sanitizeDecimal(e.target.value))}
                 disabled={!taxEnabled}
                 InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
               />
               <TextField
-                label="Sparer-Pauschbetrag (jährlich)"
+                label={t('depositForm.optionalAccordion.taxFreeAllowanceLabel')}
                 value={dTaxFreeAllowance}
                 onChange={(e) => setDTaxFreeAllowance(sanitizeDecimal(e.target.value))}
                 disabled={!taxEnabled}
@@ -306,7 +317,7 @@ const DepositForm = React.forwardRef(
               {Object.entries(accountFees).map(([key, item]) => (
                 <CostInputRow
                   key={key}
-                  item={item}
+                  item={{ ...item, label: t(item.label) }}
                   onItemChange={(v) =>
                     setAccountFees((p) => ({ ...p, [key]: { ...p[key], ...v } }))
                   }
@@ -317,7 +328,7 @@ const DepositForm = React.forwardRef(
               {Object.entries(oneTimeCosts).map(([key, item]) => (
                 <CostInputRow
                   key={key}
-                  item={item}
+                  item={{ ...item, label: t(item.label) }}
                   onItemChange={(v) =>
                     setOneTimeCosts((p) => ({ ...p, [key]: { ...p[key], ...v } }))
                   }
@@ -333,29 +344,33 @@ const DepositForm = React.forwardRef(
           spacing={1}
           sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
         >
-          <Typography variant="h6">Zusammenfassung</Typography>
+          <Typography variant="h6">{t('depositForm.summary.title')}</Typography>
           <ResultRow
-            label="Zinsertrag (brutto, gesamt)"
+            label={t('depositForm.summary.grossGainLabel')}
             value={`${fmtMoney(grossGainD.toString())} ${dCurrency}`}
           />
           <ResultRow
-            label="Abzgl. Steuern & Kosten"
+            label={t('depositForm.summary.deductionsLabel')}
             value={`-${fmtMoney(taxAmountD.add(totalFeesD).toString())} ${dCurrency}`}
           />
           <ResultRow
-            label="Gesamtgewinn (netto)"
+            label={t('depositForm.summary.totalNetGainLabel')}
             value={`${fmtMoney(totalNetGainD.toString())} ${dCurrency}`}
             isBold
           />
           <ResultRow
-            label="Jährlicher Gewinn (netto)"
+            label={t('depositForm.summary.annualNetGainLabel')}
             value={`${fmtMoney(netGainYearlyD.toString())} ${dCurrency}`}
           />
           <ResultRow
-            label="Monatlicher Gewinn (netto)"
+            label={t('depositForm.summary.monthlyNetGainLabel')}
             value={`${fmtMoney(netGainMonthlyD.toString())} ${dCurrency}`}
           />
-          <ResultRow label="Nettorendite p.a." value={`${yieldPct} %`} isBold />
+          <ResultRow
+            label={t('depositForm.summary.netYieldLabel')}
+            value={`${yieldPct} %`}
+            isBold
+          />
         </Stack>
       </Stack>
     );

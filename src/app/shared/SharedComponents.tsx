@@ -25,7 +25,6 @@ export function ResultRow({
   );
 }
 
-// --- ADDED TYPES HERE ---
 interface CurrencySelectProps {
   value: string;
   onChange: (event: SelectChangeEvent<string>) => void;
@@ -41,12 +40,11 @@ export function CurrencySelect({ value, onChange }: CurrencySelectProps) {
   );
 }
 
-// --- ADDED TYPES HERE ---
 interface PriceInputProps {
   label: string;
   value: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void; // Added onBlur for the next step
+  onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
   error: boolean;
   helperText: string;
 }

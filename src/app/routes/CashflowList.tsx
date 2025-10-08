@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Paper,
   Table,
@@ -31,7 +32,6 @@ import { ResultRow } from '../shared/SharedComponents.tsx';
 
 type Order = 'asc' | 'desc';
 
-// Define a type for our enriched row data
 interface EnrichedRow extends Cashflow {
   investmentName: string;
   creditName: string;
@@ -41,14 +41,12 @@ interface EnrichedRow extends Cashflow {
   yieldPct: number;
 }
 
-// Define the structure for our table headers for type safety
 interface HeadCell {
   id: keyof EnrichedRow;
   label: string;
   align?: 'left' | 'right' | 'center' | 'justify';
 }
 
-// This is a generic sorter
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) return -1;
   if (b[orderBy] > a[orderBy]) return 1;
@@ -61,18 +59,8 @@ function getComparator<T>(order: Order, orderBy: keyof T): (a: T, b: T) => numbe
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-const headCells: readonly HeadCell[] = [
-  { id: 'name', label: 'Name der Abschätzung' },
-  { id: 'investmentName', label: 'Investment' },
-  { id: 'creditName', label: 'Kredit' },
-  { id: 'cashflowMonthly', label: 'Netto-Gewinn / Monat', align: 'right' },
-  { id: 'yieldPct', label: 'Rendite p.a.', align: 'right' },
-  { id: 'purchasePrice', label: 'Kaufpreis', align: 'right' },
-  { id: 'investmentGain', label: 'Monatl. Gewinn', align: 'right' },
-  { id: 'monthlyLoss', label: 'Monatl. Verlust', align: 'right' },
-];
-
-export default function AbschaetzungenList() {
+export default function CashflowList() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -97,6 +85,20 @@ export default function AbschaetzungenList() {
 
   const existingNames = React.useMemo(() => cashflows.map((cf) => cf.name), [cashflows]);
 
+  const headCells: readonly HeadCell[] = React.useMemo(
+    () => [
+      { id: 'name', label: t('cashflowList.estimationName') },
+      { id: 'investmentName', label: t('cashflowList.investment') },
+      { id: 'creditName', label: t('cashflowList.credit') },
+      { id: 'cashflowMonthly', label: t('cashflowList.netProfitMonthly'), align: 'right' },
+      { id: 'yieldPct', label: t('cashflowList.yield'), align: 'right' },
+      { id: 'purchasePrice', label: t('cashflowList.purchasePrice'), align: 'right' },
+      { id: 'investmentGain', label: t('cashflowList.investmentGain'), align: 'right' },
+      { id: 'monthlyLoss', label: t('cashflowList.monthlyLoss'), align: 'right' },
+    ],
+    [t],
+  );
+
   const handleRequestSort = (property: keyof EnrichedRow) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
@@ -108,7 +110,7 @@ export default function AbschaetzungenList() {
       const investment = allInvestments.find((i) => i.id === cf.investmentId);
       const credit = cf.creditId ? credits.find((c) => c.id === cf.creditId) : null;
       const monthlyLoss = credit ? parseFloat(credit.totalMonthly || '0') : 0;
-      const purchasePrice = parseFloat(investment?.totalPrice || '0');
+      const purchasePrice = parseFloat(investment?.totalPrice || investment?.startAmount || '0');
       const cashflowMonthlyNum = parseFloat(cf.cashflowMonthly);
       const yieldPct = purchasePrice > 0 ? ((cashflowMonthlyNum * 12) / purchasePrice) * 100 : 0;
 
@@ -143,7 +145,7 @@ export default function AbschaetzungenList() {
     const item = cashflows[index];
     removeCashflow(id);
     setUndoCtx({ item, index });
-    setSnack({ open: true, msg: 'Abschätzung gelöscht' });
+    setSnack({ open: true, msg: t('cashflowList.estimationDeleted') });
   };
   const handleUndo = () => {
     if (!undoCtx) return;
@@ -155,7 +157,7 @@ export default function AbschaetzungenList() {
     });
     setUndoCtx(null);
     setSnack({ open: false, msg: '' });
-    setTimeout(() => setSnack({ open: true, msg: 'Rückgängig gemacht' }), 100);
+    setTimeout(() => setSnack({ open: true, msg: t('cashflowList.undone') }), 100);
   };
 
   return (
@@ -173,7 +175,6 @@ export default function AbschaetzungenList() {
                   mb: 1,
                 }}
               >
-                {/* FIX: Show cashflow name as the main title */}
                 <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, mr: 1 }}>
                   {row.name}
                 </Typography>
@@ -187,16 +188,20 @@ export default function AbschaetzungenList() {
                 </Box>
               </Box>
               <Stack spacing={1}>
-                {/* FIX: Add the underlying investment name as a row */}
-                <ResultRow label="Investment" value={row.investmentName} />
+                <ResultRow label={t('cashflowList.investment')} value={row.investmentName} />
                 <ResultRow
-                  label="Netto-Gewinn / Monat"
+                  label={t('cashflowList.netProfitMonthly')}
                   value={`${fmtMoney(String(row.cashflowMonthly))} €`}
                 />
-                <ResultRow label="Kredit" value={row.creditName} />
+                <ResultRow label={t('cashflowList.credit')} value={row.creditName} />
               </Stack>
             </Paper>
           ))}
+          {rows.length === 0 && (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">{t('cashflowList.noEstimations')}</Typography>
+            </Paper>
+          )}
         </Box>
       ) : (
         // --- DESKTOP VIEW ---
@@ -204,7 +209,7 @@ export default function AbschaetzungenList() {
           <Table size="medium">
             <TableHead>
               <TableRow>
-                <TableCell style={{ width: 100 }}>Aktionen</TableCell>
+                <TableCell style={{ width: 100 }}>{t('cashflowList.actions')}</TableCell>
                 {headCells.map((headCell) => (
                   <TableCell
                     key={headCell.id}
@@ -233,7 +238,7 @@ export default function AbschaetzungenList() {
                 <TableRow key={row.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <Tooltip title="Bearbeiten">
+                      <Tooltip title={t('cashflowList.edit')}>
                         <IconButton
                           color="primary"
                           size="small"
@@ -242,14 +247,13 @@ export default function AbschaetzungenList() {
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Löschen">
+                      <Tooltip title={t('cashflowList.delete')}>
                         <IconButton color="error" size="small" onClick={() => handleDelete(row.id)}>
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </Box>
                   </TableCell>
-                  {/* FIX: Add the cell for the cashflow name */}
                   <TableCell sx={{ fontWeight: 500 }}>{row.name}</TableCell>
                   <TableCell>{row.investmentName}</TableCell>
                   <TableCell>{row.creditName}</TableCell>
@@ -273,10 +277,8 @@ export default function AbschaetzungenList() {
               ))}
               {rows.length === 0 && (
                 <TableRow>
-                  {/* FIX: Increment colSpan to 9 to account for the new column */}
                   <TableCell colSpan={9} sx={{ textAlign: 'center', color: '#94a3b8', py: 3 }}>
-                    Noch keine Abschätzungen. Klicken Sie unten rechts auf „+", um eine zu
-                    erstellen.
+                    {t('cashflowList.noEstimations')}
                   </TableCell>
                 </TableRow>
               )}
@@ -311,7 +313,7 @@ export default function AbschaetzungenList() {
         action={
           undoCtx ? (
             <Button color="inherit" size="small" onClick={handleUndo}>
-              Rückgängig
+              {t('cashflowList.undo')}
             </Button>
           ) : null
         }
