@@ -55,6 +55,23 @@
     "edit": "Bearbeiten",
     "delete": "Löschen"
   },
+  "cashflowList": {
+    "actions": "Aktionen",
+    "estimationName": "Name der Abschätzung",
+    "investment": "Investment",
+    "credit": "Kredit",
+    "netProfitMonthly": "Netto-Gewinn / Monat",
+    "yield": "Rendite p.a.",
+    "purchasePrice": "Kaufpreis",
+    "investmentGain": "Monatl. Gewinn",
+    "monthlyLoss": "Monatl. Verlust",
+    "estimationDeleted": "Abschätzung gelöscht",
+    "undone": "Rückgängig gemacht",
+    "undo": "Rückgängig",
+    "noEstimations": "Noch keine Abschätzungen. Klicken Sie unten rechts auf \"+\", um eine zu erstellen.",
+    "edit": "Bearbeiten",
+    "delete": "Löschen"
+  },
   "realEstateForm": {
     "nameLabel": "Name",
     "nameHelperEmpty": "Name darf nicht leer sein",
