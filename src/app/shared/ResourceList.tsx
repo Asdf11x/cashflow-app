@@ -65,16 +65,21 @@ interface ResourceListProps<T extends BaseItem> {
   onUndo?: () => void;
   renderDataCells: (item: T) => React.ReactNode;
   renderCard: (item: T) => React.ReactNode;
-  DialogComponent: React.ComponentType<DialogProps<T>>;
+  DialogComponent: React.ComponentType<DialogProps<any>>; // Using 'any' to accommodate different original item types
   getUndoContext?: () => boolean;
-  getOriginalName?: (item: T) => string;
+  getOriginalItem?: (item: T) => any; // Function to get the original, unconverted item for editing
 }
 
 // --- Sorting Helper Functions ---
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
-  if (b[orderBy] < a[orderBy]) return -1;
-  if (b[orderBy] > a[orderBy]) return 1;
+  const valA = a[orderBy];
+  const valB = b[orderBy];
+  if (typeof valA === 'number' && typeof valB === 'number') {
+    return valB - valA;
+  }
+  if (valB < valA) return -1;
+  if (valB > valA) return 1;
   return 0;
 }
 
@@ -96,7 +101,7 @@ export default function ResourceList<T extends BaseItem>({
   renderCard,
   DialogComponent,
   getUndoContext,
-  getOriginalName,
+  getOriginalItem,
 }: ResourceListProps<T>) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -104,6 +109,7 @@ export default function ResourceList<T extends BaseItem>({
 
   // --- State Management ---
   const [openDialog, setOpenDialog] = React.useState(false);
+  // FIX: State holds the full generic item type `T` (or the original item type from getOriginalItem)
   const [editItem, setEditItem] = React.useState<T | null>(null);
   const [snack, setSnack] = React.useState<{ open: boolean; msg: string }>({
     open: false,
@@ -135,7 +141,9 @@ export default function ResourceList<T extends BaseItem>({
   };
 
   const handleOpenEdit = (item: T) => {
-    setEditItem(item);
+    // Use `getOriginalItem` if provided, to ensure the dialog gets the unconverted data
+    const itemToEdit = getOriginalItem ? getOriginalItem(item) : item;
+    setEditItem(itemToEdit);
     setOpenDialog(true);
   };
 
@@ -151,8 +159,6 @@ export default function ResourceList<T extends BaseItem>({
 
   const handleCloseSnackbar = () => {
     setSnack({ open: false, msg: '' });
-    // If we close the snackbar, we can't undo anymore.
-    // The parent's `undoCtx` will be cleared by its own logic.
   };
 
   // --- Derived Data ---
@@ -163,112 +169,114 @@ export default function ResourceList<T extends BaseItem>({
 
   const isUndoable = getUndoContext ? getUndoContext() : false;
 
-  // --- Render Logic ---
-
-  if (isMobile) {
-    return (
-      <>
-        <Box sx={{ pb: 10 }}>
-          {sortedRows.map((item) => (
-            <Paper key={item.id} sx={{ p: 2, mb: 2 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  mb: 1,
-                }}
-              >
-                <Box sx={{ flex: 1 }}>{renderCard(item)}</Box>
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  <IconButton color="primary" size="small" onClick={() => handleOpenEdit(item)}>
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton color="error" size="small" onClick={() => handleDelete(item)}>
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Box>
+  const mobileView = (
+    <>
+      <Box sx={{ pb: 10 }}>
+        {sortedRows.map((item) => (
+          <Paper key={item.id} sx={{ p: 2, mb: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+              }}
+            >
+              <Box sx={{ flex: 1, mr: 1 }}>{renderCard(item)}</Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(item)}>
+                  <EditIcon fontSize="small" />
+                </IconButton>
+                <IconButton color="error" size="small" onClick={() => handleDelete(item)}>
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
               </Box>
-            </Paper>
+            </Box>
+          </Paper>
+        ))}
+        {items.length === 0 && (
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <Typography color="text.secondary">{t(i18nKeys.empty)}</Typography>
+          </Paper>
+        )}
+      </Box>
+    </>
+  );
+
+  const desktopView = (
+    <TableContainer component={Paper} sx={{ width: '100%' }}>
+      <Table size="medium">
+        <TableHead>
+          <TableRow>
+            {headCells.map((headCell) => (
+              <TableCell
+                key={headCell.id as string}
+                align={headCell.align || 'left'}
+                sortDirection={orderBy === headCell.id ? order : false}
+              >
+                <TableSortLabel
+                  active={orderBy === headCell.id}
+                  direction={orderBy === headCell.id ? order : 'asc'}
+                  onClick={() => handleRequestSort(headCell.id)}
+                  sx={{
+                    flexDirection: headCell.align === 'right' ? 'row' : 'row-reverse',
+                    justifyContent: headCell.align === 'right' ? 'flex-end' : 'flex-start',
+                    '&': { width: '100%' },
+                    '& .MuiTableSortLabel-icon': {
+                      marginLeft: headCell.align !== 'right' ? 1 : 0,
+                      marginRight: headCell.align === 'right' ? 1 : 0,
+                    },
+                  }}
+                >
+                  {headCell.label}
+                </TableSortLabel>
+              </TableCell>
+            ))}
+            <TableCell align="right">{t(i18nKeys.actions)}</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {sortedRows.map((item) => (
+            <TableRow key={item.id} hover>
+              {renderDataCells(item)}
+              <TableCell align="right">
+                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                  <Tooltip title={t(i18nKeys.edit)}>
+                    <IconButton color="primary" size="small" onClick={() => handleOpenEdit(item)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t(i18nKeys.delete)}>
+                    <IconButton color="error" size="small" onClick={() => handleDelete(item)}>
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </TableCell>
+            </TableRow>
           ))}
           {items.length === 0 && (
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Typography color="text.secondary">{t(i18nKeys.empty)}</Typography>
-            </Paper>
+            <TableRow>
+              <TableCell
+                colSpan={headCells.length + 1}
+                sx={{ textAlign: 'center', color: 'text.secondary', py: 4 }}
+              >
+                {t(i18nKeys.empty)}
+              </TableCell>
+            </TableRow>
           )}
-        </Box>
-      </>
-    );
-  }
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
 
   return (
     <>
-      <TableContainer component={Paper} sx={{ width: '100%' }}>
-        <Table size="medium">
-          <TableHead>
-            <TableRow>
-              <TableCell width={100}>{t(i18nKeys.actions)}</TableCell>
-              {headCells.map((headCell) => (
-                <TableCell
-                  key={headCell.id as string}
-                  align={headCell.align || 'left'}
-                  sortDirection={orderBy === headCell.id ? order : false}
-                >
-                  <TableSortLabel
-                    active={orderBy === headCell.id}
-                    direction={orderBy === headCell.id ? order : 'asc'}
-                    onClick={() => handleRequestSort(headCell.id)}
-                    sx={{
-                      flexDirection: 'row',
-                      justifyContent: headCell.align === 'right' ? 'flex-end' : 'flex-start',
-                      '&': { width: '100%' },
-                      '& .MuiTableSortLabel-icon': { marginLeft: 0.5 },
-                    }}
-                  >
-                    {headCell.label}
-                  </TableSortLabel>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedRows.map((item) => (
-              <TableRow key={item.id} hover>
-                <TableCell>
-                  <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    <Tooltip title={t(i18nKeys.edit)}>
-                      <IconButton color="primary" size="small" onClick={() => handleOpenEdit(item)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t(i18nKeys.delete)}>
-                      <IconButton color="error" size="small" onClick={() => handleDelete(item)}>
-                        <DeleteOutlineIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-                {renderDataCells(item)}
-              </TableRow>
-            ))}
-            {items.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={headCells.length + 1}
-                  sx={{ textAlign: 'center', color: '#94a3b8', py: 3 }}
-                >
-                  {t(i18nKeys.empty)}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      {isMobile ? mobileView : desktopView}
 
-      {/* --- Shared Floating Action Button and Dialogs --- */}
       <Fab
         color="primary"
-        sx={{ position: 'fixed', right: 24, bottom: 24 }}
+        aria-label="add"
+        sx={{ position: 'fixed', right: { xs: 16, md: 24 }, bottom: { xs: 16, md: 24 } }}
         onClick={handleOpenAdd}
       >
         <AddIcon />
@@ -278,11 +286,7 @@ export default function ResourceList<T extends BaseItem>({
         <DialogComponent
           onClose={handleCloseDialog}
           editItem={editItem}
-          existingNames={existingNames.filter((n) => {
-            if (!editItem) return true;
-            const originalName = getOriginalName ? getOriginalName(editItem) : editItem.name;
-            return n !== originalName;
-          })}
+          existingNames={existingNames.filter((n) => n !== editItem?.name)}
         />
       )}
 
@@ -293,8 +297,8 @@ export default function ResourceList<T extends BaseItem>({
         message={snack.msg}
         action={
           isUndoable && onUndo ? (
-            <Button color="inherit" size="small" onClick={handleUndo}>
-              {t('investmentsList.undo')} {/* Assuming 'undo' key is generic */}
+            <Button color="secondary" size="small" onClick={handleUndo}>
+              {t('investmentsList.undo')} {/* Using a common undo key */}
             </Button>
           ) : null
         }

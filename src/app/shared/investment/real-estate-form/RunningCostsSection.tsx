@@ -46,6 +46,15 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
       initialStates.otherRunningCosts,
     );
 
+    // --- FIX: Sync internal state with props when they change ---
+    // This ensures that when the parent form loads the existing data,
+    // this component's state is updated to reflect it.
+    React.useEffect(() => {
+      setTaxDeductions(initialStates.taxDeductions);
+      setRunningCostsSplit(initialStates.runningCostsSplit);
+      setOtherRunningCosts(initialStates.otherRunningCosts);
+    }, [initialStates]);
+
     const annualBaseAmount = baseAmount.mul(12);
 
     const handleCostChange =

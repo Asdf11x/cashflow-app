@@ -1,14 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// Define the structure of your settings
 interface SettingsState {
   language: string;
   countryProfile: string;
-  mainCurrency: string;
+  mainCurrency: string; // 'EUR', 'CZK', 'CHF', or 'NONE'
+  exchangeRates: {
+    [key: string]: number; // e.g., { CZK: 24.75, CHF: 0.98 } relative to EUR
+  };
   setLanguage: (lang: string) => void;
   setCountryProfile: (profile: string) => void;
   setMainCurrency: (currency: string) => void;
+  setExchangeRates: (rates: { [key: string]: number }) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -17,12 +20,17 @@ export const useSettingsStore = create<SettingsState>()(
       // Initial default values
       language: 'de',
       countryProfile: 'de',
-      mainCurrency: 'EUR',
+      mainCurrency: 'EUR', // Default to EUR
+      exchangeRates: {
+        CZK: 24.75,
+        CHF: 0.98,
+      },
 
       // Setter functions to update the state
       setLanguage: (lang) => set({ language: lang }),
       setCountryProfile: (profile) => set({ countryProfile: profile }),
       setMainCurrency: (currency) => set({ mainCurrency: currency }),
+      setExchangeRates: (rates) => set({ exchangeRates: rates }),
     }),
     {
       // The name for the item in localStorage

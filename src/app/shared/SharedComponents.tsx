@@ -28,14 +28,15 @@ export function ResultRow({
 interface CurrencySelectProps {
   value: string;
   onChange: (event: SelectChangeEvent<string>) => void;
+  disabled?: boolean;
 }
 
-export function CurrencySelect({ value, onChange }: CurrencySelectProps) {
+export function CurrencySelect({ value, onChange, disabled }: CurrencySelectProps) {
   return (
-    <Select value={value} onChange={onChange} sx={{ minWidth: 100 }}>
-      <MenuItem value="€">€ EUR</MenuItem>
+    <Select value={value} onChange={onChange} sx={{ minWidth: 100 }} disabled={disabled}>
+      <MenuItem value="EUR">€ EUR</MenuItem>
       <MenuItem value="CHF">CHF</MenuItem>
-      <MenuItem value="Kč">Kč CZK</MenuItem>
+      <MenuItem value="CZK">Kč CZK</MenuItem>
     </Select>
   );
 }

@@ -1,5 +1,3 @@
-// src/components/InvestmentsList.tsx
-
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableCell, Typography, Box, Chip, Link } from '@mui/material';
@@ -11,6 +9,8 @@ import type {
   Depositvestment,
 } from '../../core/domain/types.ts';
 import ResourceList, { type HeadCell } from '../shared/ResourceList';
+import { useCurrencyConverter } from '../../core/hooks/useCurrencyConverter';
+import { fmtMoney } from '../../core/domain/calc.ts';
 
 type InvestmentRow = {
   id: string;
@@ -38,6 +38,7 @@ export default function InvestmentsList() {
   const { t } = useTranslation();
   const { objects, realEstates, deposits, removeObject, removeRealEstate, removeDeposit } =
     useInvestStore();
+  const { convert, mainCurrency, isConversionActive } = useCurrencyConverter();
   const [undoCtx, setUndoCtx] = React.useState<{ item: any; subsetIndex: number } | null>(null);
 
   const i18nKeys = {
@@ -59,8 +60,8 @@ export default function InvestmentsList() {
     [t],
   );
 
-  const rows: InvestmentRow[] = React.useMemo(
-    () => [
+  const rows: InvestmentRow[] = React.useMemo(() => {
+    const allInvestments = [
       ...objects.map((o) => ({
         id: o.id,
         name: o.name,
@@ -91,9 +92,18 @@ export default function InvestmentsList() {
         netGainMonthly: parseFloat(d.netGainMonthly),
         yieldPctYearly: parseFloat(d.returnPercent),
       })),
-    ],
-    [objects, realEstates, deposits],
-  );
+    ];
+
+    if (!isConversionActive) {
+      return allInvestments;
+    }
+
+    return allInvestments.map((inv) => ({
+      ...inv,
+      purchasePrice: convert(inv.purchasePrice, inv.currency),
+      netGainMonthly: convert(inv.netGainMonthly, inv.currency),
+    }));
+  }, [objects, realEstates, deposits, isConversionActive, convert]);
 
   const handleDelete = (row: InvestmentRow) => {
     let originalItem: ObjectInvestment | RealEstateInvestment | Depositvestment | undefined;
@@ -143,10 +153,11 @@ export default function InvestmentsList() {
     return t(`investmentsList.kinds.${map[kind]}`);
   };
 
-  const getOriginalName = (item: InvestmentRow) => {
-    if (item.kind === 'OBJECT') return objects.find((o) => o.id === item.id)?.name || '';
-    if (item.kind === 'REAL_ESTATE') return realEstates.find((r) => r.id === item.id)?.name || '';
-    return deposits.find((d) => d.id === item.id)?.name || '';
+  const getOriginalItem = (item: InvestmentRow) => {
+    if (item.kind === 'OBJECT') return objects.find((o) => o.id === item.id);
+    if (item.kind === 'REAL_ESTATE') return realEstates.find((r) => r.id === item.id);
+    if (item.kind === 'FIXED_TERM_DEPOSIT') return deposits.find((d) => d.id === item.id);
+    return undefined;
   };
 
   return (
@@ -158,20 +169,20 @@ export default function InvestmentsList() {
       onDelete={handleDelete}
       onUndo={handleUndo}
       getUndoContext={() => !!undoCtx}
-      getOriginalName={getOriginalName}
+      getOriginalItem={getOriginalItem}
       renderDataCells={(r) => (
         <>
           <TableCell key={`${r.id}-name`}>
             <NameCell name={r.name} link={r.link} />
           </TableCell>
           <TableCell key={`${r.id}-purchasePrice`} align="right">
-            {r.purchasePrice} {r.currency}
+            {fmtMoney(String(r.purchasePrice))} {isConversionActive ? mainCurrency : r.currency}
           </TableCell>
           <TableCell key={`${r.id}-netGainMonthly`} align="right">
-            {r.netGainMonthly} {r.currency}
+            {fmtMoney(String(r.netGainMonthly))} {isConversionActive ? mainCurrency : r.currency}
           </TableCell>
           <TableCell key={`${r.id}-yieldPctYearly`} align="right">
-            {r.yieldPctYearly} %
+            {fmtMoney(String(r.yieldPctYearly))} %
           </TableCell>
         </>
       )}
@@ -191,7 +202,7 @@ export default function InvestmentsList() {
                 {t('investmentsList.investmentAmount')}:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {r.purchasePrice} {r.currency}
+                {fmtMoney(String(r.purchasePrice))} {isConversionActive ? mainCurrency : r.currency}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -199,7 +210,8 @@ export default function InvestmentsList() {
                 {t('investmentsList.monthlyProfit')}:
               </Typography>
               <Typography variant="body2" fontWeight={600} color="success.main">
-                {r.netGainMonthly} {r.currency}
+                {fmtMoney(String(r.netGainMonthly))}{' '}
+                {isConversionActive ? mainCurrency : r.currency}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -207,7 +219,7 @@ export default function InvestmentsList() {
                 {t('investmentsList.yield')}:
               </Typography>
               <Typography variant="body2" fontWeight={700} color="primary.main">
-                {r.yieldPctYearly} %
+                {fmtMoney(String(r.yieldPctYearly))} %
               </Typography>
             </Box>
           </Box>

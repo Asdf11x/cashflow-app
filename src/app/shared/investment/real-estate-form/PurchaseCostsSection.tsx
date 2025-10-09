@@ -101,6 +101,14 @@ const PurchaseCostsSection = React.forwardRef<
     initialStates.additionalCosts,
   );
 
+  // --- FIX: Sync internal state with props when they change ---
+  // This ensures that when the parent form loads the existing data,
+  // this component's state is updated to reflect it.
+  React.useEffect(() => {
+    setPurchaseCosts(initialStates.purchaseCosts);
+    setAdditionalCosts(initialStates.additionalCosts);
+  }, [initialStates]);
+
   const handleCostChange =
     (setState: React.Dispatch<React.SetStateAction<CostState>>) =>
     (key: string, newValues: Partial<CostItemState>) => {

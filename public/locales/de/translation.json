@@ -215,6 +215,7 @@
   },
   "optionsMenu": {
     "title": "Optionen",
+    "noConversion": "Keine Umrechnung",
     "coreSettings": "Kerneinstellungen",
     "language": "Sprache",
     "mainCurrency": "Hauptwährung",

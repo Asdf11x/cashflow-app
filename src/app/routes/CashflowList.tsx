@@ -10,22 +10,26 @@ import { fmtMoney } from '../../core/domain/calc';
 import CashflowDialog from '../shared/CashflowDialog';
 import ResourceList, { type HeadCell } from '../shared/ResourceList';
 import { ResultRow } from '../shared/SharedComponents.tsx';
+import { useCurrencyConverter } from '../../core/hooks/useCurrencyConverter.ts';
 
+// EnrichedRow extends the base Cashflow type, so its properties must be compatible.
 interface EnrichedRow extends Cashflow {
   investmentName: string;
   creditName: string;
-  purchasePrice: number;
-  investmentGain: number;
-  monthlyLoss: number;
   yieldPct: number;
+  currency: string;
 }
 
 export default function CashflowList() {
   const { t } = useTranslation();
   const { cashflows, removeCashflow } = useCashflowStore();
-  const { objects, realEstates } = useInvestStore();
+  const { objects, realEstates, deposits } = useInvestStore();
   const credits = useCreditStore((s) => s.credits);
-  const allInvestments = React.useMemo(() => [...objects, ...realEstates], [objects, realEstates]);
+  const { convert, mainCurrency, isConversionActive } = useCurrencyConverter();
+  const allInvestments = React.useMemo(
+    () => [...objects, ...realEstates, ...deposits],
+    [objects, realEstates, deposits],
+  );
   const [undoCtx, setUndoCtx] = React.useState<{ item: Cashflow; index: number } | null>(null);
 
   const i18nKeys = {
@@ -53,26 +57,40 @@ export default function CashflowList() {
       cashflows.map((cf) => {
         const investment = allInvestments.find((i) => i.id === cf.investmentId);
         const credit = cf.creditId ? credits.find((c) => c.id === cf.creditId) : null;
-        const purchasePrice = parseFloat(investment?.totalPrice || investment?.startAmount || '0');
-        const cashflowMonthlyNum = parseFloat(cf.cashflowMonthly);
+
+        const originalPurchasePrice = parseFloat(
+          investment?.totalPrice || investment?.startAmount || '0',
+        );
+        const originalCashflowMonthly = parseFloat(cf.cashflowMonthly);
+        const originalCurrency = investment?.currency || mainCurrency;
+
+        const yieldPct =
+          originalPurchasePrice > 0
+            ? ((originalCashflowMonthly * 12) / originalPurchasePrice) * 100
+            : 0;
+
+        const displayCashflowMonthly = isConversionActive
+          ? convert(originalCashflowMonthly, originalCurrency)
+          : originalCashflowMonthly;
+
         return {
           ...cf,
           investmentName: investment?.name || '—',
           creditName: credit?.name || '—',
-          purchasePrice,
-          investmentGain: parseFloat(investment?.netGainMonthly || '0'),
-          monthlyLoss: credit ? parseFloat(credit.totalMonthly || '0') : 0,
-          yieldPct: purchasePrice > 0 ? ((cashflowMonthlyNum * 12) / purchasePrice) * 100 : 0,
+          // FIX: Convert the final display value back to a string to match the `Cashflow` base type.
+          cashflowMonthly: String(displayCashflowMonthly),
+          yieldPct: yieldPct,
+          currency: originalCurrency,
         };
       }),
-    [cashflows, allInvestments, credits],
+    [cashflows, allInvestments, credits, isConversionActive, convert, mainCurrency],
   );
 
-  const handleDelete = (item: Cashflow) => {
-    const index = cashflows.findIndex((c) => c.id === item.id);
+  const handleDelete = (row: EnrichedRow) => {
+    const index = cashflows.findIndex((c) => c.id === row.id);
     if (index > -1) {
-      setUndoCtx({ item, index });
-      removeCashflow(item.id);
+      setUndoCtx({ item: cashflows[index], index });
+      removeCashflow(row.id);
     }
   };
 
@@ -87,6 +105,10 @@ export default function CashflowList() {
     setUndoCtx(null);
   };
 
+  const getOriginalItem = (row: EnrichedRow) => {
+    return cashflows.find((c) => c.id === row.id);
+  };
+
   return (
     <ResourceList<EnrichedRow>
       items={rows}
@@ -96,6 +118,7 @@ export default function CashflowList() {
       onDelete={handleDelete}
       onUndo={handleUndo}
       getUndoContext={() => !!undoCtx}
+      getOriginalItem={getOriginalItem}
       renderDataCells={(row) => (
         <>
           <TableCell key={`${row.id}-name`} sx={{ fontWeight: 500 }}>
@@ -106,11 +129,14 @@ export default function CashflowList() {
           <TableCell
             key={`${row.id}-cashflowMonthly`}
             align="right"
-            sx={{ color: parseFloat(row.cashflowMonthly) < 0 ? 'error.main' : 'success.main' }}
+            sx={{
+              color: parseFloat(row.cashflowMonthly) < 0 ? 'error.main' : 'success.main',
+              fontWeight: 500,
+            }}
           >
-            {fmtMoney(String(row.cashflowMonthly))} €
+            {fmtMoney(row.cashflowMonthly)} {isConversionActive ? mainCurrency : row.currency}
           </TableCell>
-          <TableCell key={`${row.id}-yieldPct`} align="right">
+          <TableCell key={`${row.id}-yieldPct`} align="right" sx={{ fontWeight: 500 }}>
             {fmtMoney(String(row.yieldPct))} %
           </TableCell>
         </>
@@ -122,11 +148,17 @@ export default function CashflowList() {
           </Typography>
           <Stack spacing={1} sx={{ mt: 1 }}>
             <ResultRow label={t('cashflowList.investment')} value={row.investmentName} />
+            <ResultRow label={t('cashflowList.credit')} value={row.creditName} />
             <ResultRow
               label={t('cashflowList.netProfitMonthly')}
-              value={`${fmtMoney(String(row.cashflowMonthly))} €`}
+              value={`${fmtMoney(row.cashflowMonthly)} ${
+                isConversionActive ? mainCurrency : row.currency
+              }`}
             />
-            <ResultRow label={t('cashflowList.credit')} value={row.creditName} />
+            <ResultRow
+              label={t('cashflowList.yield')}
+              value={`${fmtMoney(String(row.yieldPct))} %`}
+            />
           </Stack>
         </>
       )}
