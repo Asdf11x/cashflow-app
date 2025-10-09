@@ -1,5 +1,7 @@
+// src/components/shared/credit/CreditForm.tsx
+
 import * as React from 'react';
-import { useTranslation } from 'react-i18next'; // Import the hook
+import { useTranslation } from 'react-i18next';
 import { Stack, TextField, Box, Divider, InputAdornment, Typography } from '@mui/material';
 import { D, normalize, sanitizeDecimal } from '../investment/formHelpers';
 import { ResultRow, CurrencySelect, PriceInput } from './../SharedComponents';
@@ -8,7 +10,7 @@ import { useCreditStore } from '../../../core/state/useCreditStore';
 import { useSettingsStore } from '../../../core/state/useSettingsStore';
 import type { Credit } from '../../../core/domain/types';
 
-// Import default value configurations
+// Import default value configurations for non-currency values
 import deDefaultValues from '../../../config/defaults/de/default-values.json';
 import czDefaultValues from '../../../config/defaults/cz/default-values.json';
 import chDefaultValues from '../../../config/defaults/ch/default-values.json';
@@ -30,47 +32,56 @@ const CreditForm = React.forwardRef(
     }: { onClose: () => void; editId?: string; existingNames: string[] },
     ref,
   ) => {
-    const { t } = useTranslation(); // Initialize the hook
-    const { addCredit, updateCredit, credits } = useCreditStore.getState();
-    const existingCredit = editId ? credits.find((c) => c.id === editId) : undefined;
+    const { t } = useTranslation();
+    // --- KORREKTUR: Verwenden Sie die reaktiven Hooks anstelle von .getState() ---
+    // Dies stellt sicher, dass die Komponente neu gerendert wird, wenn die Daten geladen werden.
+    const { addCredit, updateCredit, credits } = useCreditStore();
+    const { countryProfile, mainCurrency } = useSettingsStore();
 
-    // --- State Sourcing from Global Settings ---
-    const { countryProfile } = useSettingsStore.getState();
+    // Finden Sie den zu bearbeitenden Kredit aus dem reaktiven 'credits'-Array.
+    const existingCredit = React.useMemo(
+      () => (editId ? credits.find((c) => c.id === editId) : undefined),
+      [editId, credits],
+    );
+
     const defaults = allDefaults[countryProfile] || deDefaultValues;
     const creditDefaults = defaults.credit.basic;
 
     // --- Form State ---
-    const [cName, setCName] = React.useState(existingCredit?.name || t('creditForm.defaultName'));
-    const [cPrincipal, setCPrincipal] = React.useState(
-      existingCredit ? D(existingCredit.principal).toFixed(0) : '200000',
-    );
-    const [cRateAnnualPct, setCRateAnnualPct] = React.useState(
-      existingCredit?.rateAnnualPct || String(creditDefaults.rateAnnualPct.value),
-    );
-    const [cAmortMonthly, setCAmortMonthly] = React.useState(() => {
+    const [cName, setCName] = React.useState('');
+    const [cPrincipal, setCPrincipal] = React.useState('');
+    const [cRateAnnualPct, setCRateAnnualPct] = React.useState('');
+    const [cAmortMonthly, setCAmortMonthly] = React.useState('');
+    const [cTermMonths, setCTermMonths] = React.useState('');
+    const [cFixedRateYears, setCFixedRateYears] = React.useState('');
+    const [cSpecialRepayment, setCSpecialRepayment] = React.useState('');
+    const [cCurrency, setCCurrency] = React.useState('');
+
+    // --- KORREKTUR: Verwenden Sie useEffect, um das Formular zu füllen, wenn `existingCredit` verfügbar wird ---
+    React.useEffect(() => {
       if (existingCredit) {
-        return D(existingCredit.amortMonthly).toFixed(0);
+        setCName(existingCredit.name);
+        setCPrincipal(D(existingCredit.principal).toFixed(0));
+        setCRateAnnualPct(existingCredit.rateAnnualPct);
+        setCAmortMonthly(D(existingCredit.amortMonthly).toFixed(0));
+        setCTermMonths(String(existingCredit.termMonths || ''));
+        setCFixedRateYears(String(existingCredit.fixedRateYears || ''));
+        setCSpecialRepayment(D(existingCredit.specialRepaymentYearly || '0').toFixed(0));
+        setCCurrency(existingCredit.currency);
+      } else {
+        // Standardwerte für einen neuen Kredit setzen
+        setCName('');
+        setCPrincipal('200000');
+        setCRateAnnualPct(String(creditDefaults.rateAnnualPct.value));
+        const principal = D('200000');
+        const yearlyAmortization = principal.mul(creditDefaults.amortizationInitial.value);
+        setCAmortMonthly(yearlyAmortization.div(12).toFixed(0));
+        setCTermMonths('120');
+        setCFixedRateYears(String(creditDefaults.fixedRateYears.value));
+        setCSpecialRepayment('0');
+        setCCurrency(mainCurrency);
       }
-      const principal = D('200000');
-      const yearlyAmortization = principal.mul(creditDefaults.amortizationInitial.value);
-      return yearlyAmortization.div(12).toFixed(0);
-    });
-    const [cTermMonths, setCTermMonths] = React.useState(
-      existingCredit?.termMonths ? String(existingCredit.termMonths) : '120',
-    );
-    const [cFixedRateYears, setCFixedRateYears] = React.useState(
-      existingCredit?.fixedRateYears
-        ? String(existingCredit.fixedRateYears)
-        : String(creditDefaults.fixedRateYears.value),
-    );
-    const [cSpecialRepayment, setCSpecialRepayment] = React.useState(
-      existingCredit?.specialRepaymentYearly
-        ? D(existingCredit.specialRepaymentYearly).toFixed(0)
-        : '0',
-    );
-    const [cCurrency, setCCurrency] = React.useState(
-      existingCredit?.currency || defaults.meta.currency,
-    );
+    }, [existingCredit, mainCurrency, creditDefaults]);
 
     // Touched State for Validation
     const [isNameTouched, setIsNameTouched] = React.useState(false);
@@ -90,12 +101,16 @@ const CreditForm = React.forwardRef(
         rateAnnualPct: rateD.toString(),
         amortMonthly: amortD.toFixed(2),
         termMonths: parseInt(cTermMonths, 10) || 0,
+        totalMonthly: '0',
+        fixedRateYears: 0,
+        specialRepaymentYearly: '0',
       }),
       [cName, cCurrency, principalD, rateD, amortD, cTermMonths],
     );
 
     const interestMonthlyD = D(creditInterestMonthly(draftCredit));
     const totalPaymentMonthlyD = D(creditTotalMonthly(draftCredit));
+    draftCredit.totalMonthly = totalPaymentMonthlyD.toFixed(2);
 
     // Validation
     const trimmedName = cName.trim();
@@ -116,7 +131,7 @@ const CreditForm = React.forwardRef(
           return;
         }
 
-        const creditData: Omit<Credit, 'id'> = {
+        const creditData: Omit<Credit, 'id' | 'totalMonthly'> & { totalMonthly?: string } = {
           name: trimmedName,
           currency: cCurrency,
           principal: principalD.toFixed(2),
@@ -128,6 +143,8 @@ const CreditForm = React.forwardRef(
             ? D(normalize(cSpecialRepayment)).toFixed(2)
             : undefined,
         };
+
+        creditData.totalMonthly = totalPaymentMonthlyD.toFixed(2);
 
         if (editId) {
           updateCredit({ id: editId, ...creditData });
@@ -188,13 +205,13 @@ const CreditForm = React.forwardRef(
           <TextField
             label={t('creditForm.labels.termMonths')}
             value={cTermMonths}
-            onChange={(e) => setCTermMonths(e.target.value)}
+            onChange={(e) => setCTermMonths(e.target.value.replace(/\D/g, ''))}
             type="number"
           />
           <TextField
             label={t('creditForm.labels.fixedRateYears')}
             value={cFixedRateYears}
-            onChange={(e) => setCFixedRateYears(e.target.value)}
+            onChange={(e) => setCFixedRateYears(e.target.value.replace(/\D/g, ''))}
             type="number"
           />
         </Box>

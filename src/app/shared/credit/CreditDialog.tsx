@@ -19,7 +19,7 @@ type Props = {
 };
 type FormHandle = { submit: () => void; isValid: () => boolean };
 
-export default function CreditCreateDialog({ onClose, editItem, existingNames }: Props) {
+export default function CreditDialog({ onClose, editItem, existingNames }: Props) {
   const { t } = useTranslation();
   const formRef = React.useRef<FormHandle>(null);
   const theme = useTheme();

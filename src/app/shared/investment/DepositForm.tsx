@@ -21,7 +21,6 @@ import { fmtMoney } from '../../../core/domain/calc';
 import { useInvestStore } from '../../../core/state/useInvestStore.ts';
 import { type Depositvestment } from '../../../core/domain/types.ts';
 import Decimal from 'decimal.js';
-import { CostInputRow } from './RealEstateForm.tsx';
 
 // Import default value configurations
 import deDefaults from '../../../config/defaults/de/default-values.json';
@@ -29,6 +28,7 @@ import chDefaults from '../../../config/defaults/ch/default-values.json';
 import czDefaults from '../../../config/defaults/cz/default-values.json';
 
 import { useSettingsStore } from '../../../core/state/useSettingsStore.ts';
+import { CostInputRow } from './real-estate-form/CostInputs.tsx';
 
 // Define a type for the structure of the default values JSON files
 type DefaultsConfig = typeof deDefaults;

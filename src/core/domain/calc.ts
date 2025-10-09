@@ -1,5 +1,11 @@
 import Decimal from 'decimal.js';
-import type { Money, ObjectInvestment, Credit, RealEstateInvestment } from './types';
+import type {
+  Money,
+  ObjectInvestment,
+  Credit,
+  RealEstateInvestment,
+  Depositvestment,
+} from './types';
 const D = (v: Money | number | string) => new Decimal(v || '0');
 
 // calc.ts - adjust these functions
@@ -59,7 +65,7 @@ export function creditTotalMonthly(c: Credit): Money {
 }
 
 export function computeCashflowMonthly(
-  investment: ObjectInvestment | RealEstateInvestment,
+  investment: ObjectInvestment | RealEstateInvestment | Depositvestment,
   credit: Credit | null, // <-- Now accepts null
 ): Decimal {
   const investmentNetGain = new Decimal(investment.netGainMonthly ?? '0');

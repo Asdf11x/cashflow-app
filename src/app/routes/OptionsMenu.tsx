@@ -171,15 +171,17 @@ export default function OptionsMenu() {
     language,
     countryProfile,
     mainCurrency,
+    exchangeRates,
     setLanguage,
     setCountryProfile,
     setMainCurrency,
+    setExchangeRates,
   } = useSettingsStore();
 
   const [currentDefaults, setCurrentDefaults] = useState<DefaultsConfig>(
     allDefaults[countryProfile] || deDefaultValues,
   );
-  const [exchangeRates, setExchangeRates] = useState({ CZK: 24.75, CHF: 0.98 });
+  // const [exchangeRates, setExchangeRates] = useState({ CZK: 24.75, CHF: 0.98 });
 
   const isCustomProfile = countryProfile === 'custom';
 
@@ -212,11 +214,12 @@ export default function OptionsMenu() {
 
   const currencyOptions = useMemo(
     () => [
+      { value: 'NONE', label: t('optionsMenu.noConversion') }, // <-- ADD THIS
       { value: 'EUR', label: 'Euro (EUR)' },
       { value: 'CZK', label: 'Czech Koruna (CZK)' },
       { value: 'CHF', label: 'Swiss Franc (CHF)' },
     ],
-    [],
+    [t],
   );
 
   const handleLanguageChange = (lang: string) => {

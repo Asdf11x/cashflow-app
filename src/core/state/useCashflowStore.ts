@@ -1,9 +1,16 @@
+// src/core/state/useCashflowStore.tsx
+
 import { create } from 'zustand';
 import { useInvestStore } from './useInvestStore';
 import { useCreditStore } from './useCreditStore';
 import { computeCashflowMonthly } from '../domain/calc';
 import { persist } from 'zustand/middleware';
-import type { ObjectInvestment, RealEstateInvestment, Credit } from '../domain/types';
+import type {
+  ObjectInvestment,
+  RealEstateInvestment,
+  Credit,
+  Depositvestment,
+} from '../domain/types';
 
 export type Cashflow = {
   id: string;
@@ -23,9 +30,9 @@ type Actions = {
   removeCashflow: (id: string) => void;
 };
 
-// The signature of this function remains the same
+// The type for investment is broadened to include all possible types.
 const calculateCashflow = (
-  investment: ObjectInvestment | RealEstateInvestment,
+  investment: ObjectInvestment | RealEstateInvestment | Depositvestment,
   credit: Credit | null,
 ) => {
   return computeCashflowMonthly(investment, credit).toFixed(2);
@@ -37,13 +44,12 @@ export const useCashflowStore = create<State & Actions>()(
       cashflows: [],
 
       addCashflow: (name, investmentId, creditId) => {
-        const { objects, realEstates } = useInvestStore.getState();
+        // FIX: Pull all investment types, including deposits.
+        const { objects, realEstates, deposits } = useInvestStore.getState();
         const { credits } = useCreditStore.getState();
-        const allInvestments = [...objects, ...realEstates];
+        const allInvestments = [...objects, ...realEstates, ...deposits];
 
         const investment = allInvestments.find((i) => i.id === investmentId);
-        // FIX: Use the nullish coalescing operator (??) to ensure that if `find`
-        // returns `undefined`, it's converted to `null`. This satisfies TypeScript.
         const credit = credits.find((c) => c.id === creditId) ?? null;
 
         if (!investment) {
@@ -63,12 +69,12 @@ export const useCashflowStore = create<State & Actions>()(
       },
 
       updateCashflow: (id, name, investmentId, creditId) => {
-        const { objects, realEstates } = useInvestStore.getState();
+        // FIX: Pull all investment types, including deposits.
+        const { objects, realEstates, deposits } = useInvestStore.getState();
         const { credits } = useCreditStore.getState();
-        const allInvestments = [...objects, ...realEstates];
+        const allInvestments = [...objects, ...realEstates, ...deposits];
 
         const investment = allInvestments.find((i) => i.id === investmentId);
-        // FIX: Apply the same logic here for type safety.
         const credit = credits.find((c) => c.id === creditId) ?? null;
 
         if (!investment) {
