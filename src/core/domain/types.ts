@@ -99,8 +99,8 @@ export interface Credit {
   currency: string;
 
   principal: Money; // Darlehensbetrag
-  rateAnnualPct: string; // Sollzins p.a.
-  amortMonthly: Money; // Monatliche Tilgung
+  rateAnnualPercent: string; // Sollzins p.a.
+  repaymentMonthly: Money; // Monatliche Tilgung
   termMonths: number; // Gesamtlaufzeit
   startDate?: string; // Für Zeitachsen/Restschuld
   fixedRateYears?: number; // Zinsbindung (optional)

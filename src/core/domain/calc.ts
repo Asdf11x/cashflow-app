@@ -42,26 +42,22 @@ export const fmtNumberTrim = (v: string | number) => {
   }).format(num);
 };
 
-/* --- UPDATED: Credit math --- */
-
+/* --- Credits --- */
 /** Calculates the interest for the first month based on the total principal. */
 export function creditInterestMonthly(c: Credit): Money {
   const principal = D(c.principal);
-  const monthlyRate = D(c.rateAnnualPct).div(100).div(12); // Monthly interest rate
+  const monthlyRate = D(c.rateAnnualPercent).div(100).div(12); // Monthly interest rate
   return principal.mul(monthlyRate).toFixed(2);
 }
 
-/** Calculates the total interest for the first year. */
 export function creditInterestYearly(c: Credit): Money {
-  // This is a simplification for display; a real amortization schedule would be more precise.
   return D(creditInterestMonthly(c)).mul(12).toFixed(2);
 }
 
-/** Calculates the total monthly payment (interest + amortization). */
 export function creditTotalMonthly(c: Credit): Money {
   const interest = D(creditInterestMonthly(c));
-  const amortization = D(c.amortMonthly);
-  return interest.add(amortization).toFixed(2);
+  const repayment = D(c.repaymentMonthly);
+  return interest.add(repayment).toFixed(2);
 }
 
 export function computeCashflowMonthly(

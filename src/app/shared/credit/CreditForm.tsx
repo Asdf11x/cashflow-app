@@ -9,19 +9,7 @@ import { creditInterestMonthly, creditTotalMonthly, fmtMoney } from '../../../co
 import { useCreditStore } from '../../../core/state/useCreditStore';
 import { useSettingsStore } from '../../../core/state/useSettingsStore';
 import type { Credit } from '../../../core/domain/types';
-
-// Import default value configurations for non-currency values
-import deDefaultValues from '../../../config/defaults/de/default-values.json';
-import czDefaultValues from '../../../config/defaults/cz/default-values.json';
-import chDefaultValues from '../../../config/defaults/ch/default-values.json';
-
-type DefaultsConfig = typeof deDefaultValues;
-
-const allDefaults: Record<string, DefaultsConfig> = {
-  de: deDefaultValues,
-  cz: czDefaultValues,
-  ch: chDefaultValues,
-};
+import { useDefaults } from '../../../core/hooks/useDefaults'; // <-- IMPORT THE HOOK
 
 const CreditForm = React.forwardRef(
   (
@@ -33,49 +21,53 @@ const CreditForm = React.forwardRef(
     ref,
   ) => {
     const { t } = useTranslation();
-    // --- KORREKTUR: Verwenden Sie die reaktiven Hooks anstelle von .getState() ---
-    // Dies stellt sicher, dass die Komponente neu gerendert wird, wenn die Daten geladen werden.
     const { addCredit, updateCredit, credits } = useCreditStore();
-    const { countryProfile, mainCurrency } = useSettingsStore();
-
-    // Finden Sie den zu bearbeitenden Kredit aus dem reaktiven 'credits'-Array.
+    const { mainCurrency } = useSettingsStore();
     const existingCredit = React.useMemo(
       () => (editId ? credits.find((c) => c.id === editId) : undefined),
       [editId, credits],
     );
 
-    const defaults = allDefaults[countryProfile] || deDefaultValues;
+    // --- Cleanly get defaults using the custom hook ---
+    const defaults = useDefaults();
     const creditDefaults = defaults.credit.basic;
 
-    // --- Form State ---
     const [cName, setCName] = React.useState('');
     const [cPrincipal, setCPrincipal] = React.useState('');
     const [cRateAnnualPct, setCRateAnnualPct] = React.useState('');
-    const [cAmortMonthly, setCAmortMonthly] = React.useState('');
+    // --- STATE CHANGED: From monthly amount to annual percentage ---
+    const [cRepaymentAnnualPct, setCRepaymentAnnualPct] = React.useState('');
     const [cTermMonths, setCTermMonths] = React.useState('');
     const [cFixedRateYears, setCFixedRateYears] = React.useState('');
     const [cSpecialRepayment, setCSpecialRepayment] = React.useState('');
     const [cCurrency, setCCurrency] = React.useState('');
 
-    // --- KORREKTUR: Verwenden Sie useEffect, um das Formular zu füllen, wenn `existingCredit` verfügbar wird ---
     React.useEffect(() => {
       if (existingCredit) {
+        const principalD = D(existingCredit.principal);
         setCName(existingCredit.name);
-        setCPrincipal(D(existingCredit.principal).toFixed(0));
-        setCRateAnnualPct(existingCredit.rateAnnualPct);
-        setCAmortMonthly(D(existingCredit.amortMonthly).toFixed(0));
+        setCPrincipal(principalD.toFixed(0));
+        setCRateAnnualPct(existingCredit.rateAnnualPercent);
         setCTermMonths(String(existingCredit.termMonths || ''));
         setCFixedRateYears(String(existingCredit.fixedRateYears || ''));
         setCSpecialRepayment(D(existingCredit.specialRepaymentYearly || '0').toFixed(0));
         setCCurrency(existingCredit.currency);
+
+        // --- INVERSE CALCULATION: Determine % from existing monthly repayment ---
+        if (principalD.gt(0)) {
+          const repaymentMonthlyD = D(existingCredit.repaymentMonthly);
+          const repaymentAnnualD = repaymentMonthlyD.mul(12);
+          const repaymentPct = repaymentAnnualD.div(principalD).mul(100).toDP(2).toString();
+          setCRepaymentAnnualPct(repaymentPct);
+        } else {
+          setCRepaymentAnnualPct('0');
+        }
       } else {
-        // Standardwerte für einen neuen Kredit setzen
+        // --- Set defaults for a new credit ---
         setCName('');
         setCPrincipal('200000');
         setCRateAnnualPct(String(creditDefaults.rateAnnualPct.value));
-        const principal = D('200000');
-        const yearlyAmortization = principal.mul(creditDefaults.amortizationInitial.value);
-        setCAmortMonthly(yearlyAmortization.div(12).toFixed(0));
+        setCRepaymentAnnualPct(String(creditDefaults.repaymentInitial.value * 100)); // Convert fraction to percent
         setCTermMonths('120');
         setCFixedRateYears(String(creditDefaults.fixedRateYears.value));
         setCSpecialRepayment('0');
@@ -90,7 +82,9 @@ const CreditForm = React.forwardRef(
     // Calculations
     const principalD = D(normalize(cPrincipal));
     const rateD = D(normalize(cRateAnnualPct));
-    const amortD = D(normalize(cAmortMonthly));
+    // --- NEW CALCULATION: From Annual % to Monthly Amount ---
+    const repaymentPctD = D(normalize(cRepaymentAnnualPct));
+    const repaymentMonthlyD = principalD.mul(repaymentPctD.div(100)).div(12);
 
     const draftCredit: Credit = React.useMemo(
       () => ({
@@ -98,14 +92,14 @@ const CreditForm = React.forwardRef(
         name: cName,
         currency: cCurrency,
         principal: principalD.toFixed(2),
-        rateAnnualPct: rateD.toString(),
-        amortMonthly: amortD.toFixed(2),
+        rateAnnualPercent: rateD.toString(),
+        repaymentMonthly: repaymentMonthlyD.toFixed(2), // Use the calculated monthly amount
         termMonths: parseInt(cTermMonths, 10) || 0,
         totalMonthly: '0',
         fixedRateYears: 0,
         specialRepaymentYearly: '0',
       }),
-      [cName, cCurrency, principalD, rateD, amortD, cTermMonths],
+      [cName, cCurrency, principalD, rateD, repaymentMonthlyD, cTermMonths],
     );
 
     const interestMonthlyD = D(creditInterestMonthly(draftCredit));
@@ -131,12 +125,13 @@ const CreditForm = React.forwardRef(
           return;
         }
 
-        const creditData: Omit<Credit, 'id' | 'totalMonthly'> & { totalMonthly?: string } = {
+        const creditData: Omit<Credit, 'id'> = {
           name: trimmedName,
           currency: cCurrency,
           principal: principalD.toFixed(2),
-          rateAnnualPct: rateD.toString(),
-          amortMonthly: amortD.toFixed(2),
+          rateAnnualPercent: rateD.toString(),
+          repaymentMonthly: repaymentMonthlyD.toFixed(2), // --- Save the calculated monthly amount ---
+          totalMonthly: '0', // This will be recalculated anyway
           termMonths: parseInt(cTermMonths, 10) || 0,
           fixedRateYears: parseInt(cFixedRateYears, 10) || undefined,
           specialRepaymentYearly: D(normalize(cSpecialRepayment)).gt(0)
@@ -190,16 +185,17 @@ const CreditForm = React.forwardRef(
             onChange={(e) => setCRateAnnualPct(sanitizeDecimal(e.target.value))}
             type="text"
             inputProps={{ inputMode: 'decimal' }}
-            InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+            InputProps={{ endAdornment: <InputAdornment position="end">% p.a.</InputAdornment> }}
           />
+          {/* --- UI UPDATED: For percentage input --- */}
           <TextField
-            label={t('creditForm.labels.amortizationMonthly')}
-            value={cAmortMonthly}
-            onChange={(e) => setCAmortMonthly(sanitizeDecimal(e.target.value))}
+            label={t('creditForm.labels.repaymentAnnualPct')}
+            value={cRepaymentAnnualPct}
+            onChange={(e) => setCRepaymentAnnualPct(sanitizeDecimal(e.target.value))}
             type="text"
             inputProps={{ inputMode: 'decimal' }}
             InputProps={{
-              endAdornment: <InputAdornment position="end">{cCurrency}</InputAdornment>,
+              endAdornment: <InputAdornment position="end">% p.a.</InputAdornment>,
             }}
           />
           <TextField
@@ -231,6 +227,10 @@ const CreditForm = React.forwardRef(
           <ResultRow
             label={t('creditForm.summary.interestMonthly')}
             value={`${fmtMoney(interestMonthlyD.toString())} ${cCurrency}`}
+          />
+          <ResultRow
+            label={t('creditForm.summary.repaymentMonthly')}
+            value={`${fmtMoney(repaymentMonthlyD.toString())} ${cCurrency}`}
           />
           <ResultRow
             label={t('creditForm.summary.totalMonthly')}

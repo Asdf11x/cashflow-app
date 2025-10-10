@@ -21,24 +21,8 @@ import { fmtMoney } from '../../../core/domain/calc';
 import { useInvestStore } from '../../../core/state/useInvestStore.ts';
 import { type Depositvestment } from '../../../core/domain/types.ts';
 import Decimal from 'decimal.js';
-
-// Import default value configurations
-import deDefaults from '../../../config/defaults/de/default-values.json';
-import chDefaults from '../../../config/defaults/ch/default-values.json';
-import czDefaults from '../../../config/defaults/cz/default-values.json';
-
-import { useSettingsStore } from '../../../core/state/useSettingsStore.ts';
 import { CostInputRow } from './real-estate-form/CostInputs.tsx';
-
-// Define a type for the structure of the default values JSON files
-type DefaultsConfig = typeof deDefaults;
-
-// Create a record mapping country codes to their default configuration
-const allDefaults: Record<string, DefaultsConfig> = {
-  de: deDefaults,
-  cz: czDefaults,
-  ch: chDefaults,
-};
+import { useDefaults } from '../../../core/hooks/useDefaults.ts';
 
 const DepositForm = React.forwardRef(
   (
@@ -54,14 +38,8 @@ const DepositForm = React.forwardRef(
     ref,
   ) => {
     const { t } = useTranslation();
-    const { countryProfile } = useSettingsStore();
+    const defaults = useDefaults();
 
-    // Determine which set of defaults to use based on countryProfile
-    const defaults = React.useMemo(() => {
-      return allDefaults[countryProfile] || deDefaults;
-    }, [countryProfile]);
-
-    // Access the specific fixed term deposit defaults and meta currency
     const depositDefaults = defaults.investments.fixedTermDeposit.basic;
     const { currency: metaCurrency } = defaults.meta;
 

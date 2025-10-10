@@ -18,12 +18,13 @@
     "labels": {
       "name": "Credit Name",
       "principal": "Credit Amount (Loan)",
-      "rateAnnualPct": "Debit interest rate p.a.",
+      "rateAnnualPct": "Debit interest rate",
       "fixedRateYears": "Fixed-interest period (years)",
-      "amortizationInitial": "Initial amortization p.a.",
-      "amortizationMonthly": "Monthly Amortization",
+      "repaymentInitial": "Initial repayment p.a.",
+      "repaymentMonthly": "Monthly repayment",
+      "repaymentAnnualPct": "Yearly repayment",
       "termMonths": "Total Term (Months)",
-      "specialRepaymentYearly": "Special Repayment (annually)"
+      "specialRepaymentYearly": "Special repayment (annually)"
     },
     "helpers": {
       "nameEmpty": "Name cannot be empty",
@@ -33,7 +34,8 @@
     "summary": {
       "title": "Summary",
       "interestMonthly": "Monthly Interest (1st month)",
-      "totalMonthly": "Monthly Rate (Interest + Amortization)"
+      "totalMonthly": "Monthly Rate (Interest + Amortization)",
+      "repaymentMonthly": "Monthly Repayment"
     }
   },
   "creditDialog": {
@@ -216,6 +218,7 @@
   "optionsMenu": {
     "title": "Options",
     "coreSettings": "Core Settings",
+    "noConversion": "No Conversion",
     "language": "Language",
     "mainCurrency": "Main Currency",
     "defaultValues": "Default Values",

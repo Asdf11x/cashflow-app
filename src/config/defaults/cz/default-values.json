@@ -169,7 +169,7 @@
         "i18nKey": "creditForm.labels.fixedRateYears",
         "value": 10
       },
-      "amortizationInitial": {
+      "repaymentInitial": {
         "i18nKey": "creditForm.labels.amortizationInitial",
         "value": 0.02,
         "mode": "percent"

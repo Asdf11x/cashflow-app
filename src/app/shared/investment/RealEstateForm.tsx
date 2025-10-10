@@ -11,7 +11,6 @@ import {
 import Decimal from 'decimal.js';
 import { D, normalize, sanitizeDecimal, type CostState } from './formHelpers';
 import { useInvestStore } from '../../../core/state/useInvestStore';
-import { useSettingsStore } from '../../../core/state/useSettingsStore';
 import type {
   AdditionalPurchasePriceCosts,
   AdditionalRunningCostsRent,
@@ -19,11 +18,6 @@ import type {
   RealEstateInvestment,
   RunningCostsRent,
 } from '../../../core/domain/types';
-
-import deDefaults from '../../../config/defaults/de/default-values.json';
-import chDefaults from '../../../config/defaults/ch/default-values.json';
-import czDefaults from '../../../config/defaults/cz/default-values.json';
-
 import FormHeader from './real-estate-form/FormHeader';
 import PurchaseCostsSection, {
   type PurchaseCostsSectionHandle,
@@ -32,13 +26,7 @@ import RunningCostsSection, {
   type RunningCostsSectionHandle,
 } from './real-estate-form/RunningCostsSection';
 import SummarySection from './real-estate-form/SummarySection';
-
-type DefaultsConfig = typeof deDefaults;
-const allDefaults: Record<string, DefaultsConfig> = {
-  de: deDefaults,
-  cz: czDefaults,
-  ch: chDefaults,
-};
+import { useDefaults } from '../../../core/hooks/useDefaults.ts';
 
 export type SplitCostItemState = {
   enabled: boolean;
@@ -62,7 +50,8 @@ const RealEstateForm = React.forwardRef(
   ) => {
     const { t } = useTranslation();
     const { addRealEstate, updateRealEstate, realEstates } = useInvestStore();
-    const { countryProfile, mainCurrency } = useSettingsStore();
+    const defaults = useDefaults();
+    const { currency: metaCurrency } = defaults.meta;
 
     const existingInvestment = React.useMemo(
       () => (editId ? realEstates.find((inv) => inv.id === editId) : undefined),
@@ -72,10 +61,6 @@ const RealEstateForm = React.forwardRef(
     const purchaseCostsRef = React.useRef<PurchaseCostsSectionHandle>(null);
     const runningCostsRef = React.useRef<RunningCostsSectionHandle>(null);
 
-    const defaults = React.useMemo(
-      () => allDefaults[countryProfile] || deDefaults,
-      [countryProfile],
-    );
     const reDefaults = defaults.investments.realEstate;
 
     const [rName, setRName] = React.useState('');
@@ -87,10 +72,10 @@ const RealEstateForm = React.forwardRef(
     React.useEffect(() => {
       setRName(existingInvestment?.name || t(reDefaults.basic.name.i18nKey));
       setRPurchasePrice(existingInvestment?.startAmount || reDefaults.basic.purchasePrice);
-      setRCurrency(existingInvestment?.currency || mainCurrency);
+      setRCurrency(existingInvestment?.currency || metaCurrency);
       setRMonthlyColdRent(existingInvestment?.monthlyColdRent || reDefaults.basic.monthlyColdRent);
       setRDetailsLink(existingInvestment?.link || '');
-    }, [existingInvestment, mainCurrency, reDefaults, t]);
+    }, [existingInvestment, metaCurrency, reDefaults, t]);
 
     const { initialPurchaseStates, initialRunningStates } = React.useMemo(() => {
       const mapDefaultsToCostState = (

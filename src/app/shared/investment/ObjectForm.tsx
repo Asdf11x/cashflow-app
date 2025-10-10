@@ -6,6 +6,7 @@ import { ResultRow, CurrencySelect, PriceInput } from '../SharedComponents.tsx';
 import { fmtMoney } from '../../../core/domain/calc';
 import { useInvestStore } from '../../../core/state/useInvestStore.ts';
 import { type ObjectInvestment } from '../../../core/domain/types.ts';
+import { useDefaults } from '../../../core/hooks/useDefaults.ts';
 
 const ObjectForm = React.forwardRef(
   (
@@ -21,6 +22,11 @@ const ObjectForm = React.forwardRef(
     ref,
   ) => {
     const { t } = useTranslation();
+    const defaults = useDefaults();
+
+    // Access the specific object defaults and meta currency
+    const { currency: metaCurrency } = defaults.meta;
+
     const { addObject, updateObject, objects } = useInvestStore.getState();
     const existingObject = editId ? objects.find((o) => o.id === editId) : undefined;
 
@@ -34,7 +40,7 @@ const ObjectForm = React.forwardRef(
     const [oPurchasePrice, setOPurchasePrice] = React.useState(
       existingObject?.startAmount ? D(existingObject.startAmount).toFixed(0) : '10000',
     );
-    const [oCurrency, setOCurrency] = React.useState(existingObject?.currency || '€');
+    const [oCurrency, setOCurrency] = React.useState(existingObject?.currency || metaCurrency);
 
     // States for Revenue and Cost
     const [oMonthlyRevenue, setOMonthlyRevenue] = React.useState(initRevenue.toFixed(0));

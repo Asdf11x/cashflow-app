@@ -18,10 +18,10 @@
     "labels": {
       "name": "Name des Kredits",
       "principal": "Kreditsumme (Darlehen)",
-      "rateAnnualPct": "Sollzinssatz p.a.",
+      "rateAnnualPct": "Sollzinssatz",
       "fixedRateYears": "Zinsbindung (Jahre)",
-      "amortizationInitial": "Anfängliche Tilgung p.a.",
-      "amortizationMonthly": "Monatliche Tilgung",
+      "repaymentInitial": "Anfängliche Tilgung p.a.",
+      "repaymentAnnualPct": "Jährliche Tilgung",
       "termMonths": "Gesamtlaufzeit (Monate)",
       "specialRepaymentYearly": "Sondertilgung (jährlich)"
     },
@@ -33,7 +33,8 @@
     "summary": {
       "title": "Zusammenfassung",
       "interestMonthly": "Monatliche Zinsen (1. Monat)",
-      "totalMonthly": "Monatliche Rate (Zins + Tilgung)"
+      "totalMonthly": "Monatliche Rate (Zins + Tilgung)",
+      "repaymentMonthly": "Monatliche Tilgung"
     }
   },
   "creditDialog": {

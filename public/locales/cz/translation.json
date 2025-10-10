@@ -18,10 +18,11 @@
     "labels": {
       "name": "Název úvěru",
       "principal": "Výše úvěru (jistina)",
-      "rateAnnualPct": "Úroková sazba p.a.",
+      "rateAnnualPct": "Úroková sazba",
       "fixedRateYears": "Fixace úrokové sazby (roky)",
-      "amortizationInitial": "Počáteční splátka p.a.",
-      "amortizationMonthly": "Měsíční splátka",
+      "repaymentInitial": "Počáteční splátka p.a.",
+      "repaymentMonthly": "Měsíční splátka",
+      "repaymentAnnualPct": "Jährliche Tilgung",
       "termMonths": "Celková doba splatnosti (měsíce)",
       "specialRepaymentYearly": "Mimořádná splátka (ročně)"
     },
@@ -33,7 +34,8 @@
     "summary": {
       "title": "Shrnutí",
       "interestMonthly": "Měsíční úrok (1. měsíc)",
-      "totalMonthly": "Měsíční splátka (úrok + splátka)"
+      "totalMonthly": "Měsíční splátka (úrok + splátka)",
+      "repaymentMonthly": "Měsíční splátka"
     }
   },
   "creditDialog": {
