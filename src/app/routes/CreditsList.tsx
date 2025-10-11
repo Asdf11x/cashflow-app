@@ -37,7 +37,7 @@ export default function CreditsList() {
       { id: 'name', label: t('creditsList.name') },
       { id: 'principal', label: t('creditsList.principal'), align: 'right' },
       { id: 'totalMonthly', label: t('creditsList.monthlyRate'), align: 'right' },
-      { id: 'rateAnnualPct', label: t('creditsList.interestRate'), align: 'right' },
+      { id: 'rateAnnualPercent', label: t('creditsList.interestRate'), align: 'right' },
     ],
     [t],
   );
@@ -104,7 +104,7 @@ export default function CreditsList() {
             {fmtMoney(String(c.totalMonthly))} {isConversionActive ? mainCurrency : c.currency}
           </TableCell>
           <TableCell key={`${c.id}-rateAnnualPct`} align="right">
-            {c.rateAnnualPct} %
+            {c.rateAnnualPercent} %
           </TableCell>
         </>
       )}
@@ -135,7 +135,7 @@ export default function CreditsList() {
                 {t('creditsList.interestRate')}:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {c.rateAnnualPct} %
+                {c.rateAnnualPercent} %
               </Typography>
             </Box>
           </Box>

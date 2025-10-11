@@ -9,21 +9,16 @@ import {
   type SelectChangeEvent,
 } from '@mui/material';
 import Decimal from 'decimal.js';
-import { D, normalize, sanitizeDecimal, type CostState } from './formHelpers';
+import { D, normalize, sanitizeDecimal, type CostState, pctToFrac } from './formHelpers';
 import { useInvestStore } from '../../../core/state/useInvestStore';
-import { useSettingsStore } from '../../../core/state/useSettingsStore';
 import type {
   AdditionalPurchasePriceCosts,
   AdditionalRunningCostsRent,
   PurchasePriceCosts,
   RealEstateInvestment,
   RunningCostsRent,
+  RealEstateDeductions, // Import NEW type
 } from '../../../core/domain/types';
-
-import deDefaults from '../../../config/defaults/de/default-values.json';
-import chDefaults from '../../../config/defaults/ch/default-values.json';
-import czDefaults from '../../../config/defaults/cz/default-values.json';
-
 import FormHeader from './real-estate-form/FormHeader';
 import PurchaseCostsSection, {
   type PurchaseCostsSectionHandle,
@@ -32,13 +27,7 @@ import RunningCostsSection, {
   type RunningCostsSectionHandle,
 } from './real-estate-form/RunningCostsSection';
 import SummarySection from './real-estate-form/SummarySection';
-
-type DefaultsConfig = typeof deDefaults;
-const allDefaults: Record<string, DefaultsConfig> = {
-  de: deDefaults,
-  cz: czDefaults,
-  ch: chDefaults,
-};
+import { useDefaults } from '../../../core/hooks/useDefaults.ts';
 
 export type SplitCostItemState = {
   enabled: boolean;
@@ -50,7 +39,83 @@ export type SplitCostItemState = {
   label2: string;
 };
 
-// --- Main Component ---
+// Helper function to calculate the total annual deductions
+const calculateDeductionCostStateTotal = (
+  costState: CostState,
+  purchasePriceBase: Decimal,
+  annualRentBase: Decimal,
+  houseFeeSplit: { houseFee: SplitCostItemState },
+): Decimal => {
+  let total = D(0);
+
+  Object.entries(costState).forEach(([key, item]) => {
+    if (!item.enabled) return;
+
+    // Depreciation ('depreciation', 'specialDepreciation') is on purchase price, others on annual rent
+    const isOnPurchasePrice = key === 'depreciation' || key === 'specialDepreciation';
+    const base = isOnPurchasePrice ? purchasePriceBase : annualRentBase;
+
+    let valueAnnual = D(0);
+    if (item.mode === 'percent') {
+      valueAnnual = base.mul(pctToFrac(item.value));
+    } else {
+      // mode === 'currency'
+      // All currency inputs in this section are now assumed to be ANNUAL
+      const multiplier = 1; // <--- CHANGED from (isOnPurchasePrice ? 1 : 12) to 1
+      valueAnnual = D(normalize(item.value)).mul(multiplier);
+    }
+    total = total.add(valueAnnual);
+  });
+
+  // House Fee (Non-Apportionable Part) - now part of tax deductions
+  const houseFeeItem = houseFeeSplit.houseFee;
+  if (houseFeeItem.enabled) {
+    const monthlyRentBase = annualRentBase.div(12);
+
+    const totalMonthly =
+      houseFeeItem.mode === 'percent'
+        ? monthlyRentBase.mul(pctToFrac(houseFeeItem.value1))
+        : D(normalize(houseFeeItem.value1));
+    const apportionableMonthly =
+      houseFeeItem.mode === 'percent'
+        ? monthlyRentBase.mul(pctToFrac(houseFeeItem.value2))
+        : D(normalize(houseFeeItem.value2));
+
+    const nonApportionableMonthly = totalMonthly.sub(apportionableMonthly);
+    total = total.add(nonApportionableMonthly.mul(12)); // Add the annual non-apportionable part
+  }
+  return total;
+};
+
+// Helper function to calculate total tax costs on a specific base
+const calculateTaxCostStateTotal = (costState: CostState, taxBase: Decimal): Decimal => {
+  if (taxBase.lte(0)) return D(0);
+
+  const incomeTax = costState.incomeTax;
+  const soli = costState.solidaritySurcharge;
+  const churchTax = costState.churchTax;
+  const other = costState.otherDeductions;
+
+  const incomeTaxAmount = incomeTax.enabled ? taxBase.mul(pctToFrac(incomeTax.value)) : D(0);
+  const soliAmount = soli.enabled ? incomeTaxAmount.mul(pctToFrac(soli.value)) : D(0);
+  const churchTaxAmount = churchTax?.enabled
+    ? incomeTaxAmount.mul(pctToFrac(churchTax.value))
+    : D(0);
+
+  let otherDeductionsAnnual = D(0);
+  if (other?.enabled) {
+    otherDeductionsAnnual =
+      other.mode === 'currency'
+        ? D(normalize(other.value)) // Assuming currency here means ANNUAL flat amount for tax
+        : taxBase.mul(pctToFrac(other.value));
+  }
+
+  return incomeTaxAmount
+    .add(soliAmount)
+    .add(churchTaxAmount ?? D(0))
+    .add(otherDeductionsAnnual);
+};
+
 const RealEstateForm = React.forwardRef(
   (
     {
@@ -62,7 +127,8 @@ const RealEstateForm = React.forwardRef(
   ) => {
     const { t } = useTranslation();
     const { addRealEstate, updateRealEstate, realEstates } = useInvestStore();
-    const { countryProfile, mainCurrency } = useSettingsStore();
+    const defaults = useDefaults();
+    const { currency: metaCurrency } = defaults.meta;
 
     const existingInvestment = React.useMemo(
       () => (editId ? realEstates.find((inv) => inv.id === editId) : undefined),
@@ -72,10 +138,6 @@ const RealEstateForm = React.forwardRef(
     const purchaseCostsRef = React.useRef<PurchaseCostsSectionHandle>(null);
     const runningCostsRef = React.useRef<RunningCostsSectionHandle>(null);
 
-    const defaults = React.useMemo(
-      () => allDefaults[countryProfile] || deDefaults,
-      [countryProfile],
-    );
     const reDefaults = defaults.investments.realEstate;
 
     const [rName, setRName] = React.useState('');
@@ -87,10 +149,10 @@ const RealEstateForm = React.forwardRef(
     React.useEffect(() => {
       setRName(existingInvestment?.name || t(reDefaults.basic.name.i18nKey));
       setRPurchasePrice(existingInvestment?.startAmount || reDefaults.basic.purchasePrice);
-      setRCurrency(existingInvestment?.currency || mainCurrency);
+      setRCurrency(existingInvestment?.currency || metaCurrency);
       setRMonthlyColdRent(existingInvestment?.monthlyColdRent || reDefaults.basic.monthlyColdRent);
       setRDetailsLink(existingInvestment?.link || '');
-    }, [existingInvestment, mainCurrency, reDefaults, t]);
+    }, [existingInvestment, metaCurrency, reDefaults, t]);
 
     const { initialPurchaseStates, initialRunningStates } = React.useMemo(() => {
       const mapDefaultsToCostState = (
@@ -125,6 +187,30 @@ const RealEstateForm = React.forwardRef(
         ),
       };
 
+      const deductionsStates = mapDefaultsToCostState(
+        reDefaults.deductions, // Assumes reDefaults.deductions exists
+        existingInvestment?.realEstateDeductions as Record<string, string> | undefined,
+      );
+
+      const houseFeeSplitState = {
+        houseFee: {
+          enabled: existingInvestment?.additionalRunningCostsRent?.houseFeeTotal
+            ? D(existingInvestment.additionalRunningCostsRent.houseFeeTotal).gt(0)
+            : reDefaults.runningCosts.additional.houseFee.enabled,
+          value1:
+            existingInvestment?.additionalRunningCostsRent?.houseFeeTotal ||
+            reDefaults.runningCosts.additional.houseFee.value1,
+          value2:
+            existingInvestment?.additionalRunningCostsRent?.houseFeeApportionable ||
+            reDefaults.runningCosts.additional.houseFee.value2,
+          mode: reDefaults.runningCosts.additional.houseFee.mode,
+          allowModeChange: reDefaults.runningCosts.additional.houseFee.allowModeChange,
+          label1: t(reDefaults.runningCosts.additional.houseFee.i18nKeyTotal),
+          label2: t(reDefaults.runningCosts.additional.houseFee.i18nKeyApportionable),
+        } as SplitCostItemState,
+      };
+      // END NEW: Deductions State
+
       const runningStates = {
         taxDeductions: mapDefaultsToCostState(
           reDefaults.runningCosts.rentTaxes,
@@ -134,26 +220,20 @@ const RealEstateForm = React.forwardRef(
           { other: reDefaults.runningCosts.additional.other },
           existingInvestment?.additionalRunningCostsRent as Record<string, string> | undefined,
         ),
-        runningCostsSplit: {
-          houseFee: {
-            enabled: existingInvestment?.additionalRunningCostsRent?.houseFeeTotal
-              ? D(existingInvestment.additionalRunningCostsRent.houseFeeTotal).gt(0)
-              : reDefaults.runningCosts.additional.houseFee.enabled,
-            value1:
-              existingInvestment?.additionalRunningCostsRent?.houseFeeTotal ||
-              reDefaults.runningCosts.additional.houseFee.value1,
-            value2:
-              existingInvestment?.additionalRunningCostsRent?.houseFeeApportionable ||
-              reDefaults.runningCosts.additional.houseFee.value2,
-            mode: reDefaults.runningCosts.additional.houseFee.mode,
-            allowModeChange: reDefaults.runningCosts.additional.houseFee.allowModeChange,
-            label1: t(reDefaults.runningCosts.additional.houseFee.i18nKeyTotal),
-            label2: t(reDefaults.runningCosts.additional.houseFee.i18nKeyApportionable),
-          } as SplitCostItemState,
-        },
       };
 
-      return { initialPurchaseStates: purchaseStates, initialRunningStates: runningStates };
+      return {
+        initialPurchaseStates: purchaseStates,
+        initialRunningStates: {
+          taxDeductions: runningStates.taxDeductions,
+          otherRunningCosts: runningStates.otherRunningCosts,
+          initialDeductionsStates: {
+            // NEW wrapper for Deductions
+            deductions: deductionsStates,
+            runningCostsSplit: houseFeeSplitState,
+          },
+        },
+      };
     }, [existingInvestment, reDefaults, t]);
 
     const [totalPurchaseSideCosts, setTotalPurchaseSideCosts] = React.useState(D(0));
@@ -163,8 +243,10 @@ const RealEstateForm = React.forwardRef(
 
     const rPurchasePriceD = D(normalize(rPurchasePrice));
     const rMonthlyColdRentD = D(normalize(rMonthlyColdRent));
+    const annualColdRent = rMonthlyColdRentD.mul(12); // NEW variable
+
     const grandTotalPrice = rPurchasePriceD.add(totalPurchaseSideCosts);
-    const netRentAnnual = rMonthlyColdRentD.mul(12).sub(totalRunningCostsAnnual);
+    const netRentAnnual = annualColdRent.sub(totalRunningCostsAnnual); // Updated logic: Total Running Costs now includes Tax Costs
     const netRentMonthly = netRentAnnual.div(12);
     const yieldPct = grandTotalPrice.gt(0)
       ? netRentAnnual.div(grandTotalPrice).mul(100).toDP(2).toString()
@@ -231,17 +313,42 @@ const RealEstateForm = React.forwardRef(
           rPurchasePriceD,
         ).toString();
 
+        // NEW: Deductions object
+        const totalDeductionsAnnualActual = calculateDeductionCostStateTotal(
+          runningData.deductions,
+          rPurchasePriceD,
+          annualColdRent,
+          runningData.runningCostsSplit,
+        );
+
+        const realEstateDeductionsObject = transformCostState(
+          runningData.deductions,
+        ) as unknown as Omit<RealEstateDeductions, 'total'>;
+
+        const realEstateDeductionsFinal: RealEstateDeductions = {
+          ...realEstateDeductionsObject,
+          total: totalDeductionsAnnualActual.toString(),
+        };
+        // END NEW: Deductions object
+
+        // Taxable Income (Rent - Deductions)
+        const taxableIncome = annualColdRent.sub(totalDeductionsAnnualActual);
+
+        // Running Costs Rent (Tax Costs) object - now based on Taxable Income
         const runningCostsRentObject = transformCostState(
           runningData.taxDeductions,
         ) as unknown as RunningCostsRent;
-        runningCostsRentObject.total = calculateCostStateTotal(
+        runningCostsRentObject.total = calculateTaxCostStateTotal(
           runningData.taxDeductions,
-          rMonthlyColdRentD.mul(12),
+          taxableIncome,
         ).toString();
 
+        // Other Running Costs (House Fee logic is now simpler here as the split is done in deductions)
         const otherRunningCostsValue = runningData.otherRunningCosts.other.enabled
           ? normalize(runningData.otherRunningCosts.other.value)
           : '0';
+
+        // House Fee total/apportionable parts are still stored in additionalRunningCostsRent
         const houseFeeTotalValue = runningData.runningCostsSplit.houseFee.enabled
           ? normalize(runningData.runningCostsSplit.houseFee.value1)
           : '0';
@@ -249,12 +356,15 @@ const RealEstateForm = React.forwardRef(
           ? normalize(runningData.runningCostsSplit.houseFee.value2)
           : '0';
 
+        const nonApportionableMonthly = D(houseFeeTotalValue).sub(D(houseFeeApportionableValue));
+
         const additionalRunningCostsRentObject: AdditionalRunningCostsRent = {
-          houseFee: houseFeeApportionableValue,
+          houseFee: nonApportionableMonthly.toString(), // Net part (Total - Apportionable)
           houseFeeTotal: houseFeeTotalValue,
           houseFeeApportionable: houseFeeApportionableValue,
           other: otherRunningCostsValue,
-          total: D(houseFeeApportionableValue).add(otherRunningCostsValue).toString(),
+          // Total MONTHLY other running costs (Non-apportionable house fee + other)
+          total: D(normalize(otherRunningCostsValue)).add(nonApportionableMonthly).toString(),
         };
 
         const investmentData: RealEstateInvestment = {
@@ -275,6 +385,7 @@ const RealEstateForm = React.forwardRef(
           additionalPurchaseCosts: additionalPurchaseCostsObject,
           runningCostsRent: runningCostsRentObject,
           additionalRunningCostsRent: additionalRunningCostsRentObject,
+          realEstateDeductions: realEstateDeductionsFinal, // <--- ADDED
           details: existingInvestment?.details || {
             address: '',
             propertyType: '',
@@ -355,6 +466,7 @@ const RealEstateForm = React.forwardRef(
           key={editId ? `${editId}-running` : 'new-running'}
           ref={runningCostsRef}
           baseAmount={rMonthlyColdRentD}
+          purchasePrice={rPurchasePriceD} // <--- NEW PROP
           currency={rCurrency}
           initialStates={initialRunningStates}
           onTotalChange={handleRunningTotalChange}

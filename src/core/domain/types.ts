@@ -44,6 +44,7 @@ export interface RealEstateInvestment extends BaseInvestment {
 
   monthlyColdRent: Money;
   runningCostsRent: RunningCostsRent;
+  realEstateDeductions: RealEstateDeductions;
   additionalRunningCostsRent: AdditionalRunningCostsRent;
 
   totalAdditionalPurchaseCosts: Money;
@@ -85,6 +86,14 @@ export interface RunningCostsRent {
   total: Money;
 }
 
+export interface RealEstateDeductions {
+  depreciation: Money; // Abschreibung
+  incomeRelatedExpenses: Money; // Werbungskosten
+  debtInterest: Money; // Schuldzinsen
+  specialDepreciation: Money; // Sonderabschreibung
+  total: Money; // Total annual deductions
+}
+
 export interface AdditionalRunningCostsRent {
   houseFee: Money; // This will continue to store the NET value
   houseFeeTotal?: Money; // NEW: Stores the gross Hausgeld amount
@@ -99,8 +108,8 @@ export interface Credit {
   currency: string;
 
   principal: Money; // Darlehensbetrag
-  rateAnnualPct: string; // Sollzins p.a.
-  amortMonthly: Money; // Monatliche Tilgung
+  rateAnnualPercent: string; // Sollzins p.a.
+  repaymentMonthly: Money; // Monatliche Tilgung
   termMonths: number; // Gesamtlaufzeit
   startDate?: string; // Für Zeitachsen/Restschuld
   fixedRateYears?: number; // Zinsbindung (optional)

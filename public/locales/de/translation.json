@@ -18,10 +18,10 @@
     "labels": {
       "name": "Name des Kredits",
       "principal": "Kreditsumme (Darlehen)",
-      "rateAnnualPct": "Sollzinssatz p.a.",
+      "rateAnnualPct": "Sollzinssatz",
       "fixedRateYears": "Zinsbindung (Jahre)",
-      "amortizationInitial": "Anfängliche Tilgung p.a.",
-      "amortizationMonthly": "Monatliche Tilgung",
+      "repaymentInitial": "Anfängliche Tilgung p.a.",
+      "repaymentAnnualPct": "Jährliche Tilgung",
       "termMonths": "Gesamtlaufzeit (Monate)",
       "specialRepaymentYearly": "Sondertilgung (jährlich)"
     },
@@ -33,7 +33,8 @@
     "summary": {
       "title": "Zusammenfassung",
       "interestMonthly": "Monatliche Zinsen (1. Monat)",
-      "totalMonthly": "Monatliche Rate (Zins + Tilgung)"
+      "totalMonthly": "Monatliche Rate (Zins + Tilgung)",
+      "repaymentMonthly": "Monatliche Tilgung"
     }
   },
   "creditDialog": {
@@ -164,7 +165,11 @@
       "purchaseCosts": "Kaufnebenkosten",
       "additionalPurchaseCosts": "Weitere Kaufnebenkosten",
       "taxDeductions": "Steuerliche Abzüge",
-      "otherRunningCosts": "Weitere Laufende Kosten"
+      "otherRunningCosts": "Weitere Laufende Kosten",
+      "deductions": "Absetzungen"
+    },
+    "accordionSummary": {
+      "deductionMonthlyLabel": "Mietabzug pro Monat"
     },
     "details": {
       "link": "Link zur Anzeige"
@@ -192,9 +197,15 @@
       "solidaritySurcharge": "Solidaritätszuschlag",
       "churchTax": "Kirchensteuer",
       "otherDeductions": "Zusätzliche Abzüge",
-      "houseFee": "Hausgeld",
+      "houseFee": "Hausgeld monatl.",
       "houseFeeApportionable": "davon umlagefähig",
       "other": "Sonstiges"
+    },
+    "deductions": {
+      "depreciation": "Abschreibung (AfA) auf ",
+      "incomeRelatedExpenses": "Werbungskosten",
+      "debtInterest": "Schuldzinsen",
+      "specialDepreciation": "Sonderabschreibung"
     }
   },
   "common": {
