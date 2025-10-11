@@ -38,7 +38,6 @@ export type SplitCostItemState = {
   label2: string;
 };
 
-// --- Main Component ---
 const RealEstateForm = React.forwardRef(
   (
     {

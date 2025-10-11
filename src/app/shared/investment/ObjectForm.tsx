@@ -24,7 +24,6 @@ const ObjectForm = React.forwardRef(
     const { t } = useTranslation();
     const defaults = useDefaults();
 
-    // Access the specific object defaults and meta currency
     const { currency: metaCurrency } = defaults.meta;
 
     const { addObject, updateObject, objects } = useInvestStore.getState();

@@ -31,7 +31,7 @@ interface FormHeaderProps {
   onCurrencyChange: (e: SelectChangeEvent) => void;
   link: string;
   onLinkChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  isEditing?: boolean; // <-- ADD THE PROP
+  isEditing?: boolean;
 }
 
 export default function FormHeader(props: FormHeaderProps) {
@@ -58,11 +58,7 @@ export default function FormHeader(props: FormHeaderProps) {
           error={props.isPriceTouched && props.priceError}
           helperText={props.priceHelperText}
         />
-        <CurrencySelect
-          value={props.currency}
-          onChange={props.onCurrencyChange}
-          disabled={props.isEditing}
-        />
+        <CurrencySelect value={props.currency} onChange={props.onCurrencyChange} />
       </Box>
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

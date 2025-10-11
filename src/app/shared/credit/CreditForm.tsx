@@ -7,9 +7,8 @@ import { D, normalize, sanitizeDecimal } from '../investment/formHelpers';
 import { ResultRow, CurrencySelect, PriceInput } from './../SharedComponents';
 import { creditInterestMonthly, creditTotalMonthly, fmtMoney } from '../../../core/domain/calc';
 import { useCreditStore } from '../../../core/state/useCreditStore';
-import { useSettingsStore } from '../../../core/state/useSettingsStore';
 import type { Credit } from '../../../core/domain/types';
-import { useDefaults } from '../../../core/hooks/useDefaults'; // <-- IMPORT THE HOOK
+import { useDefaults } from '../../../core/hooks/useDefaults';
 
 const CreditForm = React.forwardRef(
   (
@@ -22,7 +21,6 @@ const CreditForm = React.forwardRef(
   ) => {
     const { t } = useTranslation();
     const { addCredit, updateCredit, credits } = useCreditStore();
-    const { mainCurrency } = useSettingsStore();
     const existingCredit = React.useMemo(
       () => (editId ? credits.find((c) => c.id === editId) : undefined),
       [editId, credits],
@@ -31,11 +29,11 @@ const CreditForm = React.forwardRef(
     // --- Cleanly get defaults using the custom hook ---
     const defaults = useDefaults();
     const creditDefaults = defaults.credit.basic;
+    const { currency: mainCurrency } = defaults.meta;
 
     const [cName, setCName] = React.useState('');
     const [cPrincipal, setCPrincipal] = React.useState('');
     const [cRateAnnualPct, setCRateAnnualPct] = React.useState('');
-    // --- STATE CHANGED: From monthly amount to annual percentage ---
     const [cRepaymentAnnualPct, setCRepaymentAnnualPct] = React.useState('');
     const [cTermMonths, setCTermMonths] = React.useState('');
     const [cFixedRateYears, setCFixedRateYears] = React.useState('');
@@ -53,7 +51,6 @@ const CreditForm = React.forwardRef(
         setCSpecialRepayment(D(existingCredit.specialRepaymentYearly || '0').toFixed(0));
         setCCurrency(existingCredit.currency);
 
-        // --- INVERSE CALCULATION: Determine % from existing monthly repayment ---
         if (principalD.gt(0)) {
           const repaymentMonthlyD = D(existingCredit.repaymentMonthly);
           const repaymentAnnualD = repaymentMonthlyD.mul(12);
