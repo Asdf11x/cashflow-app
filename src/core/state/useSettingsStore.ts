@@ -22,8 +22,8 @@ export const useSettingsStore = create<SettingsState>()(
       countryProfile: 'de',
       mainCurrency: 'EUR', // Default to EUR
       exchangeRates: {
-        CZK: 24.75,
-        CHF: 0.98,
+        CZK: 24.35,
+        CHF: 0.93,
       },
 
       // Setter functions to update the state
