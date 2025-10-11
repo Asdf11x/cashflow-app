@@ -1,7 +1,7 @@
 {
   "meta": {
-    "country": "CZ",
-    "currency": "CZK",
+    "country": "DE",
+    "currency": "EUR",
     "version": 1
   },
   "investments": {
@@ -10,8 +10,8 @@
         "name": {
           "i18nKey": "realEstateForm.defaultName"
         },
-        "purchasePrice": "4000000",
-        "monthlyColdRent": "18000",
+        "purchasePrice": "250000",
+        "monthlyColdRent": "1200",
         "detailsLink": ""
       },
       "purchaseCosts": {
@@ -19,29 +19,29 @@
           "brokerCommission": {
             "i18nKey": "realEstateForm.costLabels.brokerCommission",
             "enabled": true,
-            "value": 4.0,
+            "value": 3.57,
             "mode": "percent",
             "allowModeChange": true
           },
           "propertyTransferTax": {
             "i18nKey": "realEstateForm.costLabels.propertyTransferTax",
-            "enabled": false,
-            "value": 0,
+            "enabled": true,
+            "value": 5.0,
             "mode": "percent",
             "allowModeChange": false
           },
           "notaryFees": {
             "i18nKey": "realEstateForm.costLabels.notaryFees",
             "enabled": true,
-            "value": 0.2,
+            "value": 1.5,
             "mode": "percent",
             "allowModeChange": false
           },
           "landRegistryFees": {
             "i18nKey": "realEstateForm.costLabels.landRegistryFees",
             "enabled": true,
-            "value": 2000,
-            "mode": "currency",
+            "value": 0.5,
+            "mode": "percent",
             "allowModeChange": false
           }
         },
@@ -70,7 +70,7 @@
           "appraisalFee": {
             "i18nKey": "realEstateForm.costLabels.appraisalFee",
             "enabled": false,
-            "value": "5000",
+            "value": "1500",
             "mode": "currency",
             "allowModeChange": true
           },
@@ -83,26 +83,56 @@
           }
         }
       },
+      "deductions": {
+        "depreciation": {
+          "value": "2",
+          "mode": "percent",
+          "enabled": true,
+          "allowModeChange": false,
+          "i18nKey": "realEstateForm.deductions.depreciation"
+        },
+        "incomeRelatedExpenses": {
+          "value": "0",
+          "mode": "currency",
+          "enabled": false,
+          "allowModeChange": true,
+          "i18nKey": "realEstateForm.deductions.incomeRelatedExpenses"
+        },
+        "debtInterest": {
+          "value": "0",
+          "mode": "currency",
+          "enabled": false,
+          "allowModeChange": true,
+          "i18nKey": "realEstateForm.deductions.debtInterest"
+        },
+        "specialDepreciation": {
+          "value": "0",
+          "mode": "percent",
+          "enabled": false,
+          "allowModeChange": true,
+          "i18nKey": "realEstateForm.deductions.specialDepreciation"
+        }
+      },
       "runningCosts": {
         "rentTaxes": {
           "incomeTax": {
             "i18nKey": "realEstateForm.costLabels.incomeTax",
             "enabled": true,
-            "value": 15,
+            "value": 30,
             "mode": "percent",
             "allowModeChange": false
           },
           "solidaritySurcharge": {
             "i18nKey": "realEstateForm.costLabels.solidaritySurcharge",
-            "enabled": false,
-            "value": 0,
+            "enabled": true,
+            "value": 5.5,
             "mode": "percent",
             "allowModeChange": false
           },
           "churchTax": {
             "i18nKey": "realEstateForm.costLabels.churchTax",
             "enabled": false,
-            "value": 0,
+            "value": 9.0,
             "mode": "percent",
             "allowModeChange": false
           },
@@ -119,9 +149,9 @@
             "i18nKeyTotal": "realEstateForm.costLabels.houseFee",
             "i18nKeyApportionable": "realEstateForm.costLabels.houseFeeApportionable",
             "enabled": true,
-            "value1": "4000",
-            "value2": "3000",
-            "mode": "currency",
+            "value1": "25",
+            "value2": "60",
+            "mode": "percent",
             "allowModeChange": true
           },
           "other": {
@@ -138,7 +168,7 @@
       "basic": {
         "startAmount": {
           "i18nKey": "depositForm.startAmountLabel",
-          "value": 250000
+          "value": 10000
         },
         "termMonths": {
           "i18nKey": "depositForm.termLabel",
@@ -146,7 +176,7 @@
         },
         "rateNominal": {
           "i18nKey": "depositForm.rateLabel",
-          "value": 5.0
+          "value": 3.5
         },
         "compounding": {
           "i18nKey": "depositForm.compoundingTitle",
@@ -154,7 +184,7 @@
         }
       },
       "taxes": {
-        "withholdingTaxRate": 15,
+        "withholdingTaxRate": 25,
         "taxFreeAllowance": 0
       }
     }

@@ -18,8 +18,8 @@ import { fmtMoney } from '../../../../core/domain/calc';
 // --- Reusable Split Cost Item State ---
 export interface SplitCostItemState {
   enabled: boolean;
-  value1: string;
-  value2: string;
+  value1: string; // Total House Fee
+  value2: string; // Apportionable Part
   mode: 'currency' | 'percent';
   allowModeChange: boolean;
   label1: string;
@@ -118,43 +118,67 @@ export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostI
 interface SplitCostInputRowProps {
   item: SplitCostItemState;
   onItemChange: (newItem: Partial<SplitCostItemState>) => void;
-  baseAmount: Decimal;
+  baseAmount: Decimal; // Monthly Cold Rent (Base for value1)
   currency: string;
 }
 
 export function SplitCostInputRow({
   item,
   onItemChange,
-  baseAmount,
+  baseAmount, // Monthly Cold Rent (Base for value1: Total House Fee)
   currency,
 }: SplitCostInputRowProps) {
   const { t } = useTranslation();
   const { enabled, value1, value2, mode, allowModeChange, label1, label2 } = item;
   const isPercent = mode === 'percent';
 
+  // 1. Calculate the Monthly House Fee Sum (This is the new base for the split logic)
+  const monthlyHouseFeeSum = React.useMemo(() => {
+    // value1 (Total House Fee) is relative to baseAmount (Monthly Rent)
+    return isPercent ? baseAmount.mul(pctToFrac(value1)) : D(normalize(value1));
+  }, [value1, isPercent, baseAmount]);
+
   const handleToggleMode = () => {
     const newMode = mode === 'percent' ? 'currency' : 'percent';
     let nextValue1 = '0';
     let nextValue2 = '0';
+
+    // Base for value1 (Total House Fee) conversion is baseAmount (Rent)
+    const base1 = baseAmount;
+    // Base for value2 (Apportionable Part) conversion is monthlyHouseFeeSum
+    const base2 = monthlyHouseFeeSum;
+
     if (newMode === 'percent') {
-      nextValue1 = baseAmount.gt(0)
-        ? D(normalize(value1)).div(baseAmount).mul(100).toDP(2).toString()
-        : '0';
-      nextValue2 = baseAmount.gt(0)
-        ? D(normalize(value2)).div(baseAmount).mul(100).toDP(2).toString()
-        : '0';
+      // value1: currency -> percent (of Rent)
+      nextValue1 = base1.gt(0) ? D(normalize(value1)).div(base1).mul(100).toDP(2).toString() : '0';
+      // value2: currency -> percent (of House Fee Sum)
+      nextValue2 = base2.gt(0) ? D(normalize(value2)).div(base2).mul(100).toDP(2).toString() : '0';
     } else {
-      nextValue1 = baseAmount.mul(pctToFrac(value1)).toDP(0).toString();
-      nextValue2 = baseAmount.mul(pctToFrac(value2)).toDP(0).toString();
+      // value1: percent -> currency (absolute amount)
+      nextValue1 = base1.mul(pctToFrac(value1)).toDP(0).toString();
+      // value2: percent -> currency (absolute amount)
+      nextValue2 = base2.mul(pctToFrac(value2)).toDP(0).toString();
     }
     onItemChange({ mode: newMode, value1: nextValue1, value2: nextValue2 });
   };
 
   const absoluteNet = React.useMemo(() => {
-    const val1 = isPercent ? baseAmount.mul(pctToFrac(value1)) : D(normalize(value1));
-    const val2 = isPercent ? baseAmount.mul(pctToFrac(value2)) : D(normalize(value2));
-    return val1.sub(val2);
-  }, [value1, value2, mode, baseAmount, isPercent]);
+    // val1 is the total House Fee amount (monthlyHouseFeeSum)
+    const val1 = monthlyHouseFeeSum;
+
+    // val2Absolute is the absolute apportionable amount
+    let val2Absolute: Decimal;
+    if (isPercent) {
+      // value2 is a percentage of the total house fee (val1)
+      val2Absolute = val1.mul(pctToFrac(value2));
+    } else {
+      // value2 is an absolute currency amount
+      val2Absolute = D(normalize(value2));
+    }
+
+    // Net (Non-Apportionable Part) = Total House Fee (val1) - Apportionable Part (val2Absolute)
+    return val1.sub(val2Absolute);
+  }, [value2, mode, monthlyHouseFeeSum, isPercent]);
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>

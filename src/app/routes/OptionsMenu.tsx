@@ -29,10 +29,8 @@ import {
 import RestoreIcon from '@mui/icons-material/Restore';
 import { set } from 'lodash';
 
-// Define a type for the structure of the default values JSON files
 type DefaultsConfig = typeof deDefaultValues;
 
-// Create a record mapping country codes to their default configuration
 const allDefaults: Record<string, DefaultsConfig> = {
   de: deDefaultValues,
   cz: czDefaultValues,
@@ -196,7 +194,7 @@ export default function OptionsMenu() {
   const countryOptions = useMemo(
     () => [
       { value: 'de', label: t('countries.de') },
-      { value: 'cz', label: t('countries.cz') },
+      // { value: 'cz', label: t('countries.cz') },
       { value: 'ch', label: t('countries.ch') },
       { value: 'custom', label: t('countries.custom') },
     ],
@@ -207,7 +205,7 @@ export default function OptionsMenu() {
     () => [
       { value: 'de', label: t('languages.de') },
       { value: 'en', label: t('languages.en') },
-      { value: 'cz', label: t('languages.cz') },
+      // { value: 'cz', label: t('languages.cz') },
     ],
     [t],
   );

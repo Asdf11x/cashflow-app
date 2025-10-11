@@ -166,7 +166,11 @@
       "purchaseCosts": "Purchase Side Costs",
       "additionalPurchaseCosts": "Additional Purchase Costs",
       "taxDeductions": "Tax Deductions",
-      "otherRunningCosts": "Other Running Costs"
+      "otherRunningCosts": "Other Running Costs",
+      "deductions": "Deductions"
+    },
+    "accordionSummary": {
+      "deductionMonthlyLabel": "Monthly Rent Deduction"
     },
     "details": {
       "link": "Link to listing"
@@ -197,6 +201,12 @@
       "houseFee": "Homeowners' association fee",
       "houseFeeApportionable": "of which is apportionable",
       "other": "Other"
+    },
+    "deductions": {
+      "depreciation": "Depreciation (AfA) on ",
+      "incomeRelatedExpenses": "Income-related expenses",
+      "debtInterest": "Debt interest",
+      "specialDepreciation": "Special depreciation"
     }
   },
   "common": {

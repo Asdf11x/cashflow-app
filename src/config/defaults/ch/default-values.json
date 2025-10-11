@@ -83,6 +83,36 @@
           }
         }
       },
+      "deductions": {
+        "depreciation": {
+          "value": "2",
+          "mode": "percent",
+          "enabled": true,
+          "allowModeChange": false,
+          "i18nKey": "realEstateForm.deductions.depreciation"
+        },
+        "incomeRelatedExpenses": {
+          "value": "0",
+          "mode": "currency",
+          "enabled": false,
+          "allowModeChange": true,
+          "i18nKey": "realEstateForm.deductions.incomeRelatedExpenses"
+        },
+        "debtInterest": {
+          "value": "0",
+          "mode": "currency",
+          "enabled": false,
+          "allowModeChange": true,
+          "i18nKey": "realEstateForm.deductions.debtInterest"
+        },
+        "specialDepreciation": {
+          "value": "0",
+          "mode": "percent",
+          "enabled": false,
+          "allowModeChange": true,
+          "i18nKey": "realEstateForm.deductions.specialDepreciation"
+        }
+      },
       "runningCosts": {
         "rentTaxes": {
           "incomeTax": {
@@ -119,9 +149,9 @@
             "i18nKeyTotal": "realEstateForm.costLabels.houseFee",
             "i18nKeyApportionable": "realEstateForm.costLabels.houseFeeApportionable",
             "enabled": true,
-            "value1": "400",
-            "value2": "250",
-            "mode": "currency",
+            "value1": "25",
+            "value2": "60",
+            "mode": "percent",
             "allowModeChange": true
           },
           "other": {
@@ -154,7 +184,7 @@
         }
       },
       "taxes": {
-        "withholdingTaxRate": 35,
+        "withholdingTaxRate": 25,
         "taxFreeAllowance": 0
       }
     }

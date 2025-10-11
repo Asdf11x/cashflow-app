@@ -166,7 +166,7 @@
       "additionalPurchaseCosts": "Weitere Kaufnebenkosten",
       "taxDeductions": "Steuerliche Abzüge",
       "otherRunningCosts": "Weitere Laufende Kosten",
-      "deductions": "Absetzungen (jährliche Beträge)"
+      "deductions": "Absetzungen"
     },
     "accordionSummary": {
       "deductionMonthlyLabel": "Mietabzug pro Monat"
@@ -197,7 +197,7 @@
       "solidaritySurcharge": "Solidaritätszuschlag",
       "churchTax": "Kirchensteuer",
       "otherDeductions": "Zusätzliche Abzüge",
-      "houseFee": "Hausgeld",
+      "houseFee": "Hausgeld monatl.",
       "houseFeeApportionable": "davon umlagefähig",
       "other": "Sonstiges"
     },

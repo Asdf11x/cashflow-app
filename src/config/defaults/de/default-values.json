@@ -184,8 +184,8 @@
         }
       },
       "taxes": {
-        "withholdingTaxRate": 26.375,
-        "taxFreeAllowance": 1000
+        "withholdingTaxRate": 25,
+        "taxFreeAllowance": 0
       }
     }
   },

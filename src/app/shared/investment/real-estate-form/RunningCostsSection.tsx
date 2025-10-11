@@ -101,7 +101,7 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
           valueAnnual = base.mul(pctToFrac(item.value));
         } else {
           // mode === 'currency'. Value is now expected to be ANNUAL
-          const multiplier = 1; // <--- CHANGED from (isOnPurchasePrice ? 1 : 12) to 1
+          const multiplier = 1;
           valueAnnual = D(normalize(item.value)).mul(multiplier);
         }
         total = total.add(valueAnnual);
@@ -110,17 +110,25 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
       // 1.2 House Fee (Non-Apportionable Part)
       const houseFeeItem = runningCostsSplit.houseFee;
       if (houseFeeItem.enabled) {
-        // Calculate the non-apportionable monthly amount first (based on monthly cold rent)
-        const totalMonthly =
+        // 1. Calculate the Monthly House Fee Sum (Total House Fee) - Base for value1 (relative to baseAmount)
+        const totalMonthlyHouseFee =
           houseFeeItem.mode === 'percent'
             ? baseAmount.mul(pctToFrac(houseFeeItem.value1))
             : D(normalize(houseFeeItem.value1));
-        const apportionableMonthly =
-          houseFeeItem.mode === 'percent'
-            ? baseAmount.mul(pctToFrac(houseFeeItem.value2))
-            : D(normalize(houseFeeItem.value2));
 
-        const nonApportionableMonthly = totalMonthly.sub(apportionableMonthly);
+        // 2. Calculate the Apportionable Monthly Amount (Non-Apportionable Part) - Base for value2 is totalMonthlyHouseFee
+        const isPercentMode = houseFeeItem.mode === 'percent';
+        let apportionableMonthly: Decimal;
+        if (isPercentMode) {
+          // value2 is a percentage of the total house fee (totalMonthlyHouseFee)
+          apportionableMonthly = totalMonthlyHouseFee.mul(pctToFrac(houseFeeItem.value2));
+        } else {
+          // value2 is an absolute currency amount
+          apportionableMonthly = D(normalize(houseFeeItem.value2));
+        }
+
+        // Non-Apportionable Part (Deduction) = Total House Fee - Apportionable Part
+        const nonApportionableMonthly = totalMonthlyHouseFee.sub(apportionableMonthly);
         total = total.add(nonApportionableMonthly.mul(12)); // Add the annual non-apportionable part
       }
 
@@ -228,7 +236,7 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
               <SplitCostInputRow
                 item={runningCostsSplit.houseFee}
                 onItemChange={(v) => handleSplitCostChange('houseFee', v)}
-                baseAmount={baseAmount} // Monthly cold rent
+                baseAmount={baseAmount} // Monthly cold rent (Base for value1)
                 currency={currency}
               />
             </Stack>
@@ -295,3 +303,4 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
 );
 
 export default RunningCostsSection;
+// --- END OF FILE RunningCostsSection.tsx ---
