@@ -165,7 +165,11 @@
       "purchaseCosts": "Kaufnebenkosten",
       "additionalPurchaseCosts": "Weitere Kaufnebenkosten",
       "taxDeductions": "Steuerliche Abzüge",
-      "otherRunningCosts": "Weitere Laufende Kosten"
+      "otherRunningCosts": "Weitere Laufende Kosten",
+      "deductions": "Absetzungen (jährliche Beträge)"
+    },
+    "accordionSummary": {
+      "deductionMonthlyLabel": "Mietabzug pro Monat"
     },
     "details": {
       "link": "Link zur Anzeige"
@@ -196,6 +200,12 @@
       "houseFee": "Hausgeld",
       "houseFeeApportionable": "davon umlagefähig",
       "other": "Sonstiges"
+    },
+    "deductions": {
+      "depreciation": "Abschreibung (AfA) auf ",
+      "incomeRelatedExpenses": "Werbungskosten",
+      "debtInterest": "Schuldzinsen",
+      "specialDepreciation": "Sonderabschreibung"
     }
   },
   "common": {

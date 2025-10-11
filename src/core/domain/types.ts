@@ -44,6 +44,7 @@ export interface RealEstateInvestment extends BaseInvestment {
 
   monthlyColdRent: Money;
   runningCostsRent: RunningCostsRent;
+  realEstateDeductions: RealEstateDeductions;
   additionalRunningCostsRent: AdditionalRunningCostsRent;
 
   totalAdditionalPurchaseCosts: Money;
@@ -83,6 +84,14 @@ export interface RunningCostsRent {
   churchTax?: Money;
   otherDeductions?: Money;
   total: Money;
+}
+
+export interface RealEstateDeductions {
+  depreciation: Money; // Abschreibung
+  incomeRelatedExpenses: Money; // Werbungskosten
+  debtInterest: Money; // Schuldzinsen
+  specialDepreciation: Money; // Sonderabschreibung
+  total: Money; // Total annual deductions
 }
 
 export interface AdditionalRunningCostsRent {
