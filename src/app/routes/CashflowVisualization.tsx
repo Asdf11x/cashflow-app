@@ -20,14 +20,16 @@ import { ResponsiveLine } from '@nivo/line';
 import SearchIcon from '@mui/icons-material/Search';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { useCashflowStore } from '../../core/state/useCashflowStore';
-import { useInvestStore } from '../../core/state/useInvestStore';
-import { useCreditStore } from '../../core/state/useCreditStore';
+// Removed: import { useInvestStore } from '../../core/state/useInvestStore';
+// Removed: import { useCreditStore } from '../../core/state/useCreditStore';
 import { fmtMoney } from '../../core/domain/calc';
 
+// --- UPDATED DEFAULT_ASSUMPTIONS (Simplified) ---
 const DEFAULT_ASSUMPTIONS = {
-  rentIncreasePct: 2.0,
-  costIncreasePct: 1.5,
-  valueAppreciationPct: 3.0,
+  // rentIncreasePct will now be used as Cashflow-Wachstum
+  rentIncreasePct: 1.0,
+  // New: Flat monthly deduction (e.g., for maintenance reserve)
+  monthlyFlatDeduction: 0,
 };
 
 // --- Tab Panel Helper Component ---
@@ -56,21 +58,51 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+const SimpleCustomTooltip = ({ point }: any) => {
+  if (!point || typeof point.data.y === 'undefined') {
+    return null;
+  }
+
+  const pointData = point.data;
+  const integerValue = Math.round(pointData.y);
+  const formattedValue = fmtMoney(String(integerValue));
+  const finalValueString = `${formattedValue} €`;
+  const yearString = `Jahr ${pointData.xFormatted}:`;
+
+  return (
+    <Paper sx={{ p: 1, opacity: 0.9, borderLeft: `5px solid ${point.color}`, minWidth: '70px' }}>
+      <Typography variant="body2" sx={{ fontWeight: 'bold', lineHeight: 1.2, display: 'block' }}>
+        {yearString}
+      </Typography>
+
+      <Typography
+        variant="body2"
+        sx={{
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          lineHeight: 1.2,
+          display: 'block',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {finalValueString}
+      </Typography>
+    </Paper>
+  );
+};
+
 // --- Main Visualization Component ---
 export default function CashflowVisualization() {
   // const theme = useTheme();
 
   // --- Data Fetching from Stores ---
   const cashflows = useCashflowStore((s) => s.cashflows);
-  const objects = useInvestStore((s) => s.objects);
-  const realEstates = useInvestStore((s) => s.realEstates);
-  const credits = useCreditStore((s) => s.credits);
-  const allInvestments = React.useMemo(() => [...objects, ...realEstates], [objects, realEstates]);
 
   // --- Component State ---
   const [selectedIds, setSelectedIds] = React.useState<string[]>(() =>
     cashflows.length > 0 ? cashflows.map((cf) => cf.id) : [],
   );
+  // Use the simplified default assumptions
   const [assumptions, setAssumptions] = React.useState(DEFAULT_ASSUMPTIONS);
   const [activeTab, setActiveTab] = React.useState(0);
   const [maxYears, setMaxYears] = React.useState(25);
@@ -99,7 +131,8 @@ export default function CashflowVisualization() {
     );
   };
 
-  const handleSliderChange = (name: keyof typeof assumptions, value: number | number[]) => {
+  // Update handleSliderChange to handle the new assumption key
+  const handleSliderChange = (name: keyof typeof DEFAULT_ASSUMPTIONS, value: number | number[]) => {
     setAssumptions((prev) => ({ ...prev, [name]: Array.isArray(value) ? value[0] : value }));
   };
 
@@ -110,38 +143,46 @@ export default function CashflowVisualization() {
 
   const cumulativeCashflowData = React.useMemo(() => {
     const selectedCashflows = cashflows.filter((cf) => selectedIds.includes(cf.id));
+
+    // Use the Cashflow-Wachstum rate
+    const growthRate = assumptions.rentIncreasePct / 100;
+    // Use the flat monthly deduction
+    const flatDeduction = assumptions.monthlyFlatDeduction;
+
     return selectedCashflows.map((cf) => {
-      const investment = allInvestments.find((i) => i.id === cf.investmentId);
-      // const credit = credits.find((c) => c.id === cf.creditId);
+      // Assuming 'cf' now contains the initial net gain data directly.
+      const initialMonthlyNetGain = parseFloat(
+        (cf as any)?.initialMonthlyNetGain || cf.cashflowMonthly || '0',
+      );
 
       const dataPoints: { x: number; y: number }[] = [{ x: 0, y: 0 }];
       let cumulativeCashflow = 0;
 
-      // netGainMonthly is ALREADY calculated as: rent/income - credit - costs
-      // So it's the FINAL monthly profit/loss
-      const monthlyNetGain = parseFloat(investment?.netGainMonthly || '0');
-      let yearlyNetGain = monthlyNetGain * 12;
+      // Start the simulation with the initial monthly cashflow
+      let currentMonthlyNetGain = initialMonthlyNetGain; // Net gain BEFORE flat deduction
 
       console.log('🔥 Cashflow Debug for:', cf.name, {
-        monthlyNetGain,
-        yearlyNetGain,
-        'Should be positive?': monthlyNetGain > 0,
+        initialMonthlyNetGain,
+        flatDeduction,
       });
 
       for (let year = 1; year <= 25; year++) {
-        // Apply rent increase assumption to the net gain
         if (year > 1) {
-          yearlyNetGain *= 1 + assumptions.rentIncreasePct / 100;
+          // Apply the Cashflow-Wachstum rate to the Monthly Net Gain
+          currentMonthlyNetGain *= 1 + growthRate;
         }
 
-        // The yearly net gain IS the cashflow for this year
-        cumulativeCashflow += yearlyNetGain;
+        // Calculate the Annual Cashflow for this year:
+        // Annual Cashflow = (Monthly Net Gain * 12) - (Flat Deduction * 12)
+        const yearlyNetCashflow = currentMonthlyNetGain * 12 - flatDeduction * 12;
+
+        cumulativeCashflow += yearlyNetCashflow;
         dataPoints.push({ x: year, y: parseFloat(cumulativeCashflow.toFixed(2)) });
       }
 
       return { id: cf.name, data: dataPoints };
     });
-  }, [cashflows, allInvestments, credits, selectedIds, assumptions]);
+  }, [cashflows, selectedIds, assumptions]);
 
   const visibleChartData = React.useMemo(() => {
     return cumulativeCashflowData.map((series) => ({
@@ -208,18 +249,64 @@ export default function CashflowVisualization() {
           />
           <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
             <FormGroup>
-              {filteredCashflows.map((cf) => (
-                <FormControlLabel
-                  key={cf.id}
-                  control={
-                    <Checkbox
-                      checked={selectedIds.includes(cf.id)}
-                      onChange={(e) => handleSelectionChange(cf.id, e.target.checked)}
-                    />
-                  }
-                  label={cf.name}
-                />
-              ))}
+              {filteredCashflows.map((cf) => {
+                // Calculation of initial annual net gain (for label only)
+                const initialMonthlyNetGain = parseFloat(
+                  (cf as any)?.initialMonthlyNetGain || cf.cashflowMonthly || '0',
+                );
+                // Calculate the true starting annual net gain after the flat deduction
+                const annualNetGain =
+                  (initialMonthlyNetGain - assumptions.monthlyFlatDeduction) * 12;
+
+                // ASSUMPTION: 'totalCost' is now available on the cashflow object.
+                const initialCost = parseFloat((cf as any)?.totalCost || '0');
+                const roi = initialCost > 0 ? (annualNetGain / initialCost) * 100 : 0;
+
+                return (
+                  <FormControlLabel
+                    key={cf.id}
+                    // The main styling for the label box needs to ensure content fits the width
+                    sx={{ alignItems: 'flex-start', margin: '4px 0' }} // Adjust alignment and margin
+                    control={
+                      <Checkbox
+                        checked={selectedIds.includes(cf.id)}
+                        onChange={(e) => handleSelectionChange(cf.id, e.target.checked)}
+                      />
+                    }
+                    label={
+                      // Removed my:-0.5, increased vertical space
+                      <Box sx={{ overflow: 'hidden', pt: 0.5 }}>
+                        {/* Line 1: Cashflow Name (noWrap is fine here) */}
+                        <Typography variant="body1" noWrap>
+                          {cf.name}
+                        </Typography>
+
+                        {/* Line 2: Annual Net Gain | ROI */}
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          lineHeight={1.2}
+                          // Key change: nowrap for the entire line to force it onto one line
+                          sx={{
+                            display: 'block',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {/* Shortened "Jährlicher Nettoertrag" to "Jährl. Ertrag" to save space */}
+                          Jährl. Ertrag:&nbsp;
+                          {/* Use String concatenation with a non-breaking space for value € */}
+                          {/* Use the calculated annualNetGain, which includes the flat deduction */}
+                          {fmtMoney(String(annualNetGain))} €
+                          {/* Only show ROI if meaningful (> 0.001%) */}
+                          {roi > 0.001 && ` | Rendite: ${roi.toFixed(1)}%`}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                );
+              })}
               {filteredCashflows.length === 0 && (
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                   Keine Treffer.
@@ -232,8 +319,10 @@ export default function CashflowVisualization() {
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
               Globale Annahmen
             </Typography>
+
+            {/* Cashflow-Wachstum (using rentIncreasePct key) */}
             <Typography variant="caption" color="text.secondary" gutterBottom>
-              Mieterhöhung: {assumptions.rentIncreasePct.toFixed(1)}%
+              Cashflow-Wachstum: {assumptions.rentIncreasePct.toFixed(1)}%
             </Typography>
             <Slider
               value={assumptions.rentIncreasePct}
@@ -246,33 +335,21 @@ export default function CashflowVisualization() {
               size="small"
               sx={{ mb: 2 }}
             />
+
+            {/* Monatliche Pauschalabzüge (€/Monat) - NEW SLIDER */}
             <Typography variant="caption" color="text.secondary" gutterBottom>
-              Kostensteigerung: {assumptions.costIncreasePct.toFixed(1)}%
+              Monatliche Pauschalabzüge: {assumptions.monthlyFlatDeduction.toFixed(0)} €
             </Typography>
             <Slider
-              value={assumptions.costIncreasePct}
-              onChange={(_, val) => handleSliderChange('costIncreasePct', val)}
+              value={assumptions.monthlyFlatDeduction}
+              onChange={(_, val) => handleSliderChange('monthlyFlatDeduction', val)}
               valueLabelDisplay="auto"
-              valueLabelFormat={(v) => `${v.toFixed(1)}%`}
-              step={0.1}
+              valueLabelFormat={(v) => `${v.toFixed(0)}€`}
+              step={10}
               min={0}
-              max={10}
+              max={500}
               size="small"
               sx={{ mb: 2 }}
-            />
-            <Typography variant="caption" color="text.secondary" gutterBottom>
-              Wertsteigerung: {assumptions.valueAppreciationPct.toFixed(1)}%
-            </Typography>
-            <Slider
-              value={assumptions.valueAppreciationPct}
-              onChange={(_, val) => handleSliderChange('valueAppreciationPct', val)}
-              valueLabelDisplay="auto"
-              valueLabelFormat={(v) => `${v.toFixed(1)}%`}
-              step={0.1}
-              min={0}
-              max={15}
-              size="small"
-              disabled
             />
           </Box>
         </>
@@ -366,6 +443,8 @@ export default function CashflowVisualization() {
                 pointBorderColor={{ from: 'serieColor' }}
                 enableGridX={true}
                 enableGridY={true}
+                // Custom tooltip now safely defined
+                tooltip={SimpleCustomTooltip}
                 legends={[
                   {
                     anchor: 'bottom-right',
