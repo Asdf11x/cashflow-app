@@ -56,7 +56,8 @@
     "kinds": {
       "object": "Objekt",
       "realEstate": "Immobilie",
-      "fixedTermDeposit": "Festgeld"
+      "fixedTermDeposit": "Festgeld",
+      "stock": "Aktie"
     }
   },
   "creditsList": {
@@ -109,6 +110,7 @@
     "editTitle": "Investment bearbeiten",
     "createTitle": "Investment hinzufügen",
     "tabRealEstate": "Immobilie",
+    "tabStock": "Aktie",
     "tabDeposit": "Festgeld",
     "tabObject": "Objekt"
   },
@@ -129,6 +131,15 @@
       "monthly": "Monatlich",
       "yearly": "Jährlich"
     },
+    "taxes": {
+      "title": "Steuern & Abzüge",
+      "taxAnnualLabel": "Jährliche Steuer",
+      "taxBaseTitle": "Steuerbemessungsgrundlage (Bruttogewinn)",
+      "taxFreeAllowanceLabel": "Sparer-Pauschbetrag (jährlich)",
+      "withholdingTax": "Abgeltungssteuer",
+      "solidaritySurcharge": "Solidaritätszuschlag",
+      "churchTax": "Kirchensteuer"
+    },
     "optionalAccordion": {
       "title": "Steuern & Gebühren (optional)",
       "enableTaxes": "Steuern berücksichtigen",
@@ -136,6 +147,7 @@
       "taxFreeAllowanceLabel": "Sparer-Pauschbetrag (jährlich)"
     },
     "fees": {
+      "title": "Gebühren (optional)",
       "accountYearly": "Kontoführungsgebühren (jährlich)",
       "otherOneTime": "Sonstige einmalige Kosten"
     },
@@ -146,6 +158,49 @@
       "totalNetGainLabel": "Gesamtgewinn (netto)",
       "annualNetGainLabel": "Jährlicher Gewinn (netto)",
       "monthlyNetGainLabel": "Monatlicher Gewinn (netto)",
+      "netYieldLabel": "Nettorendite p.a."
+    }
+  },
+  "stockForm": {
+    "defaultName": "Aktienanlage",
+    "nameLabel": "Name",
+    "nameHelperEmpty": "Name darf nicht leer sein",
+    "nameHelperInUse": "Name bereits vergeben",
+    "isinWknLabel": "ISIN/WKN",
+    "linkLabel": "Link (optional)",
+    "linkPlaceholder": "z.B. Broker-Link zur Aktie",
+    "purchasePriceLabel": "Kaufpreis (pro Stück)",
+    "purchasePriceHelper": "Kaufpreis muss > 0 sein",
+    "sharesLabel": "Anzahl der Stücke",
+    "sharesHelper": "Anzahl muss > 0 sein",
+    "currentPriceLabel": "Aktueller Kurs (pro Stück)",
+    "expectedPriceLabel": "Erwarteter Kurs (pro Stück)",
+    "dividendPerShareLabel": "Dividende pro Stück (jährlich)",
+    "annualGrossDividendLabel": "Jährliche Bruttodividende",
+    "annualRunningCostsLabel": "Laufende Gesamtkosten (Jährl.)",
+    "accordions": {
+      "revenue": "Einnahmen (Dividenden)",
+      "runningCosts": "Laufende Kosten",
+      "sale": "Verkauf/Exit"
+    },
+    "costs": {
+      "orderCostBuy": "Orderkosten (Kauf)",
+      "orderCostSell": "Orderkosten (Verkauf)",
+      "depotCostsYearly": "Depotkosten (Jährlich)"
+    },
+    "taxes": {
+      "capitalGainsTax": "Kapitalertragsteuer (Abgeltung)",
+      "solidaritySurcharge": "Solidaritätszuschlag",
+      "churchTax": "Kirchensteuer"
+    },
+    "expectedSellPriceLabel": "Erwarteter Verkaufskurs (pro Stück)",
+    "sellingCostsLabel": "Gesamte Verkaufskosten",
+    "netSaleProceedsLabel": "Netto Verkaufserlös",
+    "summary": {
+      "title": "Zusammenfassung",
+      "totalInvestmentLabel": "Gesamtinvestition",
+      "annualNetGainLabel": "Jährlicher Nettogewinn (Dividenden)",
+      "monthlyNetGainLabel": "Monatlicher Nettogewinn (Dividenden)",
       "netYieldLabel": "Nettorendite p.a."
     }
   },

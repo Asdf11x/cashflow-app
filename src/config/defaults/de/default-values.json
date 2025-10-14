@@ -187,6 +187,48 @@
         "withholdingTaxRate": 25,
         "taxFreeAllowance": 0
       }
+    },
+    "stocks": {
+      "basic": {
+        "name": {
+          "i18nKey": "stockForm.defaultName"
+        },
+        "startAmount": "100",
+        "numberOfShares": "10",
+        "dividendPerShare": "1.2"
+      },
+      "costs": {
+        "orderCostBuy": {
+          "enabled": true,
+          "value": "9.99",
+          "mode": "currency",
+          "allowModeChange": false,
+          "i18nKey": "stockForm.costs.orderCostBuy"
+        },
+        "orderCostSell": {
+          "enabled": true,
+          "value": "9.99",
+          "mode": "currency",
+          "allowModeChange": false,
+          "i18nKey": "stockForm.costs.orderCostSell"
+        },
+        "depotCostsYearly": {
+          "enabled": false,
+          "value": "0",
+          "mode": "currency",
+          "allowModeChange": true,
+          "i18nKey": "stockForm.costs.depotCostsYearly"
+        }
+      },
+      "taxes": {
+        "capitalGainsTaxRate": 25,
+        "solidaritySurchargeRate": 5.5,
+        "churchTaxRate": 0,
+        "taxFreeAllowance": "1000"
+      },
+      "exit": {
+        "sellingCosts": "19.99"
+      }
     }
   },
   "credit": {

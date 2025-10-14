@@ -7,6 +7,7 @@ import type {
   ObjectInvestment,
   RealEstateInvestment,
   Depositvestment,
+  StockInvestment, // <--- NEW
 } from '../../core/domain/types.ts';
 import ResourceList, { type HeadCell } from '../shared/ResourceList';
 import { useCurrencyConverter } from '../../core/hooks/useCurrencyConverter';
@@ -18,7 +19,7 @@ type InvestmentRow = {
   purchasePrice: number;
   netGainMonthly: number;
   yieldPctYearly: number;
-  kind: 'OBJECT' | 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT';
+  kind: 'OBJECT' | 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT' | 'STOCK'; // <--- NEW
   link?: string;
   currency: string;
 };
@@ -36,8 +37,16 @@ const NameCell = ({ name, link }: { name: string; link?: string }) => {
 
 export default function InvestmentsList() {
   const { t } = useTranslation();
-  const { objects, realEstates, deposits, removeObject, removeRealEstate, removeDeposit } =
-    useInvestStore();
+  const {
+    objects,
+    realEstates,
+    deposits,
+    stocks,
+    removeObject,
+    removeRealEstate,
+    removeDeposit,
+    removeStock,
+  } = useInvestStore(); // <--- NEW: stocks, removeStock
   const { convert, mainCurrency, isConversionActive } = useCurrencyConverter();
   const [undoCtx, setUndoCtx] = React.useState<{ item: any; subsetIndex: number } | null>(null);
 
@@ -92,6 +101,17 @@ export default function InvestmentsList() {
         netGainMonthly: parseFloat(d.netGainMonthly),
         yieldPctYearly: parseFloat(d.returnPercent),
       })),
+      ...stocks.map((s) => ({
+        // <--- NEW: Stocks mapping
+        id: s.id,
+        name: s.name,
+        link: s.link,
+        kind: 'STOCK' as const,
+        currency: s.currency,
+        purchasePrice: parseFloat(s.totalPrice),
+        netGainMonthly: parseFloat(s.netGainMonthly),
+        yieldPctYearly: parseFloat(s.returnPercent),
+      })),
     ];
 
     if (!isConversionActive) {
@@ -103,10 +123,15 @@ export default function InvestmentsList() {
       purchasePrice: convert(inv.purchasePrice, inv.currency),
       netGainMonthly: convert(inv.netGainMonthly, inv.currency),
     }));
-  }, [objects, realEstates, deposits, isConversionActive, convert]);
+  }, [objects, realEstates, deposits, stocks, isConversionActive, convert]); // <--- NEW: stocks dependency
 
   const handleDelete = (row: InvestmentRow) => {
-    let originalItem: ObjectInvestment | RealEstateInvestment | Depositvestment | undefined;
+    let originalItem:
+      | ObjectInvestment
+      | RealEstateInvestment
+      | Depositvestment
+      | StockInvestment
+      | undefined; // <--- NEW type
     switch (row.kind) {
       case 'OBJECT':
         originalItem = objects.find((i) => i.id === row.id);
@@ -129,6 +154,13 @@ export default function InvestmentsList() {
           removeDeposit(row.id);
         }
         break;
+      case 'STOCK': // <--- NEW case
+        originalItem = stocks.find((i) => i.id === row.id);
+        if (originalItem) {
+          setUndoCtx({ item: originalItem, subsetIndex: stocks.indexOf(originalItem) });
+          removeStock(row.id);
+        }
+        break;
     }
   };
 
@@ -139,6 +171,7 @@ export default function InvestmentsList() {
       if (item.kind === 'OBJECT') s.objects.splice(subsetIndex, 0, item);
       else if (item.kind === 'REAL_ESTATE') s.realEstates.splice(subsetIndex, 0, item);
       else if (item.kind === 'FIXED_TERM_DEPOSIT') s.deposits.splice(subsetIndex, 0, item);
+      else if (item.kind === 'STOCK') s.stocks.splice(subsetIndex, 0, item); // <--- NEW
       return s;
     });
     setUndoCtx(null);
@@ -149,6 +182,7 @@ export default function InvestmentsList() {
       OBJECT: 'object',
       REAL_ESTATE: 'realEstate',
       FIXED_TERM_DEPOSIT: 'fixedTermDeposit',
+      STOCK: 'stock', // <--- NEW
     };
     return t(`investmentsList.kinds.${map[kind]}`);
   };
@@ -157,6 +191,7 @@ export default function InvestmentsList() {
     if (item.kind === 'OBJECT') return objects.find((o) => o.id === item.id);
     if (item.kind === 'REAL_ESTATE') return realEstates.find((r) => r.id === item.id);
     if (item.kind === 'FIXED_TERM_DEPOSIT') return deposits.find((d) => d.id === item.id);
+    if (item.kind === 'STOCK') return stocks.find((s) => s.id === item.id); // <--- NEW
     return undefined;
   };
 
@@ -194,7 +229,7 @@ export default function InvestmentsList() {
           <Chip
             label={getKindLabel(r.kind)}
             size="small"
-            color={r.kind === 'OBJECT' ? 'primary' : 'secondary'}
+            color={r.kind === 'OBJECT' || r.kind === 'STOCK' ? 'primary' : 'secondary'} // <--- NEW color logic
           />
           <Box sx={{ display: 'grid', gap: 1, mt: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -228,3 +263,4 @@ export default function InvestmentsList() {
     />
   );
 }
+// --- END OF FILE InvestmentsList.tsx ---

@@ -1,11 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ObjectInvestment, RealEstateInvestment, Depositvestment } from '../domain/types';
+import type {
+  ObjectInvestment,
+  RealEstateInvestment,
+  Depositvestment,
+  StockInvestment,
+} from '../domain/types';
 
 type State = {
   objects: ObjectInvestment[];
   realEstates: RealEstateInvestment[];
   deposits: Depositvestment[];
+  stocks: StockInvestment[];
 };
 
 type Actions = {
@@ -20,6 +26,10 @@ type Actions = {
   addDeposit: (investment: Depositvestment) => void;
   updateDeposit: (investment: Depositvestment) => void;
   removeDeposit: (id: string) => void;
+
+  addStock: (investment: StockInvestment) => void; // <--- NEW
+  updateStock: (investment: StockInvestment) => void; // <--- NEW
+  removeStock: (id: string) => void; // <--- NEW
 };
 
 export const useInvestStore = create<State & Actions>()(
@@ -28,6 +38,7 @@ export const useInvestStore = create<State & Actions>()(
       objects: [],
       realEstates: [],
       deposits: [],
+      stocks: [], // <--- NEW
 
       addObject: (newObject) => set((s) => ({ objects: [...s.objects, newObject] })),
 
@@ -59,6 +70,17 @@ export const useInvestStore = create<State & Actions>()(
         })),
 
       removeDeposit: (id) => set((s) => ({ deposits: s.deposits.filter((d) => d.id !== id) })),
+
+      // <--- NEW ACTIONS for Stock Investment ---
+      addStock: (newStock) => set((s) => ({ stocks: [...s.stocks, newStock] })),
+
+      updateStock: (updatedStock) =>
+        set((s) => ({
+          stocks: s.stocks.map((d) => (d.id === updatedStock.id ? updatedStock : d)),
+        })),
+
+      removeStock: (id) => set((s) => ({ stocks: s.stocks.filter((d) => d.id !== id) })),
+      // -----------------------------------------
     }),
     {
       name: 'invest-storage',

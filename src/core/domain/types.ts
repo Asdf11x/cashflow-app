@@ -21,6 +21,38 @@ export interface ObjectInvestment extends BaseInvestment {
   costMonthly: Money;
 }
 
+export interface StockInvestment extends BaseInvestment {
+  kind: 'STOCK';
+  isinWkn: string;
+  numberOfShares: number;
+  currentPrice: Money;
+  expectedPrice: Money;
+  dividendPerShare: Money;
+
+  // Costs
+  orderCostBuy: Money;
+  orderCostSell: Money;
+  depotCostsYearly: Money;
+
+  // Taxes (input for calculation, can be saved)
+  incomeTaxRate: number; // for calculation
+  solidaritySurchargeRate: number;
+  churchTaxRate?: number;
+  capitalGainsTaxRate: number;
+  taxFreeAllowance: Money;
+  withholdingTaxRateForeign?: number;
+
+  // Exit/Sale
+  expectedSellPrice: Money;
+  sellingCosts: Money;
+
+  // Calculated intermediate values (optional to save, but good for form persistence)
+  annualGrossDividend: Money;
+  totalOrderCostsBuy: Money;
+  totalOrderCostsSell: Money;
+  totalTaxAnnual: Money;
+}
+
 export interface Depositvestment extends BaseInvestment {
   kind: 'FIXED_TERM_DEPOSIT';
   termMonths: number;

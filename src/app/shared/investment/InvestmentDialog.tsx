@@ -14,6 +14,9 @@ import {
 import RealEstateForm from './RealEstateForm';
 import ObjectForm from './ObjectForm';
 import DepositForm from './DepositForm';
+import StockForm from './StockForm'; // <--- NEW IMPORT
+
+type InvestmentKind = 'REAL_ESTATE' | 'STOCK' | 'FIXED_TERM_DEPOSIT' | 'OBJECT'; // <--- UPDATED type
 
 export default function InvestmentDialog({
   onClose,
@@ -22,12 +25,10 @@ export default function InvestmentDialog({
 }: {
   onClose: () => void;
   existingNames: string[];
-  editItem?: { id: string; kind: 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT' | 'OBJECT' } | null;
+  editItem?: { id: string; kind: InvestmentKind } | null; // <--- UPDATED type
 }) {
   const { t } = useTranslation();
-  const [tab, setTab] = React.useState<'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT' | 'OBJECT'>(
-    editItem?.kind || 'REAL_ESTATE',
-  );
+  const [tab, setTab] = React.useState<InvestmentKind>(editItem?.kind || 'REAL_ESTATE');
   const formRef = React.useRef<{ submit: () => void; isValid: () => boolean }>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -35,7 +36,7 @@ export default function InvestmentDialog({
 
   const handleTabChange = (
     _: React.SyntheticEvent,
-    v: 'REAL_ESTATE' | 'OBJECT' | 'FIXED_TERM_DEPOSIT',
+    v: InvestmentKind, // <--- UPDATED type
   ) => {
     if (!editItem) {
       setTab(v);
@@ -88,6 +89,11 @@ export default function InvestmentDialog({
           disabled={!!editItem}
         />
         <Tab
+          value="STOCK" // <--- NEW TAB
+          label={t('investmentDialog.tabStock')}
+          disabled={!!editItem}
+        />
+        <Tab
           value="FIXED_TERM_DEPOSIT"
           label={t('investmentDialog.tabDeposit')}
           disabled={!!editItem}
@@ -109,6 +115,14 @@ export default function InvestmentDialog({
             onClose={onClose}
             existingNames={existingNames}
             editId={editItem?.kind === 'REAL_ESTATE' ? editItem.id : undefined}
+          />
+        )}
+        {tab === 'STOCK' && ( // <--- NEW FORM
+          <StockForm
+            ref={formRef}
+            onClose={onClose}
+            existingNames={existingNames}
+            editId={editItem?.kind === 'STOCK' ? editItem.id : undefined}
           />
         )}
         {tab === 'FIXED_TERM_DEPOSIT' && (
@@ -140,3 +154,4 @@ export default function InvestmentDialog({
     </Dialog>
   );
 }
+// --- END OF FILE InvestmentDialog.tsx ---

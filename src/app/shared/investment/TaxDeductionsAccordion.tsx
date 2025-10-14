@@ -1,3 +1,5 @@
+// --- START OF FILE TaxDeductionsAccordion.tsx ---
+
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -43,7 +45,9 @@ export const TaxDeductionsAccordion = ({
     const taxFreeAllowanceD = D(normalize(taxFreeAllowance));
     const taxableGain = Decimal.max(grossAnnualGain.sub(taxFreeAllowanceD), 0);
 
-    if (taxableGain.lte(0)) return D(0);
+    if (taxableGain.lte(0)) {
+      return D(0);
+    }
 
     // 1. Calculate Withholding Tax (based on taxable gain)
     const withholdingTaxConfig = taxDeductions.withholdingTax;
@@ -69,38 +73,61 @@ export const TaxDeductionsAccordion = ({
     onTotalAnnualTaxChange(totalAnnualTax);
   }, [totalAnnualTax, onTotalAnnualTaxChange]);
 
-  return (
-    <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
-          <Typography fontWeight={700}>{t('depositForm.optionalAccordion.title')}</Typography>
-          <Typography color="text.secondary">
-            - {fmtMoney(totalAnnualTax.div(12).toFixed(0))} {currency}
-          </Typography>
-        </Box>
-      </AccordionSummary>
-      <AccordionDetails>
-        <Stack spacing={2}>
-          <TextField
-            label={t('depositForm.optionalAccordion.taxFreeAllowanceLabel')}
-            value={taxFreeAllowance}
-            onChange={(e) => onTaxFreeAllowanceChange(sanitizeDecimal(e.target.value))}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">{currency}</InputAdornment>,
-            }}
-          />
-          <Divider />
-          {Object.entries(taxDeductions).map(([key, item]) => (
-            <CostInputRow
-              key={key}
-              item={item}
-              onItemChange={(v) => onTaxDeductionsChange(key, v)}
-              baseAmount={grossAnnualGain} // Base is for display, logic is handled above
-              currency={currency}
+  const titleKey = 'depositForm.taxes.title';
+  const allowanceKey = 'depositForm.taxes.taxFreeAllowanceLabel';
+
+  // Memoize the render to prevent unnecessary re-renders
+  return React.useMemo(
+    () => (
+      <Accordion defaultExpanded={true}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
+            <Typography fontWeight={700}>{t(titleKey)}</Typography>
+            <Typography color="text.secondary">
+              {t('depositForm.taxes.taxAnnualLabel')}: {fmtMoney(totalAnnualTax.toFixed(0))}{' '}
+              {currency}
+            </Typography>
+          </Box>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Stack spacing={2}>
+            <Typography variant="body2" color="text.secondary">
+              {t('depositForm.taxes.taxBaseTitle')}: {fmtMoney(grossAnnualGain.toString())}{' '}
+              {currency}
+            </Typography>
+            <TextField
+              label={t(allowanceKey)}
+              value={taxFreeAllowance}
+              onChange={(e) => onTaxFreeAllowanceChange(sanitizeDecimal(e.target.value))}
+              InputProps={{
+                endAdornment: <InputAdornment position="end">{currency}</InputAdornment>,
+              }}
             />
-          ))}
-        </Stack>
-      </AccordionDetails>
-    </Accordion>
+            <Divider />
+            {Object.entries(taxDeductions).map(([key, item]) => (
+              <CostInputRow
+                key={key}
+                item={{ ...item, label: t(item.label) }}
+                onItemChange={(v) => onTaxDeductionsChange(key, v)}
+                baseAmount={grossAnnualGain}
+                currency={currency}
+              />
+            ))}
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
+    ),
+    [
+      taxDeductions,
+      totalAnnualTax,
+      t,
+      titleKey,
+      allowanceKey,
+      taxFreeAllowance,
+      onTaxDeductionsChange,
+      grossAnnualGain,
+      currency,
+    ],
   );
 };
+// --- END OF FILE TaxDeductionsAccordion.tsx ---
