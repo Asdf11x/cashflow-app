@@ -32,9 +32,17 @@ interface CostInputRowProps {
   onItemChange: (newItem: Partial<CostItemState>) => void;
   baseAmount: Decimal;
   currency: string;
+  disabled?: boolean; // Changed to optional for backward compatibility
 }
 
-export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostInputRowProps) {
+// --- THIS IS THE CORRECTED COMPONENT ---
+export function CostInputRow({
+  item,
+  onItemChange,
+  baseAmount,
+  currency,
+  disabled = false,
+}: CostInputRowProps) {
   const { t } = useTranslation();
   const { enabled, value, mode, allowModeChange, label } = item;
   const absoluteAmount = React.useMemo(
@@ -55,6 +63,8 @@ export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostI
   };
 
   const isPercent = mode === 'percent';
+  const isRowDisabled = !enabled || disabled; // A single variable to determine if inputs should be disabled
+
   return (
     <Box
       sx={{
@@ -63,15 +73,20 @@ export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostI
         width: '100%',
         flexDirection: { xs: 'column', sm: 'row' },
         alignItems: { xs: 'flex-start', sm: 'center' },
+        opacity: disabled ? 0.7 : 1, // Visually indicate that the entire row is disabled
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1.5, flexGrow: 1 }}>
-        <Checkbox checked={enabled} onChange={(e) => onItemChange({ enabled: e.target.checked })} />
+        <Checkbox
+          checked={enabled}
+          onChange={(e) => onItemChange({ enabled: e.target.checked })}
+          disabled={disabled} // --- CHANGE 1: The parent 'disabled' prop overrides the checkbox
+        />
         <TextField
           label={label}
           value={value}
           onChange={(e) => onItemChange({ value: sanitizeDecimal(e.target.value) })}
-          disabled={!enabled}
+          disabled={isRowDisabled} // --- CHANGE 2: The text field is disabled if the row is disabled OR the checkbox is unchecked
           type="text"
           inputProps={{ inputMode: 'decimal' }}
           fullWidth
@@ -79,7 +94,10 @@ export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostI
             endAdornment: (
               <InputAdornment position="end">
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Typography variant="body2" color={enabled ? 'text.primary' : 'text.disabled'}>
+                  <Typography
+                    variant="body2"
+                    color={isRowDisabled ? 'text.disabled' : 'text.primary'}
+                  >
                     {isPercent ? '%' : currency}
                   </Typography>
                   {isPercent && (
@@ -100,7 +118,8 @@ export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostI
         exclusive
         onChange={handleToggleMode}
         size="small"
-        disabled={!enabled || !allowModeChange}
+        // --- CHANGE 3: The toggle group is disabled if the row is disabled OR mode change is disallowed
+        disabled={isRowDisabled || !allowModeChange}
         sx={{ width: { xs: '100%', sm: 'auto' } }}
       >
         <ToggleButton value="currency" sx={{ width: '50%' }}>
@@ -114,7 +133,7 @@ export function CostInputRow({ item, onItemChange, baseAmount, currency }: CostI
   );
 }
 
-// --- Split Cost Input Row Component ---
+// --- Split Cost Input Row Component (UNCHANGED) ---
 interface SplitCostInputRowProps {
   item: SplitCostItemState;
   onItemChange: (newItem: Partial<SplitCostItemState>) => void;

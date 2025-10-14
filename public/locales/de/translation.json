@@ -201,6 +201,9 @@
       "houseFeeApportionable": "davon umlagefähig",
       "other": "Sonstiges"
     },
+    "runningCosts": {
+      "nonApportionableHouseFee": "Nicht umlagefähiges Hausgeld"
+    },
     "deductions": {
       "depreciation": "Abschreibung (AfA) auf ",
       "incomeRelatedExpenses": "Werbungskosten",
