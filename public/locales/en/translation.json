@@ -202,6 +202,9 @@
       "houseFeeApportionable": "of which is apportionable",
       "other": "Other"
     },
+    "runningCosts": {
+      "nonApportionableHouseFee": "non-apportionable association fee"
+    },
     "deductions": {
       "depreciation": "Depreciation (AfA) on ",
       "incomeRelatedExpenses": "Income-related expenses",

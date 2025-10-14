@@ -84,6 +84,34 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
       setRunningCostsSplit((prev) => ({ ...prev, [key]: { ...prev[key], ...newValues } }));
     };
 
+    // --- NEW: Centralized calculation for the non-apportionable house fee ---
+    const nonApportionableMonthlyHouseFee = React.useMemo(() => {
+      const houseFeeItem = runningCostsSplit.houseFee;
+      if (!houseFeeItem.enabled) {
+        return D(0);
+      }
+
+      const totalMonthlyHouseFee =
+        houseFeeItem.mode === 'percent'
+          ? baseAmount.mul(pctToFrac(houseFeeItem.value1))
+          : D(normalize(houseFeeItem.value1));
+
+      const isPercentMode = houseFeeItem.mode === 'percent';
+      let apportionableMonthly: Decimal;
+      if (isPercentMode) {
+        // value2 is a percentage of the total house fee (totalMonthlyHouseFee)
+        apportionableMonthly = totalMonthlyHouseFee.mul(pctToFrac(houseFeeItem.value2));
+      } else {
+        // value2 is an absolute currency amount
+        apportionableMonthly = D(normalize(houseFeeItem.value2));
+      }
+
+      // Non-Apportionable Part = Total House Fee - Apportionable Part
+      const nonApportionableMonthly = totalMonthlyHouseFee.sub(apportionableMonthly);
+      // Ensure the result is not negative
+      return nonApportionableMonthly.gte(0) ? nonApportionableMonthly : D(0);
+    }, [runningCostsSplit.houseFee, baseAmount]);
+
     // 1. Calculate Total Annual Tax Deductions (Absetzungen)
     const deductionsTotalAnnual = React.useMemo(() => {
       let total = D(0);
@@ -92,7 +120,6 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
       Object.entries(deductions).forEach(([key, item]) => {
         if (!item.enabled) return;
 
-        // Depreciation ('depreciation', 'specialDepreciation') is on purchase price, others on annual rent
         const isOnPurchasePrice = key === 'depreciation' || key === 'specialDepreciation';
         const base = isOnPurchasePrice ? purchasePrice : annualColdRent;
 
@@ -100,7 +127,6 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
         if (item.mode === 'percent') {
           valueAnnual = base.mul(pctToFrac(item.value));
         } else {
-          // mode === 'currency'. Value is now expected to be ANNUAL
           const multiplier = 1;
           valueAnnual = D(normalize(item.value)).mul(multiplier);
         }
@@ -108,32 +134,11 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
       });
 
       // 1.2 House Fee (Non-Apportionable Part)
-      const houseFeeItem = runningCostsSplit.houseFee;
-      if (houseFeeItem.enabled) {
-        // 1. Calculate the Monthly House Fee Sum (Total House Fee) - Base for value1 (relative to baseAmount)
-        const totalMonthlyHouseFee =
-          houseFeeItem.mode === 'percent'
-            ? baseAmount.mul(pctToFrac(houseFeeItem.value1))
-            : D(normalize(houseFeeItem.value1));
-
-        // 2. Calculate the Apportionable Monthly Amount (Non-Apportionable Part) - Base for value2 is totalMonthlyHouseFee
-        const isPercentMode = houseFeeItem.mode === 'percent';
-        let apportionableMonthly: Decimal;
-        if (isPercentMode) {
-          // value2 is a percentage of the total house fee (totalMonthlyHouseFee)
-          apportionableMonthly = totalMonthlyHouseFee.mul(pctToFrac(houseFeeItem.value2));
-        } else {
-          // value2 is an absolute currency amount
-          apportionableMonthly = D(normalize(houseFeeItem.value2));
-        }
-
-        // Non-Apportionable Part (Deduction) = Total House Fee - Apportionable Part
-        const nonApportionableMonthly = totalMonthlyHouseFee.sub(apportionableMonthly);
-        total = total.add(nonApportionableMonthly.mul(12)); // Add the annual non-apportionable part
-      }
+      // Use the pre-calculated monthly value and multiply by 12 for the annual deduction
+      total = total.add(nonApportionableMonthlyHouseFee.mul(12));
 
       return total;
-    }, [deductions, runningCostsSplit, purchasePrice, annualColdRent, baseAmount]);
+    }, [deductions, nonApportionableMonthlyHouseFee, purchasePrice, annualColdRent]);
 
     // Calculate the Taxable Rental Income (Tax Base)
     const taxableRentalIncome = annualColdRent.sub(deductionsTotalAnnual);
@@ -159,7 +164,7 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
       if (other?.enabled) {
         otherDeductionsAnnual =
           other.mode === 'currency'
-            ? D(normalize(other.value)) // Assuming currency here means ANNUAL flat amount for tax
+            ? D(normalize(other.value))
             : taxBase.mul(pctToFrac(other.value));
       }
 
@@ -169,10 +174,12 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
         .add(otherDeductionsAnnual);
     }, [taxDeductions, taxableRentalIncome]);
 
-    // 3. Calculate Total Monthly Other Running Costs (excluding house fee which is now a tax deduction)
+    // 3. Calculate Total Monthly Other Running Costs (NOW including the non-apportionable house fee)
     const otherRunningCostsTotalMonthly = React.useMemo(() => {
-      let total = D(0);
-      // House Fee split logic REMOVED from here, as it's now in deductions
+      // Start with the non-apportionable part of the house fee
+      let total = nonApportionableMonthlyHouseFee;
+
+      // Add the other running costs
       Object.values(otherRunningCosts).forEach((cost) => {
         if (cost.enabled) {
           const value =
@@ -183,7 +190,7 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
         }
       });
       return total;
-    }, [otherRunningCosts, baseAmount]);
+    }, [otherRunningCosts, baseAmount, nonApportionableMonthlyHouseFee]);
 
     // Report Total Annual Running Costs (Tax Costs + Other Running Costs Annual)
     React.useEffect(() => {
@@ -201,6 +208,16 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
         otherRunningCosts,
       }),
     }));
+
+    // --- NEW: Prepare a read-only item for display in the "Other Running Costs" section ---
+    const nonApportionableHouseFeeItemForDisplay: CostItemState = {
+      enabled: true, // Always show the row
+      // --- MODIFIED LINE: Rounds to 2 decimal places and removes trailing .00 ---
+      value: nonApportionableMonthlyHouseFee.toDP(2).toString(),
+      mode: 'currency',
+      allowModeChange: false,
+      label: t('realEstateForm.runningCosts.nonApportionableHouseFee'),
+    };
 
     return (
       <>
@@ -227,23 +244,18 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
                       : annualColdRent
                   }
                   currency={currency}
-                  // Custom label translation key assuming:
-                  // depreciation -> Abschreibung, incomeRelatedExpenses -> Werbungskosten,
-                  // debtInterest -> Schuldzinsen, specialDepreciation -> Sonderabschreibung
                 />
               ))}
-              {/* House Fee Split Input - now part of deductions logic */}
               <SplitCostInputRow
                 item={runningCostsSplit.houseFee}
                 onItemChange={(v) => handleSplitCostChange('houseFee', v)}
-                baseAmount={baseAmount} // Monthly cold rent (Base for value1)
+                baseAmount={baseAmount}
                 currency={currency}
               />
             </Stack>
           </AccordionDetails>
         </Accordion>
 
-        {/* EXISTING: Tax Deductions Section (Steuerliche Abzüge) - Now uses Taxable Income as base */}
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
@@ -262,7 +274,7 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
                   key={key}
                   item={item}
                   onItemChange={(v) => handleCostChange(setTaxDeductions)(key, v)}
-                  baseAmount={taxableRentalIncome} // NEW: Tax base is Taxable Rental Income
+                  baseAmount={taxableRentalIncome}
                   currency={currency}
                 />
               ))}
@@ -270,7 +282,7 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
           </AccordionDetails>
         </Accordion>
 
-        {/* EXISTING: Other Running Costs Section (Excluding House Fee) */}
+        {/* --- MODIFIED: Other Running Costs Section --- */}
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', pr: 2 }}>
@@ -284,13 +296,23 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
           </AccordionSummary>
           <AccordionDetails>
             <Stack spacing={2}>
-              {/* Removed SplitCostInputRow for houseFee */}
+              {/* --- NEW: Display the non-editable, calculated house fee --- */}
+              <CostInputRow
+                key="non-apportionable-house-fee"
+                item={nonApportionableHouseFeeItemForDisplay}
+                onItemChange={() => {}} // No-op function as it cannot be changed here
+                baseAmount={baseAmount} // Not used for currency mode, but required by prop
+                currency={currency}
+                disabled // This is the crucial new prop
+              />
+
+              {/* Existing "other" costs */}
               {Object.entries(otherRunningCosts).map(([key, item]) => (
                 <CostInputRow
                   key={key}
                   item={item}
                   onItemChange={(v) => handleCostChange(setOtherRunningCosts)(key, v)}
-                  baseAmount={baseAmount} // Monthly cold rent
+                  baseAmount={baseAmount}
                   currency={currency}
                 />
               ))}
@@ -303,4 +325,3 @@ const RunningCostsSection = React.forwardRef<RunningCostsSectionHandle, RunningC
 );
 
 export default RunningCostsSection;
-// --- END OF FILE RunningCostsSection.tsx ---
