@@ -10,7 +10,6 @@ import {
   ListItemIcon,
   ListItemText,
   Box,
-  Divider,
   useMediaQuery,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -54,13 +53,22 @@ export default function Layout() {
 
   const drawer = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/*
+        MODIFICATION 1: Replaced the hidden Toolbar with a Toolbar containing the logo.
+        This Toolbar now serves the dual purpose of:
+        1. Creating the correct vertical alignment space.
+        2. Displaying the logo in a prominent position at the top of the permanent drawer.
+      */}
+      <Toolbar sx={{ justifyContent: 'center' }}>
+        <Box
+          component="img"
+          src="/rr-logo.png"
+          alt="App Logo"
+          sx={{ height: 32 }} // Adjust height as needed, no need for margin since it's centered
+        />
+      </Toolbar>
+
       <Box>
-        <Toolbar>
-          <Typography variant="h6" fontWeight={800}>
-            {t('layout.header.title')}
-          </Typography>
-        </Toolbar>
-        <Divider />
         <List>
           {NAV_ITEMS.map((item) => {
             const active =
@@ -100,14 +108,33 @@ export default function Layout() {
     >
       <AppBar color="inherit" position="sticky" sx={{ zIndex: theme.zIndex.drawer + 1 }}>
         <Toolbar>
-          {!isDesktop && (
-            <IconButton edge="start" onClick={() => setOpen(true)} sx={{ mr: 2 }}>
-              <MenuIcon />
-            </IconButton>
+          {isDesktop ? (
+            // Desktop View: Only the Centered Title, as the Logo is now in the drawer
+            <>
+              {/* Box for visual balance (approx width of logo) - keeping this for perfect center alignment of the Title*/}
+              <Box sx={{ width: 48, mr: 2 }} />
+
+              {/* Centered Title */}
+              <Box sx={{ flexGrow: 1, textAlign: 'center' }}>
+                <Typography variant="h6" fontWeight={800} component="div">
+                  {t('layout.header.title')}
+                </Typography>
+              </Box>
+
+              {/* Empty Box for visual balance (approx width of logo) */}
+              <Box sx={{ width: 48, mr: 2 }} />
+            </>
+          ) : (
+            // Mobile View: Menu Icon and Page Title
+            <>
+              <IconButton edge="start" onClick={() => setOpen(true)} sx={{ mr: 2 }}>
+                <MenuIcon />
+              </IconButton>
+              <Typography variant="h6" fontWeight={700}>
+                {pageTitle}
+              </Typography>
+            </>
           )}
-          <Typography variant="h6" fontWeight={700} sx={{ display: { lg: 'none' } }}>
-            {pageTitle}
-          </Typography>
         </Toolbar>
       </AppBar>
 
@@ -115,7 +142,14 @@ export default function Layout() {
         {isDesktop ? (
           <Drawer
             variant="permanent"
-            PaperProps={{ sx: { width: drawerWidth, position: 'relative', borderWidth: 0 } }}
+            // MODIFICATION 2: Removed the extra `pt` and simpler `PaperProps` since the logo-toolbar handles the space
+            PaperProps={{
+              sx: {
+                width: drawerWidth,
+                position: 'relative',
+                borderWidth: 0,
+              },
+            }}
           >
             {drawer}
           </Drawer>

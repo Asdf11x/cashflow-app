@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { TableCell, Typography, Box, Chip, Link } from '@mui/material';
+import { TableCell, Typography, Box, Chip } from '@mui/material';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import CreateInvestmentDialog from '../shared/investment/InvestmentDialog.tsx';
 import type {
@@ -23,15 +23,12 @@ type InvestmentRow = {
   currency: string;
 };
 
-const NameCell = ({ name, link }: { name: string; link?: string }) => {
-  if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
-    return (
-      <Link href={link} target="_blank" rel="noopener noreferrer" underline="hover">
-        {name}
-      </Link>
-    );
-  }
-  return <>{name}</>;
+const fmtCurrency = (amount: number | string) => {
+  return fmtMoney(String(Math.round(Number(amount))));
+};
+
+const fmtPercentage = (amount: number | string) => {
+  return fmtMoney(String(amount));
 };
 
 export default function InvestmentsList() {
@@ -173,23 +170,24 @@ export default function InvestmentsList() {
       renderDataCells={(r) => (
         <>
           <TableCell key={`${r.id}-name`}>
-            <NameCell name={r.name} link={r.link} />
+            <ResourceList.LinkedNameDisplay item={r} />
           </TableCell>
           <TableCell key={`${r.id}-purchasePrice`} align="right">
-            {fmtMoney(String(r.purchasePrice))} {isConversionActive ? mainCurrency : r.currency}
+            {fmtCurrency(r.purchasePrice)} {isConversionActive ? mainCurrency : r.currency}
           </TableCell>
           <TableCell key={`${r.id}-netGainMonthly`} align="right">
-            {fmtMoney(String(r.netGainMonthly))} {isConversionActive ? mainCurrency : r.currency}
+            {fmtCurrency(r.netGainMonthly)} {isConversionActive ? mainCurrency : r.currency}
           </TableCell>
           <TableCell key={`${r.id}-yieldPctYearly`} align="right">
-            {fmtMoney(String(r.yieldPctYearly))} %
+            {/* MODIFIED: Use fmtPercentage (with decimals) */}
+            {fmtPercentage(r.yieldPctYearly)} %
           </TableCell>
         </>
       )}
       renderCard={(r) => (
         <>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-            <NameCell name={r.name} link={r.link} />
+            <ResourceList.LinkedNameDisplay item={r} />
           </Typography>
           <Chip
             label={getKindLabel(r.kind)}
@@ -202,7 +200,8 @@ export default function InvestmentsList() {
                 {t('investmentsList.investmentAmount')}:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {fmtMoney(String(r.purchasePrice))} {isConversionActive ? mainCurrency : r.currency}
+                {/* MODIFIED: Use fmtCurrency (no decimals) */}
+                {fmtCurrency(r.purchasePrice)} {isConversionActive ? mainCurrency : r.currency}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -210,8 +209,8 @@ export default function InvestmentsList() {
                 {t('investmentsList.monthlyProfit')}:
               </Typography>
               <Typography variant="body2" fontWeight={600} color="success.main">
-                {fmtMoney(String(r.netGainMonthly))}{' '}
-                {isConversionActive ? mainCurrency : r.currency}
+                {/* MODIFIED: Use fmtCurrency (no decimals) */}
+                {fmtCurrency(r.netGainMonthly)} {isConversionActive ? mainCurrency : r.currency}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -219,7 +218,7 @@ export default function InvestmentsList() {
                 {t('investmentsList.yield')}:
               </Typography>
               <Typography variant="body2" fontWeight={700} color="primary.main">
-                {fmtMoney(String(r.yieldPctYearly))} %
+                {fmtPercentage(r.yieldPctYearly)} %
               </Typography>
             </Box>
           </Box>
