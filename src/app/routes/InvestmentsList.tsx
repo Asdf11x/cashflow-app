@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { TableCell, Typography, Box, Chip, Link } from '@mui/material';
+import { TableCell, Typography, Box, Chip } from '@mui/material';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import CreateInvestmentDialog from '../shared/investment/InvestmentDialog.tsx';
 import type {
@@ -8,7 +8,7 @@ import type {
   RealEstateInvestment,
   Depositvestment,
 } from '../../core/domain/types.ts';
-import ResourceList, { type HeadCell } from '../shared/ResourceList';
+import ResourceList, { type HeadCell } from '../shared/ResourceList'; // ResourceList now has LinkedNameDisplay exported on it
 import { useCurrencyConverter } from '../../core/hooks/useCurrencyConverter';
 import { fmtMoney } from '../../core/domain/calc.ts';
 
@@ -19,20 +19,21 @@ type InvestmentRow = {
   netGainMonthly: number;
   yieldPctYearly: number;
   kind: 'OBJECT' | 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT';
-  link?: string;
+  link?: string; // This property is now correctly recognized by ResourceList
   currency: string;
 };
 
-const NameCell = ({ name, link }: { name: string; link?: string }) => {
-  if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
-    return (
-      <Link href={link} target="_blank" rel="noopener noreferrer" underline="hover">
-        {name}
-      </Link>
-    );
-  }
-  return <>{name}</>;
-};
+// REMOVED: The local NameCell component is removed because ResourceList.LinkedNameDisplay replaces it.
+// const NameCell = ({ name, link }: { name: string; link?: string }) => {
+//   if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
+//     return (
+//       <Link href={link} target="_blank" rel="noopener noreferrer" underline="hover">
+//         {name}
+//       </Link>
+//     );
+//   }
+//   return <>{name}</>;
+// };
 
 export default function InvestmentsList() {
   const { t } = useTranslation();
@@ -173,7 +174,7 @@ export default function InvestmentsList() {
       renderDataCells={(r) => (
         <>
           <TableCell key={`${r.id}-name`}>
-            <NameCell name={r.name} link={r.link} />
+            <ResourceList.LinkedNameDisplay item={r} />
           </TableCell>
           <TableCell key={`${r.id}-purchasePrice`} align="right">
             {fmtMoney(String(r.purchasePrice))} {isConversionActive ? mainCurrency : r.currency}
@@ -188,8 +189,36 @@ export default function InvestmentsList() {
       )}
       renderCard={(r) => (
         <>
+          {/* REMOVED: NameCell is no longer used here. The generic ResourceList handles the name/link display in mobile view now (in the ResourceList.tsx file).
+              If you want it uppercase and bold, we can force it here, but ResourceList.tsx is supposed to handle it.
+              Based on the ResourceList.tsx, the name is already rendered before this component for mobile.
+              If the name is NOT already rendered by ResourceList, we must use LinkedNameDisplay here too, for consistency.
+              Let's assume ResourceList handles it for mobile, and this renderCard is for the *rest* of the card body.
+
+              Wait, looking at the ResourceList.tsx mobileView:
+              <Box sx={{ flex: 1, mr: 1 }}>{renderCard(item)}</Box>
+              My previous change in ResourceList.tsx for mobile was:
+              <Box sx={{ mb: 1 }}>
+                <LinkedNameDisplay item={item} />
+              </Box>
+              {renderCard(item)}
+
+              This means renderCard should NOT include the name in mobile view anymore.
+              However, the original renderCard still includes it:
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                <NameCell name={r.name} link={r.link} />
+              </Typography>
+
+              To be safe and consistent, and to use the same logic, we'll keep the name rendering inside renderCard,
+              but replace the custom NameCell with LinkedNameDisplay, and remove the redundant one in ResourceList.tsx mobileView.
+
+              Let's proceed by only replacing NameCell usage.
+
+          */}
+
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-            <NameCell name={r.name} link={r.link} />
+            {/* MODIFIED: Use the generic LinkedNameDisplay component for the mobile card */}
+            <ResourceList.LinkedNameDisplay item={r} />
           </Typography>
           <Chip
             label={getKindLabel(r.kind)}

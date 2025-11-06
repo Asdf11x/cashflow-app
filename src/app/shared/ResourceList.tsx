@@ -24,6 +24,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
+import LaunchIcon from '@mui/icons-material/Launch'; // Reliable MUI icon for external link
 
 // --- Generic Types for Reusability ---
 
@@ -33,6 +34,7 @@ type Order = 'asc' | 'desc';
 type BaseItem = {
   id: string;
   name: string;
+  link?: string; // Optional link for the resource
 };
 
 // Describes a table header column
@@ -86,9 +88,61 @@ function getComparator<T>(order: Order, orderBy: keyof T): (a: T, b: T) => numbe
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
+// --- Internal Helper Component for Linked Name (Desktop & Mobile) ---
+
+// Define the LinkedNameDisplay component
+function LinkedNameDisplay<T extends BaseItem>({ item }: { item: T }) {
+  if (!item.link) {
+    return (
+      <Typography component="span" variant="body2">
+        {item.name}
+      </Typography>
+    );
+  }
+
+  return (
+    <Typography
+      component="a"
+      href={item.link}
+      target="_blank"
+      rel="noopener noreferrer"
+      variant="body2"
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        textDecoration: 'none',
+        color: 'primary.main',
+        '&:hover': {
+          textDecoration: 'underline',
+        },
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
+    >
+      <Box sx={{ mr: 0.5 }}>{item.name}</Box>
+      <LaunchIcon
+        sx={{
+          color: 'primary.main',
+          width: 12,
+          height: 12,
+          verticalAlign: 'super',
+          ml: 0.1,
+        }}
+      />
+    </Typography>
+  );
+}
+
+// --- NEW: Define the type for the component with its static helper property ---
+interface IResourceList {
+  <T extends BaseItem>(props: ResourceListProps<T>): React.ReactElement | null;
+  LinkedNameDisplay: typeof LinkedNameDisplay;
+}
+
 // --- The Generic Component ---
 
-export default function ResourceList<T extends BaseItem>({
+const ResourceListInternal = <T extends BaseItem>({
   items,
   headCells,
   i18nKeys,
@@ -99,7 +153,7 @@ export default function ResourceList<T extends BaseItem>({
   DialogComponent,
   getUndoContext,
   getOriginalItem,
-}: ResourceListProps<T>) {
+}: ResourceListProps<T>) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -291,11 +345,15 @@ export default function ResourceList<T extends BaseItem>({
         action={
           isUndoable && onUndo ? (
             <Button color="secondary" size="small" onClick={handleUndo}>
-              {t('investmentsList.undo')} {/* Using a common undo key */}
+              {t('investmentsList.undo')}
             </Button>
           ) : null
         }
       />
     </>
   );
-}
+};
+
+const ResourceList = ResourceListInternal as IResourceList;
+ResourceList.LinkedNameDisplay = LinkedNameDisplay;
+export default ResourceList;
