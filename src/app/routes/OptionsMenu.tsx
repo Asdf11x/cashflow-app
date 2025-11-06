@@ -37,13 +37,11 @@ const allDefaults: Record<string, DefaultsConfig> = {
   ch: chDefaultValues,
 };
 
-// --- Helper function to parse default values for display ---
 const processSectionForDisplay = (sectionData: Record<string, any>, t: (key: string) => string) => {
   const results: any[] = [];
   if (!sectionData) return results;
 
   for (const [key, item] of Object.entries(sectionData)) {
-    // Handle complex items (objects with value, mode, etc.)
     if (typeof item === 'object' && item !== null && 'value' in item) {
       results.push({
         key,
@@ -51,18 +49,14 @@ const processSectionForDisplay = (sectionData: Record<string, any>, t: (key: str
         value: item.value,
         mode: item.mode,
       });
-    }
-    // Handle simple key-value pairs (like in the 'taxes' section)
-    else if (typeof item === 'number') {
+    } else if (typeof item === 'number') {
       results.push({
         key,
         label: t(`optionsMenu.fields.${key}`), // Assumes labels are in translation files
         value: item,
         mode: key.toLowerCase().includes('rate') ? 'percent' : 'currency', // Heuristic for mode
       });
-    }
-    // Special handling for houseFee with two values
-    else if (key === 'houseFee' && 'value1' in item) {
+    } else if (key === 'houseFee' && 'value1' in item) {
       results.push({
         key: 'houseFeeValue1',
         label: t(item.i18nKeyTotal),
@@ -80,7 +74,6 @@ const processSectionForDisplay = (sectionData: Record<string, any>, t: (key: str
   return results;
 };
 
-// --- Display Component for a section of default values ---
 const DataSection = ({
   title,
   data,
@@ -114,7 +107,15 @@ const DataSection = ({
     if (mode !== 'text' && mode !== 'percent') {
       finalValue = parseFloat(newValue) || 0;
     }
+
+    // NOTE: This part needs adjustment if you want to directly edit the "value" property of a complex object
+    // For simplicity with the provided `processSectionForDisplay` and `set` from lodash,
+    // we assume the editable fields are those wrapped in an object with a 'value' property
+    // (except for the simple number case which is not currently editable).
+    // The key here is the immediate key in the JSON, not the nested 'value' one.
+    // The `pathPrefix` already points to the parent object.
     const path = `${pathPrefix}.${key}.value`;
+
     onValueChange(path, finalValue);
   };
 
@@ -170,10 +171,12 @@ export default function OptionsMenu() {
     countryProfile,
     mainCurrency,
     exchangeRates,
+    customDefaults,
     setLanguage,
     setCountryProfile,
     setMainCurrency,
     setExchangeRates,
+    setCustomDefaults,
   } = useSettingsStore();
 
   const [currentDefaults, setCurrentDefaults] = useState<DefaultsConfig>(
@@ -187,9 +190,19 @@ export default function OptionsMenu() {
     if (countryProfile !== 'custom') {
       setCurrentDefaults(allDefaults[countryProfile]);
     } else {
-      setCurrentDefaults(JSON.parse(JSON.stringify(deDefaultValues)));
+      // Load from store if available, otherwise initialize from 'de' defaults and save to store
+      if (Object.keys(customDefaults).length > 0) {
+        // Load the stored custom defaults
+        setCurrentDefaults(customDefaults as DefaultsConfig);
+      } else {
+        // First time entering 'custom', initialize from 'de'
+        const initialCustomDefaults = JSON.parse(JSON.stringify(deDefaultValues)) as DefaultsConfig;
+        setCurrentDefaults(initialCustomDefaults);
+        // Persist the initial structure to the store
+        setCustomDefaults(initialCustomDefaults);
+      }
     }
-  }, [countryProfile]);
+  }, [countryProfile, customDefaults, setCustomDefaults]); // Added customDefaults & setCustomDefaults
 
   const countryOptions = useMemo(
     () => [
@@ -229,6 +242,7 @@ export default function OptionsMenu() {
     setCountryProfile('de');
     setMainCurrency('EUR');
     setExchangeRates({ CZK: 24.75, CHF: 0.98 });
+    // setCustomDefaults({}); // Optional: uncomment if you want to reset custom defaults as well
   };
 
   const handleDefaultsChange = useCallback(
@@ -237,10 +251,14 @@ export default function OptionsMenu() {
       setCurrentDefaults((prev) => {
         const newDefaults = JSON.parse(JSON.stringify(prev));
         set(newDefaults, path, value); // using lodash.set for deep updates
+
+        // CRUCIAL FIX: Persist the new custom defaults to the global store
+        setCustomDefaults(newDefaults);
+
         return newDefaults;
       });
     },
-    [isCustomProfile],
+    [isCustomProfile, setCustomDefaults], // Added setCustomDefaults as dependency
   );
 
   const selectedCountryLabel = useMemo(

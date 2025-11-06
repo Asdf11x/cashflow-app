@@ -185,16 +185,14 @@ export default function InvestmentsList() {
         </>
       )}
       renderCard={(r) => (
+        // MODIFIED: Removed Typography for name as it's now handled by ResourceList's mobileView header
         <>
-          <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-            <ResourceList.LinkedNameDisplay item={r} />
-          </Typography>
           <Chip
             label={getKindLabel(r.kind)}
             size="small"
             color={r.kind === 'OBJECT' ? 'primary' : 'secondary'}
           />
-          <Box sx={{ display: 'grid', gap: 1, mt: 2 }}>
+          <Box sx={{ display: 'grid', gap: 1, mt: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography color="text.secondary" variant="body2">
                 {t('investmentsList.investmentAmount')}:
