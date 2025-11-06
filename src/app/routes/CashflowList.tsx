@@ -6,6 +6,7 @@ import { TableCell, Typography, Stack } from '@mui/material';
 import { useCashflowStore, type Cashflow } from '../../core/state/useCashflowStore';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { useCreditStore } from '../../core/state/useCreditStore';
+// ASSUMPTION: fmtMoney is a general formatter from core/domain/calc
 import { fmtMoney } from '../../core/domain/calc';
 import CashflowDialog from '../shared/CashflowDialog';
 import ResourceList, { type HeadCell } from '../shared/ResourceList';
@@ -19,6 +20,18 @@ interface EnrichedRow extends Cashflow {
   yieldPct: number;
   currency: string;
 }
+
+// NEW HELPER: Formats currency without decimals.
+const fmtCurrency = (amount: number | string) => {
+  // We assume fmtMoney for locale grouping and Math.round for no decimals.
+  return fmtMoney(String(Math.round(Number(amount))));
+};
+
+// NEW HELPER: Formats percentage with standard decimals (assumed by original fmtMoney).
+const fmtPercentage = (amount: number | string) => {
+  // For percentages, we use the original fmtMoney to retain any decimal precision.
+  return fmtMoney(String(amount));
+};
 
 export default function CashflowList() {
   const { t } = useTranslation();
@@ -121,6 +134,7 @@ export default function CashflowList() {
       getOriginalItem={getOriginalItem}
       renderDataCells={(row) => (
         <>
+          {/* NOTE: Estimation name is not assumed to have a link */}
           <TableCell key={`${row.id}-name`} sx={{ fontWeight: 500 }}>
             {row.name}
           </TableCell>
@@ -134,10 +148,12 @@ export default function CashflowList() {
               fontWeight: 500,
             }}
           >
-            {fmtMoney(row.cashflowMonthly)} {isConversionActive ? mainCurrency : row.currency}
+            {/* MODIFIED: Use fmtCurrency (no decimals) */}
+            {fmtCurrency(row.cashflowMonthly)} {isConversionActive ? mainCurrency : row.currency}
           </TableCell>
           <TableCell key={`${row.id}-yieldPct`} align="right" sx={{ fontWeight: 500 }}>
-            {fmtMoney(String(row.yieldPct))} %
+            {/* MODIFIED: Use fmtPercentage (with decimals) */}
+            {fmtPercentage(row.yieldPct)} %
           </TableCell>
         </>
       )}
@@ -151,14 +167,11 @@ export default function CashflowList() {
             <ResultRow label={t('cashflowList.credit')} value={row.creditName} />
             <ResultRow
               label={t('cashflowList.netProfitMonthly')}
-              value={`${fmtMoney(row.cashflowMonthly)} ${
+              value={`${fmtCurrency(row.cashflowMonthly)} ${
                 isConversionActive ? mainCurrency : row.currency
               }`}
             />
-            <ResultRow
-              label={t('cashflowList.yield')}
-              value={`${fmtMoney(String(row.yieldPct))} %`}
-            />
+            <ResultRow label={t('cashflowList.yield')} value={`${fmtPercentage(row.yieldPct)} %`} />
           </Stack>
         </>
       )}

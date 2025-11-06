@@ -8,7 +8,7 @@ import type {
   RealEstateInvestment,
   Depositvestment,
 } from '../../core/domain/types.ts';
-import ResourceList, { type HeadCell } from '../shared/ResourceList'; // ResourceList now has LinkedNameDisplay exported on it
+import ResourceList, { type HeadCell } from '../shared/ResourceList';
 import { useCurrencyConverter } from '../../core/hooks/useCurrencyConverter';
 import { fmtMoney } from '../../core/domain/calc.ts';
 
@@ -19,21 +19,17 @@ type InvestmentRow = {
   netGainMonthly: number;
   yieldPctYearly: number;
   kind: 'OBJECT' | 'REAL_ESTATE' | 'FIXED_TERM_DEPOSIT';
-  link?: string; // This property is now correctly recognized by ResourceList
+  link?: string;
   currency: string;
 };
 
-// REMOVED: The local NameCell component is removed because ResourceList.LinkedNameDisplay replaces it.
-// const NameCell = ({ name, link }: { name: string; link?: string }) => {
-//   if (link && (link.startsWith('http://') || link.startsWith('https://'))) {
-//     return (
-//       <Link href={link} target="_blank" rel="noopener noreferrer" underline="hover">
-//         {name}
-//       </Link>
-//     );
-//   }
-//   return <>{name}</>;
-// };
+const fmtCurrency = (amount: number | string) => {
+  return fmtMoney(String(Math.round(Number(amount))));
+};
+
+const fmtPercentage = (amount: number | string) => {
+  return fmtMoney(String(amount));
+};
 
 export default function InvestmentsList() {
   const { t } = useTranslation();
@@ -177,47 +173,20 @@ export default function InvestmentsList() {
             <ResourceList.LinkedNameDisplay item={r} />
           </TableCell>
           <TableCell key={`${r.id}-purchasePrice`} align="right">
-            {fmtMoney(String(r.purchasePrice))} {isConversionActive ? mainCurrency : r.currency}
+            {fmtCurrency(r.purchasePrice)} {isConversionActive ? mainCurrency : r.currency}
           </TableCell>
           <TableCell key={`${r.id}-netGainMonthly`} align="right">
-            {fmtMoney(String(r.netGainMonthly))} {isConversionActive ? mainCurrency : r.currency}
+            {fmtCurrency(r.netGainMonthly)} {isConversionActive ? mainCurrency : r.currency}
           </TableCell>
           <TableCell key={`${r.id}-yieldPctYearly`} align="right">
-            {fmtMoney(String(r.yieldPctYearly))} %
+            {/* MODIFIED: Use fmtPercentage (with decimals) */}
+            {fmtPercentage(r.yieldPctYearly)} %
           </TableCell>
         </>
       )}
       renderCard={(r) => (
         <>
-          {/* REMOVED: NameCell is no longer used here. The generic ResourceList handles the name/link display in mobile view now (in the ResourceList.tsx file).
-              If you want it uppercase and bold, we can force it here, but ResourceList.tsx is supposed to handle it.
-              Based on the ResourceList.tsx, the name is already rendered before this component for mobile.
-              If the name is NOT already rendered by ResourceList, we must use LinkedNameDisplay here too, for consistency.
-              Let's assume ResourceList handles it for mobile, and this renderCard is for the *rest* of the card body.
-
-              Wait, looking at the ResourceList.tsx mobileView:
-              <Box sx={{ flex: 1, mr: 1 }}>{renderCard(item)}</Box>
-              My previous change in ResourceList.tsx for mobile was:
-              <Box sx={{ mb: 1 }}>
-                <LinkedNameDisplay item={item} />
-              </Box>
-              {renderCard(item)}
-
-              This means renderCard should NOT include the name in mobile view anymore.
-              However, the original renderCard still includes it:
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                <NameCell name={r.name} link={r.link} />
-              </Typography>
-
-              To be safe and consistent, and to use the same logic, we'll keep the name rendering inside renderCard,
-              but replace the custom NameCell with LinkedNameDisplay, and remove the redundant one in ResourceList.tsx mobileView.
-
-              Let's proceed by only replacing NameCell usage.
-
-          */}
-
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-            {/* MODIFIED: Use the generic LinkedNameDisplay component for the mobile card */}
             <ResourceList.LinkedNameDisplay item={r} />
           </Typography>
           <Chip
@@ -231,7 +200,8 @@ export default function InvestmentsList() {
                 {t('investmentsList.investmentAmount')}:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {fmtMoney(String(r.purchasePrice))} {isConversionActive ? mainCurrency : r.currency}
+                {/* MODIFIED: Use fmtCurrency (no decimals) */}
+                {fmtCurrency(r.purchasePrice)} {isConversionActive ? mainCurrency : r.currency}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -239,8 +209,8 @@ export default function InvestmentsList() {
                 {t('investmentsList.monthlyProfit')}:
               </Typography>
               <Typography variant="body2" fontWeight={600} color="success.main">
-                {fmtMoney(String(r.netGainMonthly))}{' '}
-                {isConversionActive ? mainCurrency : r.currency}
+                {/* MODIFIED: Use fmtCurrency (no decimals) */}
+                {fmtCurrency(r.netGainMonthly)} {isConversionActive ? mainCurrency : r.currency}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -248,7 +218,7 @@ export default function InvestmentsList() {
                 {t('investmentsList.yield')}:
               </Typography>
               <Typography variant="body2" fontWeight={700} color="primary.main">
-                {fmtMoney(String(r.yieldPctYearly))} %
+                {fmtPercentage(r.yieldPctYearly)} %
               </Typography>
             </Box>
           </Box>

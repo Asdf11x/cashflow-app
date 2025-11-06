@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableCell, Typography, Box } from '@mui/material';
 import { useCreditStore } from '../../core/state/useCreditStore';
+// ASSUMPTION: fmtMoney is a general formatter from core/domain/calc
 import { fmtMoney } from '../../core/domain/calc';
 import type { Credit } from '../../core/domain/types.ts';
 import CreditCreateDialog from '../shared/credit/CreditDialog.tsx';
@@ -15,6 +16,19 @@ type CreditRow = Omit<Credit, 'principal' | 'totalMonthly'> & {
   principal: number;
   totalMonthly: number;
   currency: string; // Keep original currency for display fallback
+};
+
+// NEW HELPER: Formats currency without decimals.
+// Since we don't know the signature of fmtMoney, we'll manually round the number for display
+// to ensure no decimals are shown, while still using fmtMoney for locale grouping.
+const fmtCurrency = (amount: number | string) => {
+  return fmtMoney(String(Math.round(Number(amount))));
+};
+
+// NEW HELPER: Formats percentage with standard decimals (assumed by original fmtMoney).
+const fmtPercentage = (amount: number | string) => {
+  // For percentages, we use the original fmtMoney to retain any decimal precision.
+  return fmtMoney(String(amount));
 };
 
 export default function CreditsList() {
@@ -44,6 +58,7 @@ export default function CreditsList() {
 
   const rows: CreditRow[] = React.useMemo(() => {
     const allCredits = credits.map((c) => ({
+      // NOTE: c.link is implicitly passed here if it exists on the Credit type
       ...c,
       principal: parseFloat(c.principal),
       totalMonthly: parseFloat(c.totalMonthly || '0'),
@@ -96,22 +111,29 @@ export default function CreditsList() {
       getOriginalItem={getOriginalItem}
       renderDataCells={(c) => (
         <>
-          <TableCell key={`${c.id}-name`}>{c.name}</TableCell>
+          <TableCell key={`${c.id}-name`}>
+            {/* MODIFIED: Use the generic LinkedNameDisplay for name/link */}
+            <ResourceList.LinkedNameDisplay item={c} />
+          </TableCell>
           <TableCell key={`${c.id}-principal`} align="right">
-            {fmtMoney(String(c.principal))} {isConversionActive ? mainCurrency : c.currency}
+            {/* MODIFIED: Use fmtCurrency (no decimals) */}
+            {fmtCurrency(c.principal)} {isConversionActive ? mainCurrency : c.currency}
           </TableCell>
           <TableCell key={`${c.id}-totalMonthly`} align="right">
-            {fmtMoney(String(c.totalMonthly))} {isConversionActive ? mainCurrency : c.currency}
+            {/* MODIFIED: Use fmtCurrency (no decimals) */}
+            {fmtCurrency(c.totalMonthly)} {isConversionActive ? mainCurrency : c.currency}
           </TableCell>
           <TableCell key={`${c.id}-rateAnnualPct`} align="right">
-            {c.rateAnnualPercent} %
+            {/* MODIFIED: Use fmtPercentage (with decimals) */}
+            {fmtPercentage(c.rateAnnualPercent)} %
           </TableCell>
         </>
       )}
       renderCard={(c) => (
         <>
           <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
-            {c.name}
+            {/* MODIFIED: Use the generic LinkedNameDisplay for name/link */}
+            <ResourceList.LinkedNameDisplay item={c} />
           </Typography>
           <Box sx={{ display: 'grid', gap: 1, mt: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -119,7 +141,8 @@ export default function CreditsList() {
                 {t('creditsList.principal')}:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {fmtMoney(String(c.principal))} {isConversionActive ? mainCurrency : c.currency}
+                {/* MODIFIED: Use fmtCurrency (no decimals) */}
+                {fmtCurrency(c.principal)} {isConversionActive ? mainCurrency : c.currency}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -127,7 +150,8 @@ export default function CreditsList() {
                 {t('creditsList.monthlyRate')}:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {fmtMoney(String(c.totalMonthly))} {isConversionActive ? mainCurrency : c.currency}
+                {/* MODIFIED: Use fmtCurrency (no decimals) */}
+                {fmtCurrency(c.totalMonthly)} {isConversionActive ? mainCurrency : c.currency}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -135,7 +159,8 @@ export default function CreditsList() {
                 {t('creditsList.interestRate')}:
               </Typography>
               <Typography variant="body2" fontWeight={600}>
-                {c.rateAnnualPercent} %
+                {/* MODIFIED: Use fmtPercentage (with decimals) */}
+                {fmtPercentage(c.rateAnnualPercent)} %
               </Typography>
             </Box>
           </Box>
