@@ -49,7 +49,6 @@ interface DialogProps<T> {
   existingNames: string[];
 }
 
-// Main props for our generic ResourceList
 interface ResourceListProps<T extends BaseItem> {
   items: T[];
   headCells: readonly HeadCell<T>[];
@@ -65,12 +64,10 @@ interface ResourceListProps<T extends BaseItem> {
   onUndo?: () => void;
   renderDataCells: (item: T) => React.ReactNode;
   renderCard: (item: T) => React.ReactNode;
-  DialogComponent: React.ComponentType<DialogProps<any>>; // Using 'any' to accommodate different original item types
+  DialogComponent: React.ComponentType<DialogProps<any>>;
   getUndoContext?: () => boolean;
-  getOriginalItem?: (item: T) => any; // Function to get the original, unconverted item for editing
+  getOriginalItem?: (item: T) => any;
 }
-
-// --- Sorting Helper Functions ---
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   const valA = a[orderBy];
@@ -109,7 +106,6 @@ export default function ResourceList<T extends BaseItem>({
 
   // --- State Management ---
   const [openDialog, setOpenDialog] = React.useState(false);
-  // FIX: State holds the full generic item type `T` (or the original item type from getOriginalItem)
   const [editItem, setEditItem] = React.useState<T | null>(null);
   const [snack, setSnack] = React.useState<{ open: boolean; msg: string }>({
     open: false,
@@ -141,7 +137,6 @@ export default function ResourceList<T extends BaseItem>({
   };
 
   const handleOpenEdit = (item: T) => {
-    // Use `getOriginalItem` if provided, to ensure the dialog gets the unconverted data
     const itemToEdit = getOriginalItem ? getOriginalItem(item) : item;
     setEditItem(itemToEdit);
     setOpenDialog(true);
@@ -218,9 +213,7 @@ export default function ResourceList<T extends BaseItem>({
                   direction={orderBy === headCell.id ? order : 'asc'}
                   onClick={() => handleRequestSort(headCell.id)}
                   sx={{
-                    flexDirection: headCell.align === 'right' ? 'row' : 'row-reverse',
-                    justifyContent: headCell.align === 'right' ? 'flex-end' : 'flex-start',
-                    '&': { width: '100%' },
+                    flexDirection: headCell.align === 'right' ? 'row-reverse' : 'row',
                     '& .MuiTableSortLabel-icon': {
                       marginLeft: headCell.align !== 'right' ? 1 : 0,
                       marginRight: headCell.align === 'right' ? 1 : 0,
