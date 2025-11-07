@@ -132,10 +132,13 @@
     "optionalAccordion": {
       "title": "Steuern & Gebühren (optional)",
       "enableTaxes": "Steuern berücksichtigen",
-      "withholdingTaxLabel": "Abgeltungssteuer inkl. Soli",
+      "withholdingTax": "Abgeltungssteuer",
+      "solidaritySurcharge": "Solidaritätszuschlag",
+      "churchTax": "Kirchensteuer",
       "taxFreeAllowanceLabel": "Sparer-Pauschbetrag (jährlich)"
     },
     "fees": {
+      "title": "Weitere Kosten",
       "accountYearly": "Kontoführungsgebühren (jährlich)",
       "otherOneTime": "Sonstige einmalige Kosten"
     },

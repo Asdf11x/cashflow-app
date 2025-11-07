@@ -15,7 +15,6 @@ import { D, normalize, sanitizeDecimal, pctToFrac } from '../formHelpers';
 import type { CostItemState } from '../formHelpers';
 import { fmtMoney } from '../../../../core/domain/calc';
 
-// --- Reusable Split Cost Item State ---
 export interface SplitCostItemState {
   enabled: boolean;
   value1: string; // Total House Fee
@@ -26,7 +25,6 @@ export interface SplitCostItemState {
   label2: string;
 }
 
-// --- Cost Input Row Component ---
 interface CostInputRowProps {
   item: CostItemState;
   onItemChange: (newItem: Partial<CostItemState>) => void;

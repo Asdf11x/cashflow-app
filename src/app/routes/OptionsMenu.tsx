@@ -1,3 +1,5 @@
+// src/components/OptionsMenu.tsx
+
 import { useMemo, useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../../core/state/useSettingsStore';
@@ -30,6 +32,7 @@ import RestoreIcon from '@mui/icons-material/Restore';
 import { set } from 'lodash';
 
 type DefaultsConfig = typeof deDefaultValues;
+type CompoundingType = 'NONE' | 'YEARLY' | 'MONTHLY'; // Define the enum type
 
 const allDefaults: Record<string, DefaultsConfig> = {
   de: deDefaultValues,
@@ -43,11 +46,14 @@ const processSectionForDisplay = (sectionData: Record<string, any>, t: (key: str
 
   for (const [key, item] of Object.entries(sectionData)) {
     if (typeof item === 'object' && item !== null && 'value' in item) {
+      // MODIFIED: Check for the 'compounding' key to set a specific mode
+      const mode = key === 'compounding' ? 'compounding-select' : item.mode;
+
       results.push({
         key,
         label: t(item.i18nKey),
         value: item.value,
-        mode: item.mode,
+        mode: mode, // Use the new mode
       });
     } else if (typeof item === 'number') {
       results.push({
@@ -89,13 +95,25 @@ const DataSection = ({
   onValueChange: (path: string, value: any) => void;
   pathPrefix: string;
 }) => {
+  const { t } = useTranslation();
+
   if (!data || data.length === 0) {
     return null;
   }
 
+  const compoundingOptions = [
+    { value: 'NONE', label: t('depositForm.compounding.none') },
+    { value: 'MONTHLY', label: t('depositForm.compounding.monthly') },
+    { value: 'YEARLY', label: t('depositForm.compounding.yearly') },
+  ];
+
   const getDisplayValue = (item: any) => {
     if (item.mode === 'percent') {
       return `${item.value} %`;
+    }
+    // NEW: Handle compounding-select display value
+    if (item.mode === 'compounding-select') {
+      return compoundingOptions.find((opt) => opt.value === item.value)?.label || item.value;
     }
     return `${Number(item.value).toLocaleString('de-DE')} ${
       item.mode === 'currency' ? currency : ''
@@ -104,18 +122,16 @@ const DataSection = ({
 
   const handleInputChange = (key: string, newValue: string, mode: string) => {
     let finalValue: string | number = newValue;
-    if (mode !== 'text' && mode !== 'percent') {
+
+    if (mode === 'compounding-select') {
+      finalValue = newValue as CompoundingType;
+    } else if (mode !== 'text' && mode !== 'percent') {
       finalValue = parseFloat(newValue) || 0;
+    } else if (mode === 'percent') {
+      finalValue = newValue; // Keep as string for precision on percent
     }
 
-    // NOTE: This part needs adjustment if you want to directly edit the "value" property of a complex object
-    // For simplicity with the provided `processSectionForDisplay` and `set` from lodash,
-    // we assume the editable fields are those wrapped in an object with a 'value' property
-    // (except for the simple number case which is not currently editable).
-    // The key here is the immediate key in the JSON, not the nested 'value' one.
-    // The `pathPrefix` already points to the parent object.
     const path = `${pathPrefix}.${key}.value`;
-
     onValueChange(path, finalValue);
   };
 
@@ -140,16 +156,31 @@ const DataSection = ({
                 </TableCell>
                 <TableCell align="right">
                   {isEditable ? (
-                    <TextField
-                      variant="outlined"
-                      size="small"
-                      value={item.value}
-                      onChange={(e) => handleInputChange(item.key, e.target.value, item.mode)}
-                      sx={{ width: '120px' }}
-                      InputProps={{
-                        endAdornment: item.mode === 'percent' ? '%' : currency,
-                      }}
-                    />
+                    item.mode === 'compounding-select' ? (
+                      <FormControl variant="outlined" size="small" sx={{ width: '120px' }}>
+                        <Select
+                          value={item.value}
+                          onChange={(e) => handleInputChange(item.key, e.target.value, item.mode)}
+                        >
+                          {compoundingOptions.map((opt) => (
+                            <MenuItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    ) : (
+                      <TextField
+                        variant="outlined"
+                        size="small"
+                        value={item.value}
+                        onChange={(e) => handleInputChange(item.key, e.target.value, item.mode)}
+                        sx={{ width: '120px' }}
+                        InputProps={{
+                          endAdornment: item.mode === 'percent' ? '%' : currency,
+                        }}
+                      />
+                    )
                   ) : (
                     getDisplayValue(item)
                   )}
@@ -242,7 +273,7 @@ export default function OptionsMenu() {
     setCountryProfile('de');
     setMainCurrency('EUR');
     setExchangeRates({ CZK: 24.75, CHF: 0.98 });
-    // setCustomDefaults({}); // Optional: uncomment if you want to reset custom defaults as well
+    setCustomDefaults({} as DefaultsConfig);
   };
 
   const handleDefaultsChange = useCallback(

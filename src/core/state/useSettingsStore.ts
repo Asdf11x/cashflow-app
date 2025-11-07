@@ -14,7 +14,7 @@ interface SettingsState {
   setCountryProfile: (profile: string) => void;
   setMainCurrency: (currency: string) => void;
   setExchangeRates: (rates: { [key: string]: number }) => void;
-  setCustomDefaults: (defaults: DefaultsConfig) => void; // <--- ADDED THIS
+  setCustomDefaults: (defaults: DefaultsConfig) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -35,7 +35,7 @@ export const useSettingsStore = create<SettingsState>()(
       setCountryProfile: (profile) => set({ countryProfile: profile }),
       setMainCurrency: (currency) => set({ mainCurrency: currency }),
       setExchangeRates: (rates) => set({ exchangeRates: rates }),
-      setCustomDefaults: (defaults) => set({ customDefaults: defaults }), // <--- ADDED THIS
+      setCustomDefaults: (defaults) => set({ customDefaults: defaults }),
     }),
     {
       // The name for the item in localStorage

@@ -23,7 +23,7 @@ interface TaxDeductionsAccordionProps {
   onTaxDeductionsChange: (key: string, newValues: Partial<CostItemState>) => void;
   taxFreeAllowance: string;
   onTaxFreeAllowanceChange: (value: string) => void;
-  grossAnnualGain: Decimal; // The gross gain per year to be taxed
+  grossAnnualGain: Decimal;
   currency: string;
   onTotalAnnualTaxChange: (total: Decimal) => void;
 }

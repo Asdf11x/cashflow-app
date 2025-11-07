@@ -11,11 +11,10 @@ import czDefaults from '../../config/defaults/cz/default-values.json';
 export type DefaultsConfig = typeof deDefaults;
 
 // Create a record mapping country codes to their default configuration.
-// This is the "tedious manual stuff" that will now live in ONE place.
 const allDefaults: Record<string, DefaultsConfig> = {
-  de: deDefaults,
-  cz: czDefaults,
-  ch: chDefaults,
+  de: deDefaults as DefaultsConfig, // Added type assertion for safety
+  cz: czDefaults as DefaultsConfig, // Added type assertion for safety
+  ch: chDefaults as DefaultsConfig, // Added type assertion for safety
 };
 
 /**
@@ -28,14 +27,18 @@ const allDefaults: Record<string, DefaultsConfig> = {
  * @returns {DefaultsConfig} The configuration object for the current country.
  */
 export const useDefaults = (): DefaultsConfig => {
-  const { countryProfile } = useSettingsStore();
+  // Destructure countryProfile AND customDefaults from the settings store
+  const { countryProfile, customDefaults } = useSettingsStore(); // <--- ADDED customDefaults
 
   // useMemo ensures that we only re-calculate the defaults object when the
-  // countryProfile changes, not on every render.
+  // countryProfile or customDefaults changes.
   const defaults = React.useMemo(() => {
-    // Return the specific country's defaults, or fall back to 'de' if not found.
+    if (countryProfile === 'custom') {
+      return customDefaults;
+    }
+
     return allDefaults[countryProfile] || deDefaults;
-  }, [countryProfile]);
+  }, [countryProfile, customDefaults]); // <--- ADDED customDefaults dependency
 
   return defaults;
 };
