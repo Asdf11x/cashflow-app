@@ -1,3 +1,5 @@
+// src/components/OptionsMenu.tsx
+
 import { useMemo, useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '../../core/state/useSettingsStore';
@@ -30,6 +32,7 @@ import RestoreIcon from '@mui/icons-material/Restore';
 import { set } from 'lodash';
 
 type DefaultsConfig = typeof deDefaultValues;
+type CompoundingType = 'NONE' | 'YEARLY' | 'MONTHLY'; // Define the enum type
 
 const allDefaults: Record<string, DefaultsConfig> = {
   de: deDefaultValues,
@@ -37,32 +40,29 @@ const allDefaults: Record<string, DefaultsConfig> = {
   ch: chDefaultValues,
 };
 
-// --- Helper function to parse default values for display ---
 const processSectionForDisplay = (sectionData: Record<string, any>, t: (key: string) => string) => {
   const results: any[] = [];
   if (!sectionData) return results;
 
   for (const [key, item] of Object.entries(sectionData)) {
-    // Handle complex items (objects with value, mode, etc.)
     if (typeof item === 'object' && item !== null && 'value' in item) {
+      // MODIFIED: Check for the 'compounding' key to set a specific mode
+      const mode = key === 'compounding' ? 'compounding-select' : item.mode;
+
       results.push({
         key,
         label: t(item.i18nKey),
         value: item.value,
-        mode: item.mode,
+        mode: mode, // Use the new mode
       });
-    }
-    // Handle simple key-value pairs (like in the 'taxes' section)
-    else if (typeof item === 'number') {
+    } else if (typeof item === 'number') {
       results.push({
         key,
         label: t(`optionsMenu.fields.${key}`), // Assumes labels are in translation files
         value: item,
         mode: key.toLowerCase().includes('rate') ? 'percent' : 'currency', // Heuristic for mode
       });
-    }
-    // Special handling for houseFee with two values
-    else if (key === 'houseFee' && 'value1' in item) {
+    } else if (key === 'houseFee' && 'value1' in item) {
       results.push({
         key: 'houseFeeValue1',
         label: t(item.i18nKeyTotal),
@@ -80,7 +80,6 @@ const processSectionForDisplay = (sectionData: Record<string, any>, t: (key: str
   return results;
 };
 
-// --- Display Component for a section of default values ---
 const DataSection = ({
   title,
   data,
@@ -96,13 +95,25 @@ const DataSection = ({
   onValueChange: (path: string, value: any) => void;
   pathPrefix: string;
 }) => {
+  const { t } = useTranslation();
+
   if (!data || data.length === 0) {
     return null;
   }
 
+  const compoundingOptions = [
+    { value: 'NONE', label: t('depositForm.compounding.none') },
+    { value: 'MONTHLY', label: t('depositForm.compounding.monthly') },
+    { value: 'YEARLY', label: t('depositForm.compounding.yearly') },
+  ];
+
   const getDisplayValue = (item: any) => {
     if (item.mode === 'percent') {
       return `${item.value} %`;
+    }
+    // NEW: Handle compounding-select display value
+    if (item.mode === 'compounding-select') {
+      return compoundingOptions.find((opt) => opt.value === item.value)?.label || item.value;
     }
     return `${Number(item.value).toLocaleString('de-DE')} ${
       item.mode === 'currency' ? currency : ''
@@ -111,9 +122,15 @@ const DataSection = ({
 
   const handleInputChange = (key: string, newValue: string, mode: string) => {
     let finalValue: string | number = newValue;
-    if (mode !== 'text' && mode !== 'percent') {
+
+    if (mode === 'compounding-select') {
+      finalValue = newValue as CompoundingType;
+    } else if (mode !== 'text' && mode !== 'percent') {
       finalValue = parseFloat(newValue) || 0;
+    } else if (mode === 'percent') {
+      finalValue = newValue; // Keep as string for precision on percent
     }
+
     const path = `${pathPrefix}.${key}.value`;
     onValueChange(path, finalValue);
   };
@@ -139,16 +156,31 @@ const DataSection = ({
                 </TableCell>
                 <TableCell align="right">
                   {isEditable ? (
-                    <TextField
-                      variant="outlined"
-                      size="small"
-                      value={item.value}
-                      onChange={(e) => handleInputChange(item.key, e.target.value, item.mode)}
-                      sx={{ width: '120px' }}
-                      InputProps={{
-                        endAdornment: item.mode === 'percent' ? '%' : currency,
-                      }}
-                    />
+                    item.mode === 'compounding-select' ? (
+                      <FormControl variant="outlined" size="small" sx={{ width: '120px' }}>
+                        <Select
+                          value={item.value}
+                          onChange={(e) => handleInputChange(item.key, e.target.value, item.mode)}
+                        >
+                          {compoundingOptions.map((opt) => (
+                            <MenuItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    ) : (
+                      <TextField
+                        variant="outlined"
+                        size="small"
+                        value={item.value}
+                        onChange={(e) => handleInputChange(item.key, e.target.value, item.mode)}
+                        sx={{ width: '120px' }}
+                        InputProps={{
+                          endAdornment: item.mode === 'percent' ? '%' : currency,
+                        }}
+                      />
+                    )
                   ) : (
                     getDisplayValue(item)
                   )}
@@ -170,10 +202,12 @@ export default function OptionsMenu() {
     countryProfile,
     mainCurrency,
     exchangeRates,
+    customDefaults,
     setLanguage,
     setCountryProfile,
     setMainCurrency,
     setExchangeRates,
+    setCustomDefaults,
   } = useSettingsStore();
 
   const [currentDefaults, setCurrentDefaults] = useState<DefaultsConfig>(
@@ -187,9 +221,19 @@ export default function OptionsMenu() {
     if (countryProfile !== 'custom') {
       setCurrentDefaults(allDefaults[countryProfile]);
     } else {
-      setCurrentDefaults(JSON.parse(JSON.stringify(deDefaultValues)));
+      // Load from store if available, otherwise initialize from 'de' defaults and save to store
+      if (Object.keys(customDefaults).length > 0) {
+        // Load the stored custom defaults
+        setCurrentDefaults(customDefaults as DefaultsConfig);
+      } else {
+        // First time entering 'custom', initialize from 'de'
+        const initialCustomDefaults = JSON.parse(JSON.stringify(deDefaultValues)) as DefaultsConfig;
+        setCurrentDefaults(initialCustomDefaults);
+        // Persist the initial structure to the store
+        setCustomDefaults(initialCustomDefaults);
+      }
     }
-  }, [countryProfile]);
+  }, [countryProfile, customDefaults, setCustomDefaults]); // Added customDefaults & setCustomDefaults
 
   const countryOptions = useMemo(
     () => [
@@ -229,6 +273,7 @@ export default function OptionsMenu() {
     setCountryProfile('de');
     setMainCurrency('EUR');
     setExchangeRates({ CZK: 24.75, CHF: 0.98 });
+    setCustomDefaults({} as DefaultsConfig);
   };
 
   const handleDefaultsChange = useCallback(
@@ -237,10 +282,14 @@ export default function OptionsMenu() {
       setCurrentDefaults((prev) => {
         const newDefaults = JSON.parse(JSON.stringify(prev));
         set(newDefaults, path, value); // using lodash.set for deep updates
+
+        // CRUCIAL FIX: Persist the new custom defaults to the global store
+        setCustomDefaults(newDefaults);
+
         return newDefaults;
       });
     },
-    [isCustomProfile],
+    [isCustomProfile, setCustomDefaults], // Added setCustomDefaults as dependency
   );
 
   const selectedCountryLabel = useMemo(

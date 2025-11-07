@@ -132,10 +132,13 @@
     "optionalAccordion": {
       "title": "Steuern & Gebühren (optional)",
       "enableTaxes": "Steuern berücksichtigen",
-      "withholdingTaxLabel": "Abgeltungssteuer inkl. Soli",
+      "withholdingTax": "Abgeltungssteuer",
+      "solidaritySurcharge": "Solidaritätszuschlag",
+      "churchTax": "Kirchensteuer",
       "taxFreeAllowanceLabel": "Sparer-Pauschbetrag (jährlich)"
     },
     "fees": {
+      "title": "Weitere Kosten",
       "accountYearly": "Kontoführungsgebühren (jährlich)",
       "otherOneTime": "Sonstige einmalige Kosten"
     },
@@ -169,7 +172,7 @@
       "deductions": "Absetzungen"
     },
     "accordionSummary": {
-      "deductionMonthlyLabel": "Mietabzug pro Monat"
+      "deductionMonthlyLabel": "Monatl. abzugsfähige Kosten"
     },
     "details": {
       "link": "Link zur Anzeige"
@@ -177,10 +180,10 @@
     "summary": {
       "title": "Zusammenfassung",
       "totalSideCosts": "Gesamtkosten (Neben- & Zusatzkosten)",
-      "grandTotal": "Gesamtpreis (inkl. Kaufpreis)",
+      "grandTotal": "Gesamtpreis",
       "annualRunningCosts": "Jährliche laufende Kosten",
-      "netRentMonthly": "Monatliche Nettomiete (nach Abzügen & Kosten)",
-      "netRentYearly": "Jährliche Nettomiete (nach Abzügen & Kosten)",
+      "netRentMonthly": "Monatliche Nettomiete",
+      "netRentYearly": "Jährliche Nettomiete",
       "initialYield": "Anfangsrendite p.a."
     },
     "costLabels": {

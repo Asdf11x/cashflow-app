@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { TableCell, Typography, Stack } from '@mui/material';
+// MODIFIED: Replaced Stack with Box, removed ResultRow import
+import { TableCell, Typography, Box } from '@mui/material';
 import { useCashflowStore, type Cashflow } from '../../core/state/useCashflowStore';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { useCreditStore } from '../../core/state/useCreditStore';
@@ -10,7 +11,7 @@ import { useCreditStore } from '../../core/state/useCreditStore';
 import { fmtMoney } from '../../core/domain/calc';
 import CashflowDialog from '../shared/CashflowDialog';
 import ResourceList, { type HeadCell } from '../shared/ResourceList';
-import { ResultRow } from '../shared/SharedComponents.tsx';
+// REMOVED: import { ResultRow } from '../shared/SharedComponents.tsx';
 import { useCurrencyConverter } from '../../core/hooks/useCurrencyConverter.ts';
 
 // EnrichedRow extends the base Cashflow type, so its properties must be compatible.
@@ -158,21 +159,51 @@ export default function CashflowList() {
         </>
       )}
       renderCard={(row) => (
+        // MODIFIED: Removed Typography for name as it's now handled by ResourceList's mobileView header
         <>
-          <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, mr: 1 }}>
-            {row.name}
-          </Typography>
-          <Stack spacing={1} sx={{ mt: 1 }}>
-            <ResultRow label={t('cashflowList.investment')} value={row.investmentName} />
-            <ResultRow label={t('cashflowList.credit')} value={row.creditName} />
-            <ResultRow
-              label={t('cashflowList.netProfitMonthly')}
-              value={`${fmtCurrency(row.cashflowMonthly)} ${
-                isConversionActive ? mainCurrency : row.currency
-              }`}
-            />
-            <ResultRow label={t('cashflowList.yield')} value={`${fmtPercentage(row.yieldPct)} %`} />
-          </Stack>
+          <Box sx={{ display: 'grid', gap: 1, mt: 1 }}>
+            {/* Investment */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography color="text.secondary" variant="body2">
+                {t('cashflowList.investment')}:
+              </Typography>
+              <Typography variant="body2" fontWeight={600}>
+                {row.investmentName}
+              </Typography>
+            </Box>
+            {/* Credit */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography color="text.secondary" variant="body2">
+                {t('cashflowList.credit')}:
+              </Typography>
+              <Typography variant="body2" fontWeight={600}>
+                {row.creditName}
+              </Typography>
+            </Box>
+            {/* Net Profit Monthly */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography color="text.secondary" variant="body2">
+                {t('cashflowList.netProfitMonthly')}:
+              </Typography>
+              <Typography
+                variant="body2"
+                fontWeight={600}
+                color={parseFloat(row.cashflowMonthly) < 0 ? 'error.main' : 'success.main'}
+              >
+                {fmtCurrency(row.cashflowMonthly)}{' '}
+                {isConversionActive ? mainCurrency : row.currency}
+              </Typography>
+            </Box>
+            {/* Yield */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography color="text.secondary" variant="body2">
+                {t('cashflowList.yield')}:
+              </Typography>
+              <Typography variant="body2" fontWeight={700} color="primary.main">
+                {fmtPercentage(row.yieldPct)} %
+              </Typography>
+            </Box>
+          </Box>
         </>
       )}
     />

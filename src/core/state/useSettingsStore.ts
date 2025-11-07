@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { DefaultsConfig } from '../hooks/useDefaults.ts';
 
 interface SettingsState {
   language: string;
@@ -8,10 +9,12 @@ interface SettingsState {
   exchangeRates: {
     [key: string]: number; // e.g., { CZK: 24.75, CHF: 0.98 } relative to EUR
   };
+  customDefaults: DefaultsConfig;
   setLanguage: (lang: string) => void;
   setCountryProfile: (profile: string) => void;
   setMainCurrency: (currency: string) => void;
   setExchangeRates: (rates: { [key: string]: number }) => void;
+  setCustomDefaults: (defaults: DefaultsConfig) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -25,12 +28,14 @@ export const useSettingsStore = create<SettingsState>()(
         CZK: 24.35,
         CHF: 0.93,
       },
+      customDefaults: {} as DefaultsConfig,
 
       // Setter functions to update the state
       setLanguage: (lang) => set({ language: lang }),
       setCountryProfile: (profile) => set({ countryProfile: profile }),
       setMainCurrency: (currency) => set({ mainCurrency: currency }),
       setExchangeRates: (rates) => set({ exchangeRates: rates }),
+      setCustomDefaults: (defaults) => set({ customDefaults: defaults }),
     }),
     {
       // The name for the item in localStorage

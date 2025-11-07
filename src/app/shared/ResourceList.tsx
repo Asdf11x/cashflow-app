@@ -24,27 +24,21 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
-import LaunchIcon from '@mui/icons-material/Launch'; // Reliable MUI icon for external link
-
-// --- Generic Types for Reusability ---
+import LaunchIcon from '@mui/icons-material/Launch';
 
 type Order = 'asc' | 'desc';
-
-// The base shape of any item the list can handle
 type BaseItem = {
   id: string;
   name: string;
-  link?: string; // Optional link for the resource
+  link?: string;
 };
 
-// Describes a table header column
 export interface HeadCell<T> {
   id: keyof T;
   label: string;
   align?: 'left' | 'right' | 'center' | 'justify';
 }
 
-// Props for the generic Dialog component
 interface DialogProps<T> {
   onClose: () => void;
   editItem: T | null;
@@ -88,13 +82,16 @@ function getComparator<T>(order: Order, orderBy: keyof T): (a: T, b: T) => numbe
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-// --- Internal Helper Component for Linked Name (Desktop & Mobile) ---
-
-// Define the LinkedNameDisplay component
 function LinkedNameDisplay<T extends BaseItem>({ item }: { item: T }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const typographyVariant = isMobile ? 'subtitle1' : 'body2';
+  const fontWeight = isMobile ? 'bold' : 'normal';
+
   if (!item.link) {
     return (
-      <Typography component="span" variant="body2">
+      <Typography component="span" variant={typographyVariant} sx={{ fontWeight }}>
         {item.name}
       </Typography>
     );
@@ -106,12 +103,13 @@ function LinkedNameDisplay<T extends BaseItem>({ item }: { item: T }) {
       href={item.link}
       target="_blank"
       rel="noopener noreferrer"
-      variant="body2"
+      variant={typographyVariant}
       sx={{
         display: 'inline-flex',
         alignItems: 'center',
         textDecoration: 'none',
         color: 'primary.main',
+        fontWeight: fontWeight,
         '&:hover': {
           textDecoration: 'underline',
         },
@@ -222,24 +220,99 @@ const ResourceListInternal = <T extends BaseItem>({
     <>
       <Box sx={{ pb: 10 }}>
         {sortedRows.map((item) => (
+          // MODIFIED: Removed position: 'relative' as we will use a flex layout
           <Paper key={item.id} sx={{ p: 2, mb: 2 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-              }}
-            >
-              <Box sx={{ flex: 1, mr: 1 }}>{renderCard(item)}</Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                <IconButton color="primary" size="small" onClick={() => handleOpenEdit(item)}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-                <IconButton color="error" size="small" onClick={() => handleDelete(item)}>
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
+            {/* NEW/MODIFIED: Container for card content and action buttons */}
+            <Box>
+              {/* The renderCard prop is expected to render the name/title with variant="h6" or similar,
+                  followed by the rest of the content in a separate Box. We need to split this for the flex layout.
+
+                  Since renderCard can contain the entire block, the best approach is to check if it returns
+                  an element where the name is the first child (like a Typography or LinkedNameDisplay).
+                  However, based on the consumer files (CreditsList/InvestmentsList/CashflowList),
+                  renderCard is structured as:
+
+                  <>
+                    <Typography variant="h6" ...> <ResourceList.LinkedNameDisplay /> </Typography>
+                    <Box> ... other content ... </Box>
+                  </>
+
+                  We will assume this structure and render the header part manually using flex,
+                  and render the rest of the content after the header.
+              */}
+
+              {/* Header: Name/Title (from renderCard's first element) and Buttons */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  // Ensure this container has a bottom margin if needed to separate from content
+                  mb: 1,
+                }}
+              >
+                {/* Name/Title - This should be the main title element from renderCard.
+                    We will replicate the title/name part for proper alignment.
+                    This requires a slight change in the assumption of `renderCard`'s output,
+                    but is necessary for proper mobile alignment without complex parsing.
+                */}
+                <Typography variant="h6" sx={{ fontWeight: 600, flex: 1, mr: 1, minWidth: 0 }}>
+                  <ResourceList.LinkedNameDisplay item={item} />
+                </Typography>
+
+                {/* Horizontal Action Buttons */}
+                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0.5, flexShrink: 0 }}>
+                  <IconButton color="primary" size="small" onClick={() => handleOpenEdit(item)}>
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton color="error" size="small" onClick={() => handleDelete(item)}>
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Box>
+
+              {/* The remaining card content (everything *except* the name/title) */}
+              <Box>
+                {/* To fix the issue, we need to manually process renderCard output
+                    to remove the name/title part if it exists, or update all call sites.
+
+                    Since updating all call sites (CreditsList, InvestmentsList, CashflowList)
+                    to *only* render the body content is the most robust way to align
+                    with the new flex header, I will update them to only render the body.
+
+                    The current implementation is:
+
+                    renderCard={(c) => (
+                        <>
+                            <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
+                                <ResourceList.LinkedNameDisplay item={c} />
+                            </Typography>
+                            <Box sx={{ display: 'grid', gap: 1, mt: 1 }}>
+                                ... content ...
+                            </Box>
+                        </>
+                    )}
+
+                    I will update them to:
+
+                    renderCard={(c) => (
+                        <>
+                            <Chip ... /> // Only for InvestmentsList
+                            <Box sx={{ display: 'grid', gap: 1, mt: 1 }}>
+                                ... content ...
+                            </Box>
+                        </>
+                    )}
+
+                    AND, I will remove the manual Typography from `renderCard` in the consumer files
+                    since the new `ResourceList` handles the name/title display.
+                */}
+                {/* The card content is rendered below the new flex header */}
+                {renderCard(item)}
               </Box>
             </Box>
+
+            {/* REMOVED OLD ICON AND WRAPPER STRUCTURES */}
           </Paper>
         ))}
         {items.length === 0 && (

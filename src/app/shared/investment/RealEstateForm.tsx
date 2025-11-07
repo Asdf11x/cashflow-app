@@ -17,7 +17,7 @@ import type {
   PurchasePriceCosts,
   RealEstateInvestment,
   RunningCostsRent,
-  RealEstateDeductions, // Import NEW type
+  RealEstateDeductions,
 } from '../../../core/domain/types';
 import FormHeader from './real-estate-form/FormHeader';
 import PurchaseCostsSection, {
@@ -138,8 +138,10 @@ const RealEstateForm = React.forwardRef(
     const purchaseCostsRef = React.useRef<PurchaseCostsSectionHandle>(null);
     const runningCostsRef = React.useRef<RunningCostsSectionHandle>(null);
 
+    // Safely access the real estate defaults section
     const reDefaults = defaults.investments.realEstate;
 
+    // --- State Initialization using Defaults ---
     const [rName, setRName] = React.useState('');
     const [rPurchasePrice, setRPurchasePrice] = React.useState('');
     const [rCurrency, setRCurrency] = React.useState('');
@@ -147,11 +149,15 @@ const RealEstateForm = React.forwardRef(
     const [rDetailsLink, setRDetailsLink] = React.useState('');
 
     React.useEffect(() => {
+      const purchasePriceDefault = String(reDefaults.basic.purchasePrice);
+      const monthlyColdRentDefault = String(reDefaults.basic.monthlyColdRent);
+      const detailsLinkDefault = String(reDefaults.basic.detailsLink); // Assuming it is a string
+
       setRName(existingInvestment?.name || t(reDefaults.basic.name.i18nKey));
-      setRPurchasePrice(existingInvestment?.startAmount || reDefaults.basic.purchasePrice);
+      setRPurchasePrice(existingInvestment?.startAmount || purchasePriceDefault);
       setRCurrency(existingInvestment?.currency || metaCurrency);
-      setRMonthlyColdRent(existingInvestment?.monthlyColdRent || reDefaults.basic.monthlyColdRent);
-      setRDetailsLink(existingInvestment?.link || '');
+      setRMonthlyColdRent(existingInvestment?.monthlyColdRent || monthlyColdRentDefault);
+      setRDetailsLink(existingInvestment?.link || detailsLinkDefault);
     }, [existingInvestment, metaCurrency, reDefaults, t]);
 
     const { initialPurchaseStates, initialRunningStates } = React.useMemo(() => {
@@ -162,12 +168,18 @@ const RealEstateForm = React.forwardRef(
         Object.fromEntries(
           Object.entries(defaultCosts).map(([key, def]) => {
             const savedValue = savedCosts?.[key as keyof typeof savedCosts];
-            const isEnabled = savedValue !== undefined ? D(savedValue).gt(0) : def.enabled;
+            const initialValue = savedValue !== undefined ? savedValue : String(def.value);
+            const isEnabled =
+              savedValue !== undefined
+                ? D(savedValue).gt(0)
+                : def.enabled !== undefined
+                  ? def.enabled
+                  : true;
             return [
               key,
               {
                 enabled: isEnabled,
-                value: savedValue !== undefined ? savedValue : String(def.value),
+                value: initialValue,
                 mode: def.mode,
                 allowModeChange: def.allowModeChange,
                 label: t(def.i18nKey),
@@ -188,25 +200,27 @@ const RealEstateForm = React.forwardRef(
       };
 
       const deductionsStates = mapDefaultsToCostState(
-        reDefaults.deductions, // Assumes reDefaults.deductions exists
+        reDefaults.deductions,
         existingInvestment?.realEstateDeductions as Record<string, string> | undefined,
       );
 
+      // --- House Fee Split Cost Initialization ---
+      const houseFeeDefault = reDefaults.runningCosts.additional.houseFee;
+
+      const savedHouseFeeTotal = existingInvestment?.additionalRunningCostsRent?.houseFeeTotal;
+      const savedHouseFeeApportionable =
+        existingInvestment?.additionalRunningCostsRent?.houseFeeApportionable;
+
       const houseFeeSplitState = {
         houseFee: {
-          enabled: existingInvestment?.additionalRunningCostsRent?.houseFeeTotal
-            ? D(existingInvestment.additionalRunningCostsRent.houseFeeTotal).gt(0)
-            : reDefaults.runningCosts.additional.houseFee.enabled,
-          value1:
-            existingInvestment?.additionalRunningCostsRent?.houseFeeTotal ||
-            reDefaults.runningCosts.additional.houseFee.value1,
-          value2:
-            existingInvestment?.additionalRunningCostsRent?.houseFeeApportionable ||
-            reDefaults.runningCosts.additional.houseFee.value2,
-          mode: reDefaults.runningCosts.additional.houseFee.mode,
-          allowModeChange: reDefaults.runningCosts.additional.houseFee.allowModeChange,
-          label1: t(reDefaults.runningCosts.additional.houseFee.i18nKeyTotal),
-          label2: t(reDefaults.runningCosts.additional.houseFee.i18nKeyApportionable),
+          // Check saved total value for enabled status, then fall back to default enabled
+          enabled: savedHouseFeeTotal ? D(savedHouseFeeTotal).gt(0) : houseFeeDefault.enabled,
+          value1: savedHouseFeeTotal || String(houseFeeDefault.value1),
+          value2: savedHouseFeeApportionable || String(houseFeeDefault.value2),
+          mode: houseFeeDefault.mode,
+          allowModeChange: houseFeeDefault.allowModeChange,
+          label1: t(houseFeeDefault.i18nKeyTotal),
+          label2: t(houseFeeDefault.i18nKeyApportionable),
         } as SplitCostItemState,
       };
       // END NEW: Deductions State

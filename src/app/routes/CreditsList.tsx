@@ -130,12 +130,9 @@ export default function CreditsList() {
         </>
       )}
       renderCard={(c) => (
+        // MODIFIED: Removed Typography for name as it's now handled by ResourceList's mobileView header
         <>
-          <Typography variant="h6" sx={{ fontWeight: 600, flex: 1 }}>
-            {/* MODIFIED: Use the generic LinkedNameDisplay for name/link */}
-            <ResourceList.LinkedNameDisplay item={c} />
-          </Typography>
-          <Box sx={{ display: 'grid', gap: 1, mt: 1 }}>
+          <Box sx={{ display: 'grid', gap: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography color="text.secondary" variant="body2">
                 {t('creditsList.principal')}:

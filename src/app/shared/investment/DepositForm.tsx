@@ -1,3 +1,5 @@
+// src/components/DepositForm.tsx
+
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -72,28 +74,27 @@ const DepositForm = React.forwardRef(
     const [isNameTouched, setIsNameTouched] = React.useState(false);
     const [isPriceTouched, setIsPriceTouched] = React.useState(false);
 
-    // --- V-- NEW STATE for detailed tax deductions ---
     const [taxDeductions, setTaxDeductions] = React.useState<CostState>({
       withholdingTax: {
         enabled: true,
-        value: String(taxDefaults.withholdingTaxRate), // 25
+        value: String(taxDefaults.withholdingTaxRate),
         mode: 'percent',
         allowModeChange: false,
-        label: t('depositForm.taxes.withholdingTax'),
+        label: t('depositForm.optionalAccordion.withholdingTax'),
       },
       solidaritySurcharge: {
         enabled: true,
-        value: '5.5', // 5.5
+        value: '5.5',
         mode: 'percent',
         allowModeChange: false,
-        label: t('depositForm.taxes.solidaritySurcharge'),
+        label: t('depositForm.optionalAccordion.solidaritySurcharge'),
       },
       churchTax: {
         enabled: false,
-        value: '8', // 8
+        value: '8',
         mode: 'percent',
         allowModeChange: true,
-        label: t('depositForm.taxes.churchTax'),
+        label: t('depositForm.optionalAccordion.churchTax'),
       },
     });
 
@@ -103,27 +104,28 @@ const DepositForm = React.forwardRef(
         : String(taxDefaults.taxFreeAllowance),
     );
 
-    // State for fees (remains the same)
     const [accountFees, setAccountFees] = React.useState<CostState>({
       yearly: {
         enabled: false,
         value: '0',
         mode: 'currency',
         allowModeChange: true,
+        // IMPORTANT: keep this as a translated label, don't re-translate later
         label: t('depositForm.fees.accountYearly'),
       },
-      // ... add other fees here if needed
     });
 
-    // --- V-- STATE to store the calculated total annual tax from the accordion ---
     const [totalAnnualTaxD, setTotalAnnualTaxD] = React.useState(D(0));
 
-    // Calculations
-    const startAmountD = D(normalize(dStartAmount));
-    const termMonthsN = parseInt(dTermMonths, 10) || 0;
-    const termYearsD = termMonthsN > 0 ? D(termMonthsN).div(12) : D(0);
-    const rateNominalPctD = D(normalize(dRateNominal));
-    const rateNominalFracD = rateNominalPctD.div(100);
+    // Calculations (memoize primitives where possible)
+    const startAmountD = React.useMemo(() => D(normalize(dStartAmount)), [dStartAmount]);
+    const termMonthsN = React.useMemo(() => parseInt(dTermMonths, 10) || 0, [dTermMonths]);
+    const termYearsD = React.useMemo(
+      () => (termMonthsN > 0 ? D(termMonthsN).div(12) : D(0)),
+      [termMonthsN],
+    );
+    const rateNominalPctD = React.useMemo(() => D(normalize(dRateNominal)), [dRateNominal]);
+    const rateNominalFracD = React.useMemo(() => rateNominalPctD.div(100), [rateNominalPctD]);
 
     const grossGainD = React.useMemo(() => {
       if (startAmountD.lte(0) || rateNominalFracD.lte(0) || termYearsD.lte(0)) return D(0);
@@ -153,29 +155,46 @@ const DepositForm = React.forwardRef(
       return D(0);
     }, [startAmountD, rateNominalFracD, termYearsD, termMonthsN, dCompounding]);
 
-    const grossGainYearly = termYearsD.gt(0) ? grossGainD.div(termYearsD) : D(0);
+    const grossGainYearlyD = React.useMemo(
+      () => (termYearsD.gt(0) ? grossGainD.div(termYearsD) : D(0)),
+      [grossGainD, termYearsD],
+    );
 
-    const calculateTotalCosts = (costs: CostState, base: Decimal): Decimal =>
-      Object.values(costs).reduce((sum, item) => {
-        if (!item.enabled) return sum;
-        const value =
-          item.mode === 'percent' ? base.mul(pctToFrac(item.value)) : D(normalize(item.value));
-        return sum.add(value);
-      }, D(0));
+    const calculateTotalCosts = React.useCallback(
+      (costs: CostState, base: Decimal): Decimal =>
+        Object.values(costs).reduce((sum, item) => {
+          if (!item.enabled) return sum;
+          const value =
+            item.mode === 'percent' ? base.mul(pctToFrac(item.value)) : D(normalize(item.value));
+          return sum.add(value);
+        }, D(0)),
+      [],
+    );
 
     const totalFeesD = React.useMemo(() => {
       const yearlyFees = calculateTotalCosts(accountFees, startAmountD);
       return yearlyFees.mul(termYearsD); // Total fees over the term
-    }, [accountFees, startAmountD, termYearsD]);
+    }, [accountFees, startAmountD, termYearsD, calculateTotalCosts]);
 
-    // --- V-- CORRECTED CALCULATION ---
-    const totalTaxOverTermD = totalAnnualTaxD.mul(termYearsD);
-    const totalNetGainD = grossGainD.sub(totalTaxOverTermD).sub(totalFeesD);
-    const netGainYearlyD = termYearsD.gt(0) ? totalNetGainD.div(termYearsD) : D(0);
-    const netGainMonthlyD = netGainYearlyD.div(12);
-    const yieldPct = startAmountD.gt(0)
-      ? netGainYearlyD.div(startAmountD).mul(100).toDP(2).toString()
-      : '0';
+    // --- Compute net values ---
+    const totalTaxOverTermD = React.useMemo(
+      () => totalAnnualTaxD.mul(termYearsD),
+      [totalAnnualTaxD, termYearsD],
+    );
+    const totalNetGainD = React.useMemo(
+      () => grossGainD.sub(totalTaxOverTermD).sub(totalFeesD),
+      [grossGainD, totalTaxOverTermD, totalFeesD],
+    );
+    const netGainYearlyD = React.useMemo(
+      () => (termYearsD.gt(0) ? totalNetGainD.div(termYearsD) : D(0)),
+      [totalNetGainD, termYearsD],
+    );
+    const netGainMonthlyD = React.useMemo(() => netGainYearlyD.div(12), [netGainYearlyD]);
+    const yieldPct = React.useMemo(
+      () =>
+        startAmountD.gt(0) ? netGainYearlyD.div(startAmountD).mul(100).toDP(2).toString() : '0',
+      [netGainYearlyD, startAmountD],
+    );
 
     // Validation
     const trimmedName = dName.trim();
@@ -190,6 +209,27 @@ const DepositForm = React.forwardRef(
     const handleTaxDeductionsChange = (key: string, newValues: Partial<CostState[string]>) => {
       setTaxDeductions((prev) => ({ ...prev, [key]: { ...prev[key], ...newValues } }));
     };
+
+    const handleAccountFeesChange = React.useCallback(
+      (key: string, v: Partial<CostState[string]>) => {
+        setAccountFees((p) => ({ ...p, [key]: { ...p[key], ...v } }));
+      },
+      [],
+    );
+
+    // IMPORTANT: Do NOT re-translate already translated labels — that caused i18next missingKey logs
+    const memoizedAccountFees = React.useMemo(() => {
+      return Object.entries(accountFees).map(([key, item]) => ({
+        key,
+        item: { ...item },
+      }));
+    }, [accountFees]);
+
+    // Guarded setter to prevent parent-child update loops when child re-emits same value
+    const handleTotalAnnualTaxChange = React.useCallback((v: Decimal | number | string) => {
+      const next = D(typeof v === 'object' && v !== null ? (v as Decimal).toString() : String(v));
+      setTotalAnnualTaxD((prev) => (prev.eq(next) ? prev : next));
+    }, []);
 
     React.useImperativeHandle(ref, () => ({
       submit: () => {
@@ -207,7 +247,6 @@ const DepositForm = React.forwardRef(
           termMonths: termMonthsN,
           rateNominal: rateNominalPctD.toNumber(),
           compounding: dCompounding,
-          // We can still save these for data consistency if needed
           withholdingTaxRate: taxDeductions.withholdingTax.enabled
             ? D(taxDeductions.withholdingTax.value).toNumber()
             : undefined,
@@ -229,7 +268,7 @@ const DepositForm = React.forwardRef(
 
     return (
       <Stack spacing={3} sx={{ mt: 1 }}>
-        {/* --- Name, Link, Amount, Term, Rate Fields (UNCHANGED) --- */}
+        {/* Name */}
         <TextField
           label={t('depositForm.nameLabel')}
           value={dName}
@@ -240,6 +279,7 @@ const DepositForm = React.forwardRef(
           fullWidth
           required
         />
+        {/* Link */}
         <TextField
           label={t('depositForm.linkLabel')}
           value={dLink}
@@ -247,6 +287,7 @@ const DepositForm = React.forwardRef(
           placeholder={t('depositForm.linkPlaceholder')}
           fullWidth
         />
+        {/* Amount + Currency */}
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           <PriceInput
             label={t('depositForm.startAmountLabel')}
@@ -260,6 +301,7 @@ const DepositForm = React.forwardRef(
           />
           <CurrencySelect value={dCurrency} onChange={(e) => setDCurrency(e.target.value)} />
         </Box>
+        {/* Term + Rate */}
         <Box sx={{ display: 'flex', gap: 2 }}>
           <TextField
             label={t('depositForm.termLabel')}
@@ -278,6 +320,7 @@ const DepositForm = React.forwardRef(
             InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
           />
         </Box>
+        {/* Compounding */}
         <Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             {t('depositForm.compoundingTitle')}
@@ -294,30 +337,30 @@ const DepositForm = React.forwardRef(
           </ToggleButtonGroup>
         </Box>
 
-        {/* --- V-- OLD ACCORDION REMOVED AND REPLACED WITH THESE TWO --- */}
+        {/* Taxes */}
         <TaxDeductionsAccordion
           taxDeductions={taxDeductions}
           onTaxDeductionsChange={handleTaxDeductionsChange}
           taxFreeAllowance={dTaxFreeAllowance}
           onTaxFreeAllowanceChange={setDTaxFreeAllowance}
-          grossAnnualGain={grossGainYearly}
+          // Pass a primitive to avoid child effects retriggering on Decimal identity changes
+          grossAnnualGain={grossGainYearlyD.toDecimalPlaces()}
           currency={dCurrency}
-          onTotalAnnualTaxChange={setTotalAnnualTaxD}
+          onTotalAnnualTaxChange={handleTotalAnnualTaxChange}
         />
 
+        {/* Fees */}
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography fontWeight={700}>{t('depositForm.fees.title')}</Typography>
           </AccordionSummary>
           <AccordionDetails>
             <Stack spacing={2}>
-              {Object.entries(accountFees).map(([key, item]) => (
+              {memoizedAccountFees.map(({ key, item }) => (
                 <CostInputRow
                   key={key}
-                  item={{ ...item, label: t(item.label) }}
-                  onItemChange={(v) =>
-                    setAccountFees((p) => ({ ...p, [key]: { ...p[key], ...v } }))
-                  }
+                  item={item}
+                  onItemChange={(v) => handleAccountFeesChange(key, v)}
                   baseAmount={startAmountD}
                   currency={dCurrency}
                 />
@@ -327,6 +370,7 @@ const DepositForm = React.forwardRef(
         </Accordion>
 
         <Divider />
+        {/* Summary */}
         <Stack
           spacing={1}
           sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}

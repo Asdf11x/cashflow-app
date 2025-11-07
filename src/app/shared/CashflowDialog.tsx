@@ -12,7 +12,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { useTranslation } from 'react-i18next'; // <-- 1. IMPORT THE HOOK
+import { useTranslation } from 'react-i18next';
 import { useInvestStore } from '../../core/state/useInvestStore';
 import { useCreditStore } from '../../core/state/useCreditStore';
 import { useCashflowStore, type Cashflow } from '../../core/state/useCashflowStore';
