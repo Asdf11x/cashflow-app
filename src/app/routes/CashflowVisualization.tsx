@@ -8,7 +8,6 @@ import {
   Checkbox,
   Slider,
   Divider,
-  // useTheme,
   Tabs,
   Tab,
   TextField,
@@ -18,25 +17,26 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { ResponsiveLine } from '@nivo/line';
+import type { LegendProps } from '@nivo/legends';
 import SearchIcon from '@mui/icons-material/Search';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import { useCashflowStore } from '../../core/state/useCashflowStore';
 import { fmtMoney } from '../../core/domain/calc';
+import { useEnrichedCashflows } from '../../core/hooks/useEnrichedCashflows';
 
-// --- UPDATED DEFAULT_ASSUMPTIONS (Simplified) ---
 const DEFAULT_ASSUMPTIONS = {
-  // rentIncreasePct will now be used as Cashflow-Wachstum
   rentIncreasePct: 1.0,
-  // New: Flat monthly deduction (e.g., for maintenance reserve)
   monthlyFlatDeduction: 0,
 };
 
-// --- Tab Panel Helper Component ---
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
 }
+
+const fmtIntegerCurrency = (value: number | string) => {
+  return fmtMoney(String(Math.round(Number(value))));
+};
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
@@ -57,36 +57,19 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-// --- Custom Nivo Tooltip Component (Fixing Decimals and Wrapping) ---
 const SimpleCustomTooltip = ({ point }: any) => {
-  // Safe check
   if (!point || typeof point.data.y === 'undefined') {
     return null;
   }
-
   const pointData = point.data;
-
-  // 1. Get the value as an integer (no decimals)
-  const integerValue = Math.round(pointData.y);
-
-  // 2. Format the integer value (assuming fmtMoney handles thousands separators, etc.)
-  const formattedValue = fmtMoney(String(integerValue));
-
-  // 3. Combine value and currency into a single string
+  const formattedValue = fmtIntegerCurrency(pointData.y);
   const finalValueString = `${formattedValue} €`;
-
-  // Year string stays separate
   const yearString = `Jahr ${pointData.xFormatted}:`;
-
   return (
-    // minWidth is still helpful to prevent wrapping
     <Paper sx={{ p: 1, opacity: 0.9, borderLeft: `5px solid ${point.color}`, minWidth: '70px' }}>
-      {/* First line: Jahr X: (using body2 and bold for better visibility) */}
       <Typography variant="body2" sx={{ fontWeight: 'bold', lineHeight: 1.2, display: 'block' }}>
         {yearString}
       </Typography>
-
-      {/* Second line: y € (NOW in a single string, with no decimals, and GUARANTEED no wrap) */}
       <Typography
         variant="body2"
         sx={{
@@ -94,7 +77,7 @@ const SimpleCustomTooltip = ({ point }: any) => {
           fontSize: '1rem',
           lineHeight: 1.2,
           display: 'block',
-          whiteSpace: 'nowrap', // Prevents line breaks within the value string
+          whiteSpace: 'nowrap',
         }}
       >
         {finalValueString}
@@ -103,39 +86,24 @@ const SimpleCustomTooltip = ({ point }: any) => {
   );
 };
 
-// --- Main Visualization Component ---
 export default function CashflowVisualization() {
-  // --- Responsive Hooks (New SOTA approach) ---
-  // Determine if we are on a small screen (e.g., less than 900px)
   const isSmallScreen = useMediaQuery('(max-width:900px)');
+  const allEnrichedCashflows = useEnrichedCashflows();
 
-  // --- Data Fetching from Stores ---
-  const cashflows = useCashflowStore((s) => s.cashflows);
-
-  // --- Component State ---
   const [selectedIds, setSelectedIds] = React.useState<string[]>(() =>
-    cashflows.length > 0 ? cashflows.map((cf) => cf.id) : [],
+    allEnrichedCashflows.length > 0 ? allEnrichedCashflows.map((cf) => cf.id) : [],
   );
   const [assumptions, setAssumptions] = React.useState(DEFAULT_ASSUMPTIONS);
   const [activeTab, setActiveTab] = React.useState(0);
   const [maxYears, setMaxYears] = React.useState(25);
-  // Default to collapsed on small screens
   const [controlsCollapsed, setControlsCollapsed] = React.useState(isSmallScreen);
   const [searchTerm, setSearchTerm] = React.useState('');
 
-  // --- Removed HACKY screen width logic and dependencies ---
-  // const [screenWidth, setScreenWidth] = React.useState(window.innerWidth);
-  // React.useEffect(() => { ... }, []);
-  // const getResponsiveOffset = () => { ... };
-
-  // useEffect to sync collapsed state on screen size change
   React.useEffect(() => {
-    // If the screen size is small, force controls to be collapsed
     if (isSmallScreen) {
       setControlsCollapsed(true);
     }
   }, [isSmallScreen]);
-  // --- End Removed HACKY logic ---
 
   const handleSelectionChange = (id: string, isChecked: boolean) => {
     setSelectedIds((prev) =>
@@ -143,47 +111,38 @@ export default function CashflowVisualization() {
     );
   };
 
-  // Update handleSliderChange to handle the new assumption key
   const handleSliderChange = (name: keyof typeof DEFAULT_ASSUMPTIONS, value: number | number[]) => {
     setAssumptions((prev) => ({ ...prev, [name]: Array.isArray(value) ? value[0] : value }));
   };
 
   const filteredCashflows = React.useMemo(
-    () => cashflows.filter((cf) => cf.name.toLowerCase().includes(searchTerm.toLowerCase())),
-    [cashflows, searchTerm],
+    () =>
+      allEnrichedCashflows.filter((cf) => cf.name.toLowerCase().includes(searchTerm.toLowerCase())),
+    [allEnrichedCashflows, searchTerm],
   );
 
   const cumulativeCashflowData = React.useMemo(() => {
-    const selectedCashflows = cashflows.filter((cf) => selectedIds.includes(cf.id));
-
+    const selectedCashflows = allEnrichedCashflows.filter((cf) => selectedIds.includes(cf.id));
     const growthRate = assumptions.rentIncreasePct / 100;
     const flatDeduction = assumptions.monthlyFlatDeduction;
 
     return selectedCashflows.map((cf) => {
-      const initialMonthlyNetGain = parseFloat(
-        (cf as any)?.initialMonthlyNetGain || cf.cashflowMonthly || '0',
-      );
-
+      const initialYearlyNetGain = cf.displayCashflowYearly;
       const dataPoints: { x: number; y: number }[] = [{ x: 0, y: 0 }];
       let cumulativeCashflow = 0;
-
-      let currentMonthlyNetGain = initialMonthlyNetGain;
+      let currentYearlyNetGain = initialYearlyNetGain;
 
       for (let year = 1; year <= 25; year++) {
         if (year > 1) {
-          currentMonthlyNetGain *= 1 + growthRate;
+          currentYearlyNetGain *= 1 + growthRate;
         }
-
-        // Calculation: Yearly CF = (Monthly Growing CF * 12) - (Fixed Deduction * 12)
-        const yearlyNetCashflow = currentMonthlyNetGain * 12 - flatDeduction * 12;
-
+        const yearlyNetCashflow = currentYearlyNetGain - flatDeduction * 12;
         cumulativeCashflow += yearlyNetCashflow;
         dataPoints.push({ x: year, y: parseFloat(cumulativeCashflow.toFixed(2)) });
       }
-
       return { id: cf.name, data: dataPoints };
     });
-  }, [cashflows, selectedIds, assumptions]);
+  }, [allEnrichedCashflows, selectedIds, assumptions]);
 
   const visibleChartData = React.useMemo(() => {
     return cumulativeCashflowData.map((series) => ({
@@ -201,19 +160,23 @@ export default function CashflowVisualization() {
     { value: 25, label: '25' },
   ];
 
-  // --- Responsive Control Widths ---
+  const axisTickValues = React.useMemo(() => {
+    if (maxYears <= 12) {
+      return Array.from({ length: maxYears }, (_, i) => i + 1);
+    }
+    return yearSliderMarks.map((m) => m.value).filter((v) => v <= maxYears);
+  }, [maxYears]);
+
   const sidebarWidth = controlsCollapsed ? (isSmallScreen ? '100%' : 80) : 260;
-  // On small screens, chartWidth is 100% of available space minus the padding
   const chartFlexBasis = isSmallScreen ? '100%' : 1;
 
   const Controls = (
     <Paper
       sx={{
         p: 2,
-        height: isSmallScreen && !controlsCollapsed ? 'auto' : '100%', // Auto height on mobile when open
+        height: isSmallScreen && !controlsCollapsed ? 'auto' : '100%',
         display: 'flex',
         flexDirection: 'column',
-        // Use fixed width for desktop sidebar, full width for mobile collapsed view (simulating a drawer)
         width: sidebarWidth,
         minWidth: sidebarWidth,
         flexShrink: controlsCollapsed ? 0 : 1,
@@ -222,11 +185,7 @@ export default function CashflowVisualization() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         {!controlsCollapsed && <Typography variant="h6">Einstellungen</Typography>}
         <Tooltip title={controlsCollapsed ? 'Einblenden' : 'Ausblenden'}>
-          <IconButton
-            // On small screens, hide the icon when collapsed if controls go to a drawer/overlay later
-            onClick={() => setControlsCollapsed(!controlsCollapsed)}
-            sx={{ ml: 'auto' }}
-          >
+          <IconButton onClick={() => setControlsCollapsed(!controlsCollapsed)} sx={{ ml: 'auto' }}>
             <ChevronLeftIcon
               sx={{
                 transform: controlsCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -258,23 +217,14 @@ export default function CashflowVisualization() {
           <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
             <FormGroup>
               {filteredCashflows.map((cf) => {
-                // Calculation of initial annual net gain (for label only)
-                const initialMonthlyNetGain = parseFloat(
-                  (cf as any)?.initialMonthlyNetGain || cf.cashflowMonthly || '0',
-                );
-                // Calculate the true starting annual net gain after the flat deduction
                 const annualNetGain =
-                  (initialMonthlyNetGain - assumptions.monthlyFlatDeduction) * 12;
-
-                // ASSUMPTION: 'totalCost' is now available on the cashflow object.
+                  cf.displayCashflowYearly - assumptions.monthlyFlatDeduction * 12;
                 const initialCost = parseFloat((cf as any)?.totalCost || '0');
                 const roi = initialCost > 0 ? (annualNetGain / initialCost) * 100 : 0;
-
                 return (
                   <FormControlLabel
                     key={cf.id}
-                    // The main styling for the label box needs to ensure content fits the width
-                    sx={{ alignItems: 'flex-start', margin: '4px 0' }} // Adjust alignment and margin
+                    sx={{ alignItems: 'flex-start', margin: '4px 0' }}
                     control={
                       <Checkbox
                         checked={selectedIds.includes(cf.id)}
@@ -282,19 +232,14 @@ export default function CashflowVisualization() {
                       />
                     }
                     label={
-                      // Removed my:-0.5, increased vertical space
                       <Box sx={{ overflow: 'hidden', pt: 0.5 }}>
-                        {/* Line 1: Cashflow Name (noWrap is fine here) */}
                         <Typography variant="body1" noWrap>
                           {cf.name}
                         </Typography>
-
-                        {/* Line 2: Annual Net Gain | ROI */}
                         <Typography
                           variant="caption"
                           color="text.secondary"
                           lineHeight={1.2}
-                          // Key change: nowrap for the entire line to force it onto one line
                           sx={{
                             display: 'block',
                             whiteSpace: 'nowrap',
@@ -302,12 +247,8 @@ export default function CashflowVisualization() {
                             textOverflow: 'ellipsis',
                           }}
                         >
-                          {/* Shortened "Jährlicher Nettoertrag" to "Jährl. Ertrag" to save space */}
                           Jährl. Ertrag:&nbsp;
-                          {/* Use String concatenation with a non-breaking space for value € */}
-                          {/* Use the calculated annualNetGain, which includes the flat deduction */}
-                          {fmtMoney(String(annualNetGain))} €
-                          {/* Only show ROI if meaningful (> 0.001%) */}
+                          {fmtIntegerCurrency(annualNetGain)} €
                           {roi > 0.001 && ` | Rendite: ${roi.toFixed(1)}%`}
                         </Typography>
                       </Box>
@@ -327,8 +268,6 @@ export default function CashflowVisualization() {
             <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
               Globale Annahmen
             </Typography>
-
-            {/* Cashflow-Wachstum (using rentIncreasePct key) */}
             <Typography variant="caption" color="text.secondary" gutterBottom>
               Cashflow-Wachstum: {assumptions.rentIncreasePct.toFixed(1)}%
             </Typography>
@@ -343,8 +282,6 @@ export default function CashflowVisualization() {
               size="small"
               sx={{ mb: 2 }}
             />
-
-            {/* Monatliche Pauschalabzüge (€/Monat) - NEW SLIDER */}
             <Typography variant="caption" color="text.secondary" gutterBottom>
               Monatliche Pauschalabzüge: {assumptions.monthlyFlatDeduction.toFixed(0)} €
             </Typography>
@@ -365,73 +302,80 @@ export default function CashflowVisualization() {
     </Paper>
   );
 
-  // --- Nivo Chart Adjustments ---
-  // Move legends to bottom-left on all screen sizes to save horizontal space
   const chartMargin = {
     top: 20,
     right: isSmallScreen ? 20 : 40,
-    bottom: isSmallScreen ? 100 : 60,
+    bottom: isSmallScreen ? 120 : 100,
     left: isSmallScreen ? 50 : 80,
   };
-  const chartLegend = {
-    anchor: 'bottom-left' as const, // Change from bottom-right to bottom-left
-    direction: 'row' as const, // Change from column to row for better mobile fit
+
+  const chartLegend: LegendProps = {
+    anchor: 'bottom-left',
+    direction: 'column',
+    justify: false,
     translateX: 0,
-    translateY: isSmallScreen ? 50 : 50, // Move down further on small screen
-    itemWidth: isSmallScreen ? 60 : 100, // Reduced item width on small screen
+    translateY: isSmallScreen ? 95 : 80,
+    itemsSpacing: 2,
+    itemWidth: 180,
     itemHeight: 20,
-    itemsSpacing: isSmallScreen ? 5 : 2,
-    symbolSize: 10,
+    itemDirection: 'left-to-right',
+    itemOpacity: 0.85,
+    symbolSize: 12,
+    effects: [
+      {
+        on: 'hover',
+        style: {
+          itemOpacity: 1,
+        },
+      },
+    ],
   };
 
   return (
     <Box
       sx={{
         display: 'flex',
-        // Stacks columns on small screens, rows on large screens
         flexDirection: isSmallScreen ? 'column' : 'row',
-        height: isSmallScreen ? 'auto' : 'calc(100vh - 64px)', // Auto height on mobile
+        height: isSmallScreen ? 'auto' : 'calc(100vh - 64px)',
         p: 2,
         gap: 2,
       }}
     >
-      {/* Chart Area */}
       <Paper
         sx={{
           flexGrow: 1,
-          p: isSmallScreen ? 1 : 2, // Less padding on mobile
+          p: isSmallScreen ? 1 : 2,
           display: 'flex',
           flexDirection: 'column',
-          // Remove HACKY fixed width constraints, use flex
           minWidth: 0,
           flexBasis: chartFlexBasis,
           overflow: 'hidden',
-          order: isSmallScreen ? 1 : 0, // Chart is the main content, appears first/on top
+          order: isSmallScreen ? 1 : 0,
         }}
       >
-        {/* Header/Tabs */}
         <Box sx={{ borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
           <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
             <Tab label="Kumulativer Cashflow" />
           </Tabs>
         </Box>
-
         <TabPanel value={activeTab} index={0}>
-          {/* Timeframe Slider */}
           <Box
             sx={{
               display: 'flex',
-              // alignItems: 'center',
               gap: 2,
               mb: 2,
               flexShrink: 0,
-              flexDirection: isSmallScreen ? 'column' : 'row', // Stack slider label and slider
+              flexDirection: isSmallScreen ? 'column' : 'row',
               alignItems: isSmallScreen ? 'flex-start' : 'center',
             }}
           >
-            <Typography variant="body2" sx={{ minWidth: 100 }}>
-              Zeitraum: {maxYears} Jahre
-            </Typography>
+            {/* MODIFICATION START */}
+            {/* This Box now has a fixed min-width on larger screens. This prevents the slider */}
+            {/* from shifting position when 'maxYears' changes from 1 to 2 digits. */}
+            <Box sx={{ minWidth: isSmallScreen ? 'auto' : '115px' }}>
+              <Typography variant="body2">Zeitraum: {maxYears} Jahre</Typography>
+            </Box>
+            {/* MODIFICATION END */}
             <Slider
               value={maxYears}
               onChange={(_, val) => setMaxYears(Array.isArray(val) ? val[0] : val)}
@@ -442,31 +386,24 @@ export default function CashflowVisualization() {
               sx={{ flex: 1, maxWidth: isSmallScreen ? '100%' : 500 }}
             />
           </Box>
-
-          {/* Nivo Chart Container */}
-          <Box
-            sx={{
-              flex: 1,
-              width: '100%',
-              minHeight: isSmallScreen ? 300 : 400, // Reduced height for mobile
-            }}
-          >
+          <Box sx={{ flex: 1, width: '100%', minHeight: isSmallScreen ? 300 : 400 }}>
             {visibleChartData.length > 0 ? (
               <ResponsiveLine
                 data={visibleChartData}
-                margin={chartMargin} // Use responsive margin
+                margin={chartMargin}
                 xScale={{ type: 'linear', min: 0, max: maxYears }}
                 yScale={{ type: 'linear', min: 'auto', max: 'auto' }}
                 axisBottom={{
                   legend: 'Jahre',
                   legendOffset: isSmallScreen ? 35 : 40,
                   legendPosition: 'middle',
+                  tickValues: axisTickValues,
                 }}
                 axisLeft={{
                   legend: 'Kumulativer Cashflow',
-                  legendOffset: isSmallScreen ? -40 : -65, // Less offset on mobile
+                  legendOffset: isSmallScreen ? -40 : -65,
                   legendPosition: 'middle',
-                  format: (v) => `${fmtMoney(String(v))} €`,
+                  format: (v) => `${fmtIntegerCurrency(v)} €`,
                 }}
                 curve="monotoneX"
                 useMesh
@@ -477,7 +414,7 @@ export default function CashflowVisualization() {
                 enableGridX={true}
                 enableGridY={true}
                 tooltip={SimpleCustomTooltip}
-                legends={[chartLegend]} // Use responsive legend
+                legends={[chartLegend]}
               />
             ) : (
               <Box
@@ -496,14 +433,11 @@ export default function CashflowVisualization() {
           </Box>
         </TabPanel>
       </Paper>
-
-      {/* Sidebar / Controls */}
       <Box
         sx={{
           flexShrink: 0,
           width: isSmallScreen ? '100%' : sidebarWidth,
-          order: isSmallScreen ? 2 : 1, // Controls appear below chart on mobile
-          // Only show the controls section when not collapsed on small screens
+          order: isSmallScreen ? 2 : 1,
           display: isSmallScreen && controlsCollapsed && !controlsCollapsed ? 'none' : 'block',
         }}
       >
