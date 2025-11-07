@@ -2,49 +2,35 @@
 
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-// MODIFIED: Replaced Stack with Box, removed ResultRow import
 import { TableCell, Typography, Box } from '@mui/material';
 import { useCashflowStore, type Cashflow } from '../../core/state/useCashflowStore';
-import { useInvestStore } from '../../core/state/useInvestStore';
-import { useCreditStore } from '../../core/state/useCreditStore';
-// ASSUMPTION: fmtMoney is a general formatter from core/domain/calc
 import { fmtMoney } from '../../core/domain/calc';
 import CashflowDialog from '../shared/CashflowDialog';
 import ResourceList, { type HeadCell } from '../shared/ResourceList';
-// REMOVED: import { ResultRow } from '../shared/SharedComponents.tsx';
-import { useCurrencyConverter } from '../../core/hooks/useCurrencyConverter.ts';
+import { useCurrencyConverter } from '../../core/hooks/useCurrencyConverter';
+// NEW: Import the centralized hook and the EnrichedCashflow type
+import { useEnrichedCashflows, type EnrichedCashflow } from '../../core/hooks/useEnrichedCashflows';
 
-// EnrichedRow extends the base Cashflow type, so its properties must be compatible.
-interface EnrichedRow extends Cashflow {
-  investmentName: string;
-  creditName: string;
-  yieldPct: number;
-  currency: string;
-}
-
-// NEW HELPER: Formats currency without decimals.
-const fmtCurrency = (amount: number | string) => {
-  // We assume fmtMoney for locale grouping and Math.round for no decimals.
-  return fmtMoney(String(Math.round(Number(amount))));
+// Helper to format currency (assumes integers).
+const fmtCurrency = (amount: number) => {
+  return fmtMoney(String(amount));
 };
 
-// NEW HELPER: Formats percentage with standard decimals (assumed by original fmtMoney).
-const fmtPercentage = (amount: number | string) => {
-  // For percentages, we use the original fmtMoney to retain any decimal precision.
+// Helper to format percentage with decimals.
+const fmtPercentage = (amount: number) => {
+  // Retain decimal precision for yield percentages
   return fmtMoney(String(amount));
 };
 
 export default function CashflowList() {
   const { t } = useTranslation();
+  // Still need raw cashflows for undo/delete logic that modifies the store
   const { cashflows, removeCashflow } = useCashflowStore();
-  const { objects, realEstates, deposits } = useInvestStore();
-  const credits = useCreditStore((s) => s.credits);
-  const { convert, mainCurrency, isConversionActive } = useCurrencyConverter();
-  const allInvestments = React.useMemo(
-    () => [...objects, ...realEstates, ...deposits],
-    [objects, realEstates, deposits],
-  );
+  const { mainCurrency, isConversionActive } = useCurrencyConverter();
   const [undoCtx, setUndoCtx] = React.useState<{ item: Cashflow; index: number } | null>(null);
+
+  // Use the new centralized hook to get the consistently calculated rows
+  const rows = useEnrichedCashflows();
 
   const i18nKeys = {
     empty: 'cashflowList.noEstimations',
@@ -55,52 +41,19 @@ export default function CashflowList() {
     delete: 'cashflowList.delete',
   };
 
-  const headCells: readonly HeadCell<EnrichedRow>[] = React.useMemo(
+  const headCells: readonly HeadCell<EnrichedCashflow>[] = React.useMemo(
     () => [
       { id: 'name', label: t('cashflowList.estimationName') },
       { id: 'investmentName', label: t('cashflowList.investment') },
       { id: 'creditName', label: t('cashflowList.credit') },
-      { id: 'cashflowMonthly', label: t('cashflowList.netProfitMonthly'), align: 'right' },
+      { id: 'displayCashflowMonthly', label: t('cashflowList.netProfitMonthly'), align: 'right' },
+      { id: 'displayCashflowYearly', label: t('cashflowList.netProfitYearly'), align: 'right' },
       { id: 'yieldPct', label: t('cashflowList.yield'), align: 'right' },
     ],
     [t],
   );
 
-  const rows: EnrichedRow[] = React.useMemo(
-    () =>
-      cashflows.map((cf) => {
-        const investment = allInvestments.find((i) => i.id === cf.investmentId);
-        const credit = cf.creditId ? credits.find((c) => c.id === cf.creditId) : null;
-
-        const originalPurchasePrice = parseFloat(
-          investment?.totalPrice || investment?.startAmount || '0',
-        );
-        const originalCashflowMonthly = parseFloat(cf.cashflowMonthly);
-        const originalCurrency = investment?.currency || mainCurrency;
-
-        const yieldPct =
-          originalPurchasePrice > 0
-            ? ((originalCashflowMonthly * 12) / originalPurchasePrice) * 100
-            : 0;
-
-        const displayCashflowMonthly = isConversionActive
-          ? convert(originalCashflowMonthly, originalCurrency)
-          : originalCashflowMonthly;
-
-        return {
-          ...cf,
-          investmentName: investment?.name || '—',
-          creditName: credit?.name || '—',
-          // FIX: Convert the final display value back to a string to match the `Cashflow` base type.
-          cashflowMonthly: String(displayCashflowMonthly),
-          yieldPct: yieldPct,
-          currency: originalCurrency,
-        };
-      }),
-    [cashflows, allInvestments, credits, isConversionActive, convert, mainCurrency],
-  );
-
-  const handleDelete = (row: EnrichedRow) => {
+  const handleDelete = (row: EnrichedCashflow) => {
     const index = cashflows.findIndex((c) => c.id === row.id);
     if (index > -1) {
       setUndoCtx({ item: cashflows[index], index });
@@ -119,12 +72,12 @@ export default function CashflowList() {
     setUndoCtx(null);
   };
 
-  const getOriginalItem = (row: EnrichedRow) => {
+  const getOriginalItem = (row: EnrichedCashflow) => {
     return cashflows.find((c) => c.id === row.id);
   };
 
   return (
-    <ResourceList<EnrichedRow>
+    <ResourceList<EnrichedCashflow>
       items={rows}
       headCells={headCells}
       i18nKeys={i18nKeys}
@@ -135,76 +88,87 @@ export default function CashflowList() {
       getOriginalItem={getOriginalItem}
       renderDataCells={(row) => (
         <>
-          {/* NOTE: Estimation name is not assumed to have a link */}
-          <TableCell key={`${row.id}-name`} sx={{ fontWeight: 500 }}>
-            {row.name}
-          </TableCell>
-          <TableCell key={`${row.id}-investmentName`}>{row.investmentName}</TableCell>
-          <TableCell key={`${row.id}-creditName`}>{row.creditName}</TableCell>
+          <TableCell sx={{ fontWeight: 500 }}>{row.name}</TableCell>
+          <TableCell>{row.investmentName}</TableCell>
+          <TableCell>{row.creditName}</TableCell>
           <TableCell
-            key={`${row.id}-cashflowMonthly`}
             align="right"
             sx={{
-              color: parseFloat(row.cashflowMonthly) < 0 ? 'error.main' : 'success.main',
+              color: row.displayCashflowMonthly < 0 ? 'error.main' : 'success.main',
               fontWeight: 500,
             }}
           >
-            {/* MODIFIED: Use fmtCurrency (no decimals) */}
-            {fmtCurrency(row.cashflowMonthly)} {isConversionActive ? mainCurrency : row.currency}
+            {fmtCurrency(row.displayCashflowMonthly)}{' '}
+            {isConversionActive ? mainCurrency : row.currency}
           </TableCell>
-          <TableCell key={`${row.id}-yieldPct`} align="right" sx={{ fontWeight: 500 }}>
-            {/* MODIFIED: Use fmtPercentage (with decimals) */}
+          <TableCell
+            align="right"
+            sx={{
+              color: row.displayCashflowYearly < 0 ? 'error.main' : 'success.main',
+              fontWeight: 700, // Make yearly value stand out
+            }}
+          >
+            {fmtCurrency(row.displayCashflowYearly)}{' '}
+            {isConversionActive ? mainCurrency : row.currency}
+          </TableCell>
+          <TableCell align="right" sx={{ fontWeight: 500 }}>
             {fmtPercentage(row.yieldPct)} %
           </TableCell>
         </>
       )}
       renderCard={(row) => (
-        // MODIFIED: Removed Typography for name as it's now handled by ResourceList's mobileView header
-        <>
-          <Box sx={{ display: 'grid', gap: 1, mt: 1 }}>
-            {/* Investment */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography color="text.secondary" variant="body2">
-                {t('cashflowList.investment')}:
-              </Typography>
-              <Typography variant="body2" fontWeight={600}>
-                {row.investmentName}
-              </Typography>
-            </Box>
-            {/* Credit */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography color="text.secondary" variant="body2">
-                {t('cashflowList.credit')}:
-              </Typography>
-              <Typography variant="body2" fontWeight={600}>
-                {row.creditName}
-              </Typography>
-            </Box>
-            {/* Net Profit Monthly */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography color="text.secondary" variant="body2">
-                {t('cashflowList.netProfitMonthly')}:
-              </Typography>
-              <Typography
-                variant="body2"
-                fontWeight={600}
-                color={parseFloat(row.cashflowMonthly) < 0 ? 'error.main' : 'success.main'}
-              >
-                {fmtCurrency(row.cashflowMonthly)}{' '}
-                {isConversionActive ? mainCurrency : row.currency}
-              </Typography>
-            </Box>
-            {/* Yield */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography color="text.secondary" variant="body2">
-                {t('cashflowList.yield')}:
-              </Typography>
-              <Typography variant="body2" fontWeight={700} color="primary.main">
-                {fmtPercentage(row.yieldPct)} %
-              </Typography>
-            </Box>
+        <Box sx={{ display: 'grid', gap: 1, mt: 1 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography color="text.secondary" variant="body2">
+              {t('cashflowList.investment')}:
+            </Typography>
+            <Typography variant="body2" fontWeight={600}>
+              {row.investmentName}
+            </Typography>
           </Box>
-        </>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography color="text.secondary" variant="body2">
+              {t('cashflowList.credit')}:
+            </Typography>
+            <Typography variant="body2" fontWeight={600}>
+              {row.creditName}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography color="text.secondary" variant="body2">
+              {t('cashflowList.netProfitMonthly')}:
+            </Typography>
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              color={row.displayCashflowMonthly < 0 ? 'error.main' : 'success.main'}
+            >
+              {fmtCurrency(row.displayCashflowMonthly)}{' '}
+              {isConversionActive ? mainCurrency : row.currency}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography color="text.secondary" variant="body2">
+              {t('cashflowList.netProfitYearly')}:
+            </Typography>
+            <Typography
+              variant="body2"
+              fontWeight={700}
+              color={row.displayCashflowYearly < 0 ? 'error.main' : 'success.main'}
+            >
+              {fmtCurrency(row.displayCashflowYearly)}{' '}
+              {isConversionActive ? mainCurrency : row.currency}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Typography color="text.secondary" variant="body2">
+              {t('cashflowList.yield')}:
+            </Typography>
+            <Typography variant="body2" fontWeight={700} color="primary.main">
+              {fmtPercentage(row.yieldPct)} %
+            </Typography>
+          </Box>
+        </Box>
       )}
     />
   );

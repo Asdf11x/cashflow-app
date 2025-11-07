@@ -230,8 +230,8 @@
   },
   "optionsMenu": {
     "title": "Options",
-    "coreSettings": "Core Settings",
     "noConversion": "No Conversion",
+    "coreSettings": "Core Settings",
     "language": "Language",
     "mainCurrency": "Main Currency",
     "defaultValues": "Default Values",
