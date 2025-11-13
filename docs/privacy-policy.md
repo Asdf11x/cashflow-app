@@ -1,14 +1,14 @@
-Datenschutz­erklärung für die App "Cashflow App"
+# Privacy Policy for "Cashflow App"
 
-Diese App verarbeitet keine personenbezogenen Daten außerhalb des Gerätes des Nutzers.
-Alle eingegebenen Informationen bleiben lokal auf dem Gerät gespeichert und werden nicht an Server, Dienste oder Dritte übertragen.
+This app does not process any personal data outside of the user's device.
+All information entered by the user is stored locally on the device and is not transmitted to any servers, services, or third parties.
 
-Es findet kein Tracking statt.
-Es werden keine Analysedaten, Nutzungsdaten oder technischen Informationen an externe Anbieter gesendet.
+The app performs no tracking.
+No analytics data, usage data, or technical information is sent to external providers.
 
-Berechtigungen:
-Die App verwendet keine Geräteberechtigungen außer denjenigen, die für den normalen Betrieb erforderlich sind.
+Permissions:
+The app does not use any device permissions other than those required for its normal operation.
 
-Kontakt:
-Bei Fragen zum Datenschutz kannst du uns kontaktieren unter:
+Contact:
+If you have any questions regarding privacy, you can contact us at:
 mlabscollective@gmail.com
